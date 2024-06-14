@@ -1,0 +1,28 @@
+{
+    "name": "riki137/multitron",
+    "description": "Tool for managing fast both asynchronous and multi-threaded execution of tasks. Focused on performance and pleasant CLI interface.",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Multitron\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Richard Riki Popeliš",
+            "email": "popelis@efabrica.sk"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "symfony/console": "^5.0|^6.0|^7.0",
+        "amphp/parallel": "^2.2",
+        "amphp/sync": "^2.2"
+    },
+    "require-dev": {
+        "tracy/tracy": "^2.10",
+        "psr/log": "^3.0",
+        "nette/di": "^3.2"
+    }
+}
