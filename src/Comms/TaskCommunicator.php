@@ -4,9 +4,7 @@ declare(strict_types=1);
 namespace Multitron\Comms;
 
 use Amp\Cancellation;
-use Amp\Serialization\SerializationException;
 use Amp\Sync\Channel;
-use Amp\Sync\ChannelException;
 use ArrayObject;
 use Multitron\Comms\Data\Message\LogLevel;
 use Multitron\Comms\Data\Message\LogMessage;
@@ -43,15 +41,6 @@ class TaskCommunicator
     public function sendMessage(Message $data): void
     {
         $this->channel->send($data);
-    }
-
-    /**
-     * @throws SerializationException
-     * @throws ChannelException
-     */
-    public function receive(): Message
-    {
-        return $this->channel->receive();
     }
 
     public function log(string $message, LogLevel $level = LogLevel::INFO): void

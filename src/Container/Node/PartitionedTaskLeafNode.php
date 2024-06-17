@@ -6,6 +6,7 @@ namespace Multitron\Container\Node;
 
 use Closure;
 use Multitron\Impl\PartitionedTask;
+use RuntimeException;
 
 class PartitionedTaskLeafNode extends TaskLeafNode
 {
@@ -14,7 +15,7 @@ class PartitionedTaskLeafNode extends TaskLeafNode
         parent::__construct($id, function () use ($modulo, $index, $parentFactory) {
             $task = clone($parentFactory());
             if (!$task instanceof PartitionedTask) {
-                throw new \RuntimeException(get_class($task) . ' must be an instance of PartitionedTask');
+                throw new RuntimeException(get_class($task) . ' must be an instance of PartitionedTask');
             }
             $task->setPartitioning($index, $modulo);
             return $task;

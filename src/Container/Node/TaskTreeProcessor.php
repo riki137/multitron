@@ -6,11 +6,11 @@ namespace Multitron\Container\Node;
 
 use Multitron\Impl\Task;
 use RuntimeException;
-use Traversable;
 
 class TaskTreeProcessor
 {
     private array $groupIndex = [];
+
     private array $nodes = [];
 
     public function __construct(private readonly TaskGroupNode $node)

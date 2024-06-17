@@ -29,7 +29,6 @@ class LocalTask implements RunningTask
         $this->cancel = new DeferredCancellation();
         $this->future = new DeferredFuture();
         $this->centre = new TaskCentre($this->channel, $this->cancel->getCancellation());
-        $this->run();
     }
 
     public function run(): void

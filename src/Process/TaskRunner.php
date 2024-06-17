@@ -9,7 +9,6 @@ use Amp\Parallel\Worker\ContextWorkerPool;
 use Amp\Parallel\Worker\WorkerException;
 use Amp\Parallel\Worker\WorkerPool;
 use Amp\Pipeline\Queue;
-use Multitron\Container\Node\TaskGroupNode;
 use Multitron\Container\Node\TaskLeafNode;
 use Multitron\Container\Node\TaskTreeProcessor;
 use Tracy\Debugger;
@@ -22,6 +21,7 @@ class TaskRunner
     private SharedMemory $sharedMemory;
 
     private Queue $processes;
+
     public function __construct(private readonly TaskTreeProcessor $tree, ?int $concurrentTasks, private readonly ?string $bootstrapPath = null)
     {
         $this->workerPool = new ContextWorkerPool($concurrentTasks, new ContextWorkerFactory($bootstrapPath));
@@ -55,7 +55,9 @@ class TaskRunner
     private function runTask(TaskLeafNode $task): RunningTask
     {
         if ($task->isAsync()) {
-            return new LocalTask($this->sharedMemory, $task->getTask());
+            $local = new LocalTask($this->sharedMemory, $task->getTask());
+            $local->run();
+            return $local;
         }
 
         $cancel = new DeferredCancellation();

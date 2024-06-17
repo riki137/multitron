@@ -8,20 +8,15 @@ use Multitron\Comms\Data\Message\LogLevel;
 use Multitron\Comms\Data\Message\LogMessage;
 use Multitron\Comms\Data\Message\ProgressMessage;
 use Multitron\Comms\Data\TaskProgress;
-use Multitron\Container\Node\TaskLeafNode;
-use Multitron\Process\RunningTask;
 use Multitron\Process\TaskRunner;
 use Multitron\Util\Throttle;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableCell;
 use Symfony\Component\Console\Helper\TableCellStyle;
-use Symfony\Component\Console\Input\StringInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\ConsoleSectionOutput;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Style\StyleInterface;
-use Symfony\Component\Console\Style\SymfonyStyle;
 use function Amp\async;
 
 /**
@@ -30,15 +25,26 @@ use function Amp\async;
 class TableOutput
 {
     private BufferedOutput $tableOutput;
+
     private BufferedOutput $logOutput;
+
     private Table $table;
+
     private ConsoleSectionOutput $consoleSection;
+
     private Throttle $throttle;
+
     private array $runningTasks = [];
+
     private array $finishedTasks = [];
+
     private array $taskStartTimes = [];
+
     private int $taskWidth = 16;
+
     private int $total = 0;
+
+    private array $start = [];
 
     /**
      * TableOutput constructor.
@@ -78,25 +84,32 @@ class TableOutput
 
         foreach ($tasks ?? $this->runningTasks as $taskId => $runningTask) {
             $progress = $runningTask->getCentre()->getProgress();
-            $label = str_pad($taskId, $this->taskWidth, " ", STR_PAD_LEFT);
+            $label = str_pad($taskId, $this->taskWidth, ' ', STR_PAD_LEFT);
 
             if ($progress->total > 0 && $progress->done >= $progress->total) {
-                $label .= " <fg=green>✔</>";
+                $label .= ' <fg=green>✔</>';
             } else {
-                $label .= "  ";
+                $label .= '  ';
             }
 
             $this->table->addRow([
                 "<options=bold>$label</>",
-                $this->getStatus($taskId, $progress)
+                $this->getStatus($taskId, $progress),
             ]);
         }
         if ($tasks === null) {
+            $finished = count($this->finishedTasks);
+            foreach ($this->runningTasks as $runningTask) {
+                $prog = $runningTask->getCentre()->getProgress();
+                if ($prog->total > 0) {
+                    $finished += max(0, min(1, $prog->done / $prog->total));
+                }
+            }
             $this->table->addRow([
                 new TableCell('TOTAL  ', ['style' => new TableCellStyle(['align' => 'right', 'options' => 'bold'])]),
-                ProgressBar::render(count($this->finishedTasks) / $this->total * 100, 16, 'blue')
-                . " " . count($this->finishedTasks) . "<fg=gray>/</>" . $this->total
-                . " <fg=gray>" . number_format(microtime(true) - $this->start[''], 1, '.', ' ') . "s</>"
+                ProgressBar::render($finished / $this->total * 100, 16, 'blue')
+                . ' ' . count($this->finishedTasks) . '<fg=gray>/</>' . $this->total
+                . ' <fg=gray>' . number_format(microtime(true) - $this->start[''], 1, '.', ' ') . 's</>',
             ]);
         }
 
@@ -196,9 +209,13 @@ class TableOutput
             $status .= " <fg=red>{$progress->error}xERR</>";
             $color = 'red';
         }
-        $status = ProgressBar::render($progress->getPercentage(), 16, $color) . " " . $progress->done . "<fg=gray>/</>" . $progress->total . $status;
+        $status = ProgressBar::render(
+            $progress->getPercentage(),
+            16,
+            $color
+        ) . ' ' . $progress->done . '<fg=gray>/</>' . $progress->total . $status;
 
-        $status .= " <fg=gray>" . number_format(microtime(true) - $this->taskStartTimes[$taskId], 1, '.', ' ') . "s</>";
+        $status .= ' <fg=gray>' . number_format(microtime(true) - $this->taskStartTimes[$taskId], 1, '.', ' ') . 's</>';
         return $status;
     }
 }

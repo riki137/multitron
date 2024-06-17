@@ -13,8 +13,11 @@ use Throwable;
 class LocalChannel implements Channel
 {
     private array $queue = [];
+
     private array $onClose = [];
+
     private bool $closed = false;
+
     private DeferredFuture $future;
 
     public function __construct()
@@ -87,4 +90,3 @@ class LocalChannel implements Channel
         }
     }
 }
-

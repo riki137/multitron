@@ -15,7 +15,8 @@ enum LogLevel: string
     case ALERT = \Psr\Log\LogLevel::ALERT;
     case EMERGENCY = \Psr\Log\LogLevel::EMERGENCY;
 
-    public function toColor(): string {
+    public function toColor(): string
+    {
         return match ($this) {
             self::DEBUG => 'gray',
             self::INFO => 'green',

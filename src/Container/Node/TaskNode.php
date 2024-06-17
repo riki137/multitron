@@ -7,6 +7,7 @@ namespace Multitron\Container\Node;
 abstract class TaskNode
 {
     private array $dependencies = [];
+
     private array $groups = [];
 
     public function __construct(private readonly string $id)
@@ -18,7 +19,8 @@ abstract class TaskNode
         return $this->id;
     }
 
-    public function dependsOn(TaskNode|string ...$dependencies): static {
+    public function dependsOn(TaskNode|string ...$dependencies): static
+    {
         foreach ($dependencies as $dependency) {
             if ($dependency instanceof TaskNode) {
                 $dependency = $dependency->id;
@@ -28,14 +30,25 @@ abstract class TaskNode
         return $this;
     }
 
+    public function removeDependency(TaskNode|string $dependency): static
+    {
+        if ($dependency instanceof TaskNode) {
+            $dependency = $dependency->id;
+        }
+        unset($this->dependencies[$dependency]);
+        return $this;
+    }
+
     /**
      * @return string[]
      */
-    public function getDependencies(): array {
+    public function getDependencies(): array
+    {
         return $this->dependencies;
     }
 
-    public function belongsTo(TaskGroupNode|string $group): self {
+    public function belongsTo(TaskGroupNode|string $group): self
+    {
         if ($group instanceof TaskGroupNode) {
             $group = $group->getId();
         }
@@ -46,7 +59,8 @@ abstract class TaskNode
     /**
      * @return string[]
      */
-    public function getGroups(): array {
+    public function getGroups(): array
+    {
         return $this->groups;
     }
 }

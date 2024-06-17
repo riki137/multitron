@@ -35,12 +35,11 @@ class TaskGroupNode extends TaskNode
         }
     }
 
-
     private function unpackNode(TaskNode $node): Generator
     {
         if ($node instanceof TaskGroupNode) {
-            foreach ($node->getTasks() as $node) {
-                yield from $this->unpackNode($node);
+            foreach ($node->getTasks() as $leaf) {
+                yield from $this->unpackNode($leaf);
             }
         } elseif ($node instanceof TaskLeafNode) {
             yield $node;

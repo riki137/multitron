@@ -6,12 +6,8 @@ namespace Multitron\Process;
 
 use Amp\DeferredFuture;
 use Amp\Future;
-use Multitron\Container\Def\TaskDefinition;
-use Multitron\Container\Node\TaskGroupNode;
-use Multitron\Container\Node\TaskLeafNode;
 use Multitron\Container\Node\TaskNode;
 use Multitron\Container\Node\TaskTreeProcessor;
-use Multitron\Container\TaskContainer;
 use RuntimeException;
 use Throwable;
 use Tracy\Debugger;
@@ -29,10 +25,6 @@ class TaskQueue
     private array $finished = [];
 
     private array $dependencyCache = [];
-    /**
-     * @var TaskLeafNode[]
-     */
-    private array $nodes;
 
     public function __construct(private readonly int $concurrencyLimit, private readonly TaskTreeProcessor $treeProcessor)
     {
@@ -60,8 +52,10 @@ class TaskQueue
                 }
             }
             if (empty($this->futures)) {
-                throw new RuntimeException('Circular dependency detected with the following tasks left: ' . implode(', ',
-                        array_keys($queue)));
+                throw new RuntimeException('Circular dependency detected with the following tasks left: ' . implode(
+                    ', ',
+                    array_keys($queue)
+                ));
             }
             try {
                 $this->markFinished(awaitFirst($this->futures));
@@ -96,7 +90,6 @@ class TaskQueue
             $deps[] = $id;
         }
     }
-
 
     public function markFinished(string $id): void
     {
