@@ -28,7 +28,7 @@ class LocalChannel implements Channel
     public function send(mixed $data): void
     {
         if ($this->closed) {
-            throw new ChannelException('Channel is closed');
+            throw new ChannelException('Channel is closed when sending: ' . var_export($data, true));
         }
 
         $this->queue[] = $data;
@@ -85,7 +85,7 @@ class LocalChannel implements Channel
             }
 
             if (!$this->future->isComplete()) {
-                $this->future->error(new ChannelException('Channel is closed'));
+                $this->future->error(new ChannelException('Closing channel before completing future'));
             }
         }
     }

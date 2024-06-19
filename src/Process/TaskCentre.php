@@ -11,8 +11,7 @@ use Amp\Sync\ChannelException;
 use Generator;
 use Multitron\Comms\Data\Message\LogMessage;
 use Multitron\Comms\Data\Message\Message;
-use Multitron\Comms\Data\Message\ProgressMessage;
-use Multitron\Comms\Data\TaskProgress;
+use Multitron\Comms\Data\Message\TaskProgress;
 use UnexpectedValueException;
 
 class TaskCentre
@@ -25,7 +24,7 @@ class TaskCentre
 
     public function __construct(Channel $channel, Cancellation $cancel)
     {
-        $this->progress = new TaskProgress();
+        $this->progress = new TaskProgress(0);
         $this->pipeline = Pipeline::fromIterable($this->pipeline($channel, $cancel));
     }
 
@@ -44,7 +43,7 @@ class TaskCentre
 
     private function process(Message $message): void
     {
-        if ($message instanceof ProgressMessage) {
+        if ($message instanceof TaskProgress) {
             $this->progress->update($message);
         } elseif ($message instanceof LogMessage) {
             $this->status = $message->status;

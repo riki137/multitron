@@ -6,8 +6,7 @@ namespace Multitron\Output;
 
 use Multitron\Comms\Data\Message\LogLevel;
 use Multitron\Comms\Data\Message\LogMessage;
-use Multitron\Comms\Data\Message\ProgressMessage;
-use Multitron\Comms\Data\TaskProgress;
+use Multitron\Comms\Data\Message\TaskProgress;
 use Multitron\Process\TaskRunner;
 use Multitron\Util\Throttle;
 use Symfony\Component\Console\Helper\Table;
@@ -150,7 +149,7 @@ class TableOutput
                 foreach ($runningTask->getCentre()->getPipeline() as $message) {
                     if ($message instanceof LogMessage) {
                         $this->logTask($taskId, $message->status, $message->level);
-                    } elseif ($message instanceof ProgressMessage) {
+                    } elseif ($message instanceof TaskProgress) {
                         $progress->update($message);
                     }
                     $this->throttle->call();
@@ -216,6 +215,9 @@ class TableOutput
         ) . ' ' . $progress->done . '<fg=gray>/</>' . $progress->total . $status;
 
         $status .= ' <fg=gray>' . number_format(microtime(true) - $this->taskStartTimes[$taskId], 1, '.', ' ') . 's</>';
+        if ($progress->memoryUsage !== null) {
+            $status .= ' <fg=blue>' . $progress->getMemoryUsage() . '</>';
+        }
         return $status;
     }
 }

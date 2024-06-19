@@ -12,10 +12,12 @@ abstract class SimpleTask implements Task
     public function execute(TaskCommunicator $comm): void
     {
         try {
-            $comm->sendProgress(0, 1);
+            $comm->setTotal(1);
             $success = $this->run($comm);
-            $comm->sendProgress((int)$success, 1, (int)!$success);
-            if (!$success) {
+            if ($success) {
+                $comm->addDone();
+                $comm->sendProgress(true);
+            } else {
                 $comm->error('Task failed');
             }
         } catch (Throwable $e) {

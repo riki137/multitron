@@ -34,21 +34,16 @@ class LocalTask implements RunningTask
     public function run(): void
     {
         $communicator = new TaskCommunicator($this->sharedMemory, $this->channel, $this->cancel->getCancellation());
-        try {
-            $exec = async(fn() => $this->task->execute($communicator));
-            async(function () use ($communicator, $exec) {
-                try {
-                    $this->future->complete($exec->await($this->cancel->getCancellation()));
-                } catch (Throwable $e) {
-                    $communicator->log($e->getMessage());
-                    $this->future->error($e);
-                } finally {
-                    $this->channel->close();
-                }
-            });
-        } catch (Throwable $e) {
-            $communicator->log($e->getMessage());
-        }
+        $exec = async(fn() => $this->task->execute($communicator));
+        $catcher = async(function () use ($communicator, $exec) {
+            try {
+                $this->future->complete($exec->await($this->cancel->getCancellation()));
+            } catch (Throwable $e) {
+                $communicator->log($e->getMessage());
+                $this->future->error($e);
+            }
+            $communicator->shutdown();
+        });
     }
 
     public function await(): mixed

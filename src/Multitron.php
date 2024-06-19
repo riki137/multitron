@@ -16,6 +16,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Tracy\Debugger;
 
 class Multitron extends Command
 {
@@ -50,6 +51,8 @@ class Multitron extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        EventLoop::setErrorHandler(fn($t) => Debugger::log($t, 'EventLoop'));
+        Debugger::$strictMode = false;
         $node = $this->rootNode;
         if ($input->getArgument('task') !== '*') {
             $node = new TaskFilteringNode('root-filtered', $node, $input->getArgument('task'));

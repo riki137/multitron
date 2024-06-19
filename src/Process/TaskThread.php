@@ -19,6 +19,8 @@ use Tracy\Debugger;
 
 class TaskThread implements AmpTask
 {
+    public static bool $inThread = false;
+
     public function __construct(
         private readonly int $semaphoreKey,
         private readonly int $parcelKey,
@@ -29,6 +31,7 @@ class TaskThread implements AmpTask
 
     #[Override] public function run(Channel $channel, Cancellation $cancellation): int
     {
+        self::$inThread = true;
         try {
             $sharedMemory = new SharedMemory($this->semaphoreKey, $this->parcelKey);
             $communicator = new TaskCommunicator($sharedMemory, $channel, $cancellation);
@@ -55,6 +58,7 @@ class TaskThread implements AmpTask
 
                 Debugger::$strictMode = false;
                 $task->execute($communicator);
+                $communicator->shutdown();
             } catch (Throwable $e) {
                 $communicator->error($e->getMessage());
                 Debugger::log($e, 'softCrash');

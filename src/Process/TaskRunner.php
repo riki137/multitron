@@ -16,7 +16,7 @@ use function Amp\delay;
 
 class TaskRunner
 {
-    private WorkerPool $workerPool;
+    private ContextWorkerPool $workerPool;
 
     private SharedMemory $sharedMemory;
 
