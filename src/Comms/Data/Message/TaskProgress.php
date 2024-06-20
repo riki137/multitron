@@ -15,11 +15,6 @@ class TaskProgress implements Message
     ) {
     }
 
-    public static function getId(): string
-    {
-        return 'progress';
-    }
-
     public function getPercentage(): float
     {
         return $this->total === 0 ? 0 : ($this->done / $this->total) * 100;

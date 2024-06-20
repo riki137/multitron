@@ -10,9 +10,4 @@ class LogMessage implements Message
         public readonly LogLevel $level = LogLevel::INFO
     ) {
     }
-
-    public static function getId(): string
-    {
-        return 'status';
-    }
 }

@@ -9,6 +9,7 @@ use Multitron\Comms\Data\Message\LogMessage;
 use Multitron\Comms\Data\Message\TaskProgress;
 use Multitron\Process\TaskRunner;
 use Multitron\Util\Throttle;
+use Revolt\EventLoop;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableCell;
 use Symfony\Component\Console\Helper\TableCellStyle;
@@ -16,6 +17,8 @@ use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\ConsoleSectionOutput;
 use Symfony\Component\Console\Output\OutputInterface;
+use Throwable;
+use Tracy\Debugger;
 use function Amp\async;
 
 /**
@@ -45,13 +48,6 @@ class TableOutput
 
     private array $start = [];
 
-    /**
-     * TableOutput constructor.
-     *
-     * @param TaskRunner $runner
-     * @param ConsoleOutputInterface $output
-     * @param int $taskWidth
-     */
     public function __construct(TaskRunner $runner, private readonly ConsoleOutputInterface $output)
     {
         $this->tableOutput = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL, true);
@@ -137,20 +133,25 @@ class TableOutput
      */
     public function start(TaskRunner $runner): void
     {
+        EventLoop::setErrorHandler(function (Throwable $t) {
+            $this->logOutput->writeln("ERRL: <fg=red>{$t->getMessage()}</>");
+            $this->logOutput->writeln('Logged in ' . Debugger::log($t, 'EventLoop'));
+            return true;
+        });
+
         $this->rewriteTable();
 
         foreach ($runner->getProcesses() as $taskId => $runningTask) {
             $this->runningTasks[$taskId] = $runningTask;
             $this->taskStartTimes[$taskId] = microtime(true);
-
+            $runningTask->getFuture()->catch(function (Throwable $t) use ($runningTask, $taskId) {
+                $runningTask->getCentre()->getProgress()->error++;
+                $this->logTask($taskId, $t->getMessage(), LogLevel::ERROR);
+            });
             async(function () use ($taskId, $runningTask) {
-                $progress = $runningTask->getCentre()->getProgress();
-
                 foreach ($runningTask->getCentre()->getPipeline() as $message) {
                     if ($message instanceof LogMessage) {
                         $this->logTask($taskId, $message->status, $message->level);
-                    } elseif ($message instanceof TaskProgress) {
-                        $progress->update($message);
                     }
                     $this->throttle->call();
                 }
@@ -204,12 +205,16 @@ class TableOutput
         if ($progress->done > $progress->total) {
             $color = 'yellow';
         }
+        $percent = $progress->getPercentage();
         if ($progress->error > 0) {
             $status .= " <fg=red>{$progress->error}xERR</>";
             $color = 'red';
+            if ($percent === 0.0) {
+                $percent = 100.0;
+            }
         }
         $status = ProgressBar::render(
-            $progress->getPercentage(),
+            $percent,
             16,
             $color
         ) . ' ' . $progress->done . '<fg=gray>/</>' . $progress->total . $status;

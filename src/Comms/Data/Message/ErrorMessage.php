@@ -10,9 +10,4 @@ class ErrorMessage implements Message
         public readonly string $message
     ) {
     }
-
-    public static function getId(): string
-    {
-        return 'error';
-    }
 }

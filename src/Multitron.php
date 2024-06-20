@@ -51,7 +51,6 @@ class Multitron extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        EventLoop::setErrorHandler(fn($t) => Debugger::log($t, 'EventLoop'));
         Debugger::$strictMode = false;
         $node = $this->rootNode;
         if ($input->getArgument('task') !== '*') {

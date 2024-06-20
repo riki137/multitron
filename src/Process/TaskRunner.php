@@ -4,27 +4,24 @@ declare(strict_types=1);
 namespace Multitron\Process;
 
 use Amp\DeferredCancellation;
-use Amp\Parallel\Worker\ContextWorkerFactory;
-use Amp\Parallel\Worker\ContextWorkerPool;
-use Amp\Parallel\Worker\WorkerException;
-use Amp\Parallel\Worker\WorkerPool;
 use Amp\Pipeline\Queue;
 use Multitron\Container\Node\TaskLeafNode;
 use Multitron\Container\Node\TaskTreeProcessor;
+use Throwable;
 use Tracy\Debugger;
-use function Amp\delay;
+use function Amp\async;
 
 class TaskRunner
 {
-    private ContextWorkerPool $workerPool;
+    private WorkerPool $workerPool;
 
     private SharedMemory $sharedMemory;
 
     private Queue $processes;
 
-    public function __construct(private readonly TaskTreeProcessor $tree, ?int $concurrentTasks, private readonly ?string $bootstrapPath = null)
+    public function __construct(private readonly TaskTreeProcessor $tree, private readonly int $concurrentTasks, private readonly ?string $bootstrapPath = null)
     {
-        $this->workerPool = new ContextWorkerPool($concurrentTasks, new ContextWorkerFactory($bootstrapPath));
+        $this->workerPool = new WorkerPool();
         $this->sharedMemory = new SharedMemory(null, null);
         $this->processes = new Queue();
     }
@@ -39,12 +36,18 @@ class TaskRunner
 
     public function runAll(): void
     {
-        $queue = new TaskQueue($this->workerPool->getLimit(), $this->tree);
+        $queue = new TaskQueue($this->concurrentTasks, $this->tree);
         $all = [];
         foreach ($queue->fetchAll() as $taskId => $taskNode) {
-            $all[] = $runningTask = $this->runTask($taskNode);
+            $runningTask = $this->runTask($taskNode);
             $this->processes->pushAsync([$taskId, $runningTask]);
-            $runningTask->finally(fn() => $queue->markFinished($taskId));
+            $all[] = async(function () use ($taskId, $queue, $runningTask) {
+                try {
+                    $runningTask->getFuture()->await();
+                } finally {
+                    $queue->markFinished($taskId);
+                }
+            });
         }
         foreach ($all as $runningTask) {
             $runningTask->await();
@@ -54,7 +57,7 @@ class TaskRunner
 
     private function runTask(TaskLeafNode $task): RunningTask
     {
-        if ($task->isAsync()) {
+        if ($task->isNonBlocking()) {
             $local = new LocalTask($this->sharedMemory, $task->getTask());
             $local->run();
             return $local;
@@ -63,20 +66,22 @@ class TaskRunner
         $cancel = new DeferredCancellation();
         while (true) {
             try {
-                return new IsolatedTask(
+                return new WorkerTask(
                     $this->workerPool->submit(
                         new TaskThread($this->sharedMemory->semaphoreKey, $this->sharedMemory->parcelKey, $this->bootstrapPath, $task->getId()),
                         $cancel->getCancellation()
                     ),
                     $cancel
                 );
-            } catch (WorkerException $e) {
+            } catch (Throwable $e) {
                 Debugger::log($e->getMessage(), 'worker-crash');
-                delay(1);
             }
         }
     }
 
+    /**
+     * @return iterable<string, RunningTask>
+     */
     public function getProcesses(): iterable
     {
         foreach ($this->processes->iterate() as [$taskId, $runningTask]) {

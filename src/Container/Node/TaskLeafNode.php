@@ -9,7 +9,7 @@ use Multitron\Impl\Task;
 
 class TaskLeafNode extends TaskNode
 {
-    private bool $async = false;
+    private bool $nonBlocking = false;
 
     /**
      * @param string $id
@@ -31,14 +31,14 @@ class TaskLeafNode extends TaskNode
      * @param bool $async
      * @return $this
      */
-    public function setAsync(bool $async = true): static
+    public function setNonBlocking(bool $async = true): static
     {
-        $this->async = $async;
+        $this->nonBlocking = $async;
         return $this;
     }
 
-    public function isAsync(): bool
+    public function isNonBlocking(): bool
     {
-        return $this->async;
+        return $this->nonBlocking;
     }
 }

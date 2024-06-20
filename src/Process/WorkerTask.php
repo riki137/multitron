@@ -4,10 +4,10 @@ declare(strict_types=1);
 namespace Multitron\Process;
 
 use Amp\DeferredCancellation;
+use Amp\Future;
 use Amp\Parallel\Worker\Execution;
-use Closure;
 
-class IsolatedTask implements RunningTask
+class WorkerTask implements RunningTask
 {
     private TaskCentre $centre;
 
@@ -18,14 +18,9 @@ class IsolatedTask implements RunningTask
         $this->centre = new TaskCentre($exec->getChannel(), $this->cancel->getCancellation());
     }
 
-    public function await(): int
+    public function getFuture(): Future
     {
-        return $this->exec->await();
-    }
-
-    public function finally(Closure $closure): void
-    {
-        $this->exec->getFuture()->finally($closure);
+        return $this->exec->getFuture();
     }
 
     public function cancel(): void

@@ -36,7 +36,7 @@ class TaskFilteringNode extends TaskGroupNode
         foreach ($node->getDependencies() as $dep) {
             if ($this->tree->isGroup($dep)) {
                 $node->removeDependency($dep);
-                foreach ($this->tree->getIdsInGroup($dep) as $leaf) {
+                foreach ($this->tree->getLeafIdsInGroup($dep) as $leaf) {
                     $node->dependsOn($leaf);
                 }
             }

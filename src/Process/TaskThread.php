@@ -7,6 +7,7 @@ use Amp\Cancellation;
 use Amp\Parallel\Worker\Task as AmpTask;
 use Amp\Sync\Channel;
 use Multitron\Bridge\Nette\NettePsrContainer;
+use Multitron\Comms\Data\Message\SuccessMessage;
 use Multitron\Comms\TaskCommunicator;
 use Multitron\Container\Node\TaskTreeProcessor;
 use Multitron\Impl\Task;
@@ -58,6 +59,7 @@ class TaskThread implements AmpTask
 
                 Debugger::$strictMode = false;
                 $task->execute($communicator);
+                $communicator->sendMessage(new SuccessMessage());
                 $communicator->shutdown();
             } catch (Throwable $e) {
                 $communicator->error($e->getMessage());

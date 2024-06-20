@@ -5,8 +5,9 @@ namespace Multitron\Process;
 
 use Amp\DeferredCancellation;
 use Amp\DeferredFuture;
-use Closure;
+use Amp\Future;
 use Multitron\Comms\Data\Message\Message;
+use Multitron\Comms\Data\Message\SuccessMessage;
 use Multitron\Comms\LocalChannel;
 use Multitron\Comms\TaskCommunicator;
 use Multitron\Impl\Task;
@@ -38,6 +39,7 @@ class LocalTask implements RunningTask
         $catcher = async(function () use ($communicator, $exec) {
             try {
                 $this->future->complete($exec->await($this->cancel->getCancellation()));
+                $communicator->sendMessage(new SuccessMessage());
             } catch (Throwable $e) {
                 $communicator->log($e->getMessage());
                 $this->future->error($e);
@@ -46,14 +48,9 @@ class LocalTask implements RunningTask
         });
     }
 
-    public function await(): mixed
+    public function getFuture(): Future
     {
-        return $this->future->getFuture()->await($this->cancel->getCancellation());
-    }
-
-    public function finally(Closure $closure): void
-    {
-        $this->future->getFuture()->finally($closure);
+        return $this->future->getFuture();
     }
 
     public function receive(): Message
