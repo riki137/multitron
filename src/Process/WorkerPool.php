@@ -52,16 +52,8 @@ class WorkerPool
         $exec = $worker->submit($task, $cancellation);
 
         return new Execution($exec->getTask(), $exec->getChannel(), $exec->getFuture()->catch(function (Throwable $e) use ($worker) {
-            $error = implode(iterator_to_array($this->stderr[$worker]));
-            if ($error === '') {
-                $stdout = implode(iterator_to_array($this->stdout[$worker]));
-                if ($stdout !== '') {
-                    $error = 'stdErr was empty. stdOut: "' . $stdout . '".';
-                } else {
-                    $error = 'stdErr and stdOut were empty.';
-                }
-            }
-            throw new WorkerException($error, $e->getCode(), $e);
+
+            throw new WorkerException($this->stderr[$worker], $this->stdout[$worker], $e);
         }));
     }
 
