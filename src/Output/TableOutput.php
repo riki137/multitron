@@ -7,6 +7,7 @@ namespace Multitron\Output;
 use Multitron\Comms\Data\Message\LogLevel;
 use Multitron\Comms\Data\Message\LogMessage;
 use Multitron\Comms\Data\Message\TaskProgress;
+use Multitron\Process\RunningTask;
 use Multitron\Process\TaskRunner;
 use Multitron\Util\Throttle;
 use Revolt\EventLoop;
@@ -24,7 +25,7 @@ use function Amp\async;
 /**
  * Handles the rendering and updating of a table displaying the progress of tasks.
  */
-class TableOutput
+final class TableOutput
 {
     private BufferedOutput $tableOutput;
 
@@ -47,6 +48,8 @@ class TableOutput
     private int $total = 0;
 
     private array $start = [];
+
+    private int $maxMem = 0;
 
     public function __construct(TaskRunner $runner, private readonly ConsoleOutputInterface $output)
     {
@@ -77,6 +80,8 @@ class TableOutput
     {
         $this->table->setRows([]);
 
+        $totalMem = 0;
+        /** @var RunningTask $runningTask */
         foreach ($tasks ?? $this->runningTasks as $taskId => $runningTask) {
             $progress = $runningTask->getCentre()->getProgress();
             $label = str_pad($taskId, $this->taskWidth, ' ', STR_PAD_LEFT);
@@ -86,6 +91,7 @@ class TableOutput
             } else {
                 $label .= '  ';
             }
+            $totalMem += $progress->memoryUsage ?? 0;
 
             $this->table->addRow([
                 "<options=bold>$label</>",
@@ -100,11 +106,16 @@ class TableOutput
                     $finished += max(0, min(1, $prog->done / $prog->total));
                 }
             }
+            $totalMem += memory_get_usage(true);
+            $this->maxMem = max($this->maxMem, $totalMem);
             $this->table->addRow([
                 new TableCell('TOTAL  ', ['style' => new TableCellStyle(['align' => 'right', 'options' => 'bold'])]),
                 ProgressBar::render($finished / $this->total * 100, 16, 'blue')
                 . ' ' . count($this->finishedTasks) . '<fg=gray>/</>' . $this->total
-                . ' <fg=gray>' . number_format(microtime(true) - $this->start[''], 1, '.', ' ') . 's</>',
+                . ' <fg=gray>' . number_format(microtime(true) - $this->start[''], 1, '.', ' ') . 's</> ' .
+                '<fg=blue>' . TaskProgress::formatMemoryUsage(memory_get_usage(true)) . '</> | ' .
+                '<fg=magenta>' . TaskProgress::formatMemoryUsage($totalMem) . '</> / ' .
+                '<fg=red>' . TaskProgress::formatMemoryUsage($this->maxMem) . '</>',
             ]);
         }
 
@@ -214,10 +225,10 @@ class TableOutput
             }
         }
         $status = ProgressBar::render(
-            $percent,
-            16,
-            $color
-        ) . ' ' . $progress->done . '<fg=gray>/</>' . $progress->total . $status;
+                $percent,
+                16,
+                $color
+            ) . ' ' . $progress->done . '<fg=gray>/</>' . $progress->total . $status;
 
         $status .= ' <fg=gray>' . number_format(microtime(true) - $this->taskStartTimes[$taskId], 1, '.', ' ') . 's</>';
         if ($progress->memoryUsage !== null) {

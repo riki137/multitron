@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Multitron\Comms\Data\Message;
 
-class TaskProgress implements Message
+final class TaskProgress implements Message
 {
     public function __construct(
         public int $total,
@@ -22,7 +22,7 @@ class TaskProgress implements Message
 
     public function getMemoryUsage(): ?string
     {
-        return $this->memoryUsage === null ? null : number_format($this->memoryUsage / 1024 / 1024) . 'MB';
+        return $this->memoryUsage === null ? null : self::formatMemoryUsage($this->memoryUsage);
     }
 
     public function update(TaskProgress $progress): void
@@ -33,5 +33,17 @@ class TaskProgress implements Message
         $this->warning = $progress->warning;
         $this->skipped = $progress->skipped;
         $this->memoryUsage = $progress->memoryUsage;
+    }
+
+    public static function formatMemoryUsage(?int $memoryUsage): string
+    {
+        $memoryUsage /= 1024 * 1024;
+        if ($memoryUsage >= 1000) {
+            return number_format($memoryUsage / 1024, 1, '.', '') . 'GB';
+        }
+        if ($memoryUsage >= 10) {
+            return number_format($memoryUsage, 0, '.', '') . 'MB';
+        }
+        return number_format($memoryUsage, 1, '.', '') . 'MB';
     }
 }

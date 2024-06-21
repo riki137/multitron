@@ -26,8 +26,11 @@ class TaskTreeProcessor
     {
     }
 
-    private function index(): void
+    private function index(): self
     {
+        if ($this->nodes !== []) {
+            return $this;
+        }
         $dfsGraph = [];
         foreach ($this->node->getTasks() as $node) {
             if (isset($this->nodes[$node->getId()])) {
@@ -54,6 +57,8 @@ class TaskTreeProcessor
         }
         $dfs = new CircularDependencyChecker();
         $dfs->check($dfsGraph);
+
+        return $this;
     }
 
     private function extractCycle($path, $startNode): array
@@ -97,10 +102,7 @@ class TaskTreeProcessor
      */
     public function getNodes(): array
     {
-        if ($this->nodes === []) {
-            $this->index();
-        }
-        return $this->nodes;
+        return $this->index()->nodes;
     }
 
     public function get(string $id): Task
@@ -119,33 +121,22 @@ class TaskTreeProcessor
 
     public function isGroup(string $group): bool
     {
-        if ($this->groupToLeafs === []) {
-            $this->index();
-        }
-        return isset($this->groupToLeafs[$group]);
+        return isset($this->index()->groupToLeafs[$group]);
     }
 
     public function getLeafIdsInGroup(string $group): array
     {
-        if ($this->groupToLeafs === []) {
-            $this->index();
-        }
-        return $this->groupToLeafs[$group] ?? [];
+        return $this->index()->groupToLeafs[$group] ?? [];
     }
 
     public function getDependencies(TaskNode $node): array
     {
-        if ($this->dependencies === []) {
-            $this->index();
-        }
-        return $this->dependencies[$node->getId()] ?? [];
+        return $this->index()->dependencies[$node->getId()] ?? [];
     }
 
     public function ksort(array &$nodes): void
     {
-        if ($this->priorities === []) {
-            $this->index();
-        }
+        $this->index();
         uksort($nodes, fn($a, $b) => ($this->priorities[$b] ?? 0) <=> ($this->priorities[$a] ?? 0));
     }
 }

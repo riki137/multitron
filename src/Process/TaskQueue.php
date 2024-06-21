@@ -36,7 +36,7 @@ class TaskQueue
         do {
             $chunk = [];
             foreach ($queue as $id => $node) {
-                if (count($this->futures) > $this->concurrencyLimit) {
+                if (count($this->futures) >= $this->concurrencyLimit) {
                     break;
                 }
                 $deps = array_diff($this->treeProcessor->getDependencies($node), $this->finished);
