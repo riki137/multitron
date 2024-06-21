@@ -39,6 +39,7 @@ class LocalTask implements RunningTask
         $catcher = async(function () use ($communicator, $exec) {
             try {
                 $this->future->complete($exec->await($this->cancel->getCancellation()));
+                $communicator->sendProgress(true);
                 $communicator->sendMessage(new SuccessMessage());
             } catch (Throwable $e) {
                 $communicator->log($e->getMessage());

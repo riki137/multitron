@@ -17,7 +17,7 @@ use Throwable;
 class WorkerPool
 {
     /** @var Worker[] */
-    private array $workers = [];
+    private static array $workers = [];
 
     private ProcessContextFactory $contextFactory;
 
@@ -32,9 +32,17 @@ class WorkerPool
         $this->stdout = new SplObjectStorage();
     }
 
+    /**
+     * @return Worker[]
+     */
+    public static function getWorkers(): array
+    {
+        return self::$workers;
+    }
+
     public function pull(): Worker
     {
-        foreach ($this->workers as $worker) {
+        foreach (self::$workers as $worker) {
             if ($worker->isIdle()) {
                 return $worker;
             }
@@ -43,7 +51,7 @@ class WorkerPool
         $cw = new ContextWorker($context);
         $this->stderr[$cw] = $context->getStderr();
         $this->stdout[$cw] = $context->getStdout();
-        return $this->workers[] = $cw;
+        return self::$workers[] = $cw;
     }
 
     public function submit(Task $task, Cancellation $cancellation): Execution
@@ -52,14 +60,13 @@ class WorkerPool
         $exec = $worker->submit($task, $cancellation);
 
         return new Execution($exec->getTask(), $exec->getChannel(), $exec->getFuture()->catch(function (Throwable $e) use ($worker) {
-
             throw new WorkerException($this->stderr[$worker], $this->stdout[$worker], $e);
         }));
     }
 
     public function shutdown(): void
     {
-        foreach ($this->workers as $worker) {
+        foreach (self::$workers as $worker) {
             $worker->shutdown();
         }
     }

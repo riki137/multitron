@@ -6,10 +6,13 @@ namespace Multitron\Process;
 
 use Amp\DeferredFuture;
 use Amp\Future;
+use Generator;
 use Multitron\Container\Node\TaskNode;
 use Multitron\Container\Node\TaskTreeProcessor;
 use Throwable;
 use Tracy\Debugger;
+use function Amp\async;
+use function Amp\delay;
 use function Amp\Future\awaitFirst;
 
 class TaskQueue
@@ -33,12 +36,10 @@ class TaskQueue
     public function fetchAll(): iterable
     {
         $queue = $this->treeProcessor->getNodes();
+        $this->treeProcessor->ksortByPriority($queue);
         do {
             $chunk = [];
-            foreach ($queue as $id => $node) {
-                if (count($this->futures) >= $this->concurrencyLimit) {
-                    break;
-                }
+            foreach ($this->throttleConcurrent($queue) as $id => $node) {
                 $deps = array_diff($this->treeProcessor->getDependencies($node), $this->finished);
                 if (empty($deps)) {
                     unset($queue[$id]);
@@ -48,13 +49,29 @@ class TaskQueue
                 }
             }
             try {
-                $this->markFinished(awaitFirst($this->futures));
+                awaitFirst([async(fn() => delay(0.2)), ...$this->futures]);
+                $this->futures = array_filter($this->futures, fn(Future $future) => !$future->isComplete());
             } catch (Throwable $e) {
                 Debugger::log($e, 'queue-wait');
             }
-            $this->treeProcessor->ksort($chunk);
             yield from $chunk;
         } while ($queue !== []);
+    }
+
+    private function throttleConcurrent(iterable $items): Generator
+    {
+        foreach ($items as $id => $item) {
+            if ($this->concurrencyLimit === 0) {
+                yield $id => $item;
+                continue;
+            }
+            $futures = array_filter($this->futures, fn(Future $future) => !$future->isComplete());
+            $count = count($futures);
+            if ($count >= $this->concurrencyLimit) {
+                return;
+            }
+            yield $id => $item;
+        }
     }
 
     public function markFinished(string $id): void

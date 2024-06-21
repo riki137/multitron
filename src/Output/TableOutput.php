@@ -9,6 +9,7 @@ use Multitron\Comms\Data\Message\LogMessage;
 use Multitron\Comms\Data\Message\TaskProgress;
 use Multitron\Process\RunningTask;
 use Multitron\Process\TaskRunner;
+use Multitron\Process\WorkerPool;
 use Multitron\Util\Throttle;
 use Revolt\EventLoop;
 use Symfony\Component\Console\Helper\Table;
@@ -110,12 +111,7 @@ final class TableOutput
             $this->maxMem = max($this->maxMem, $totalMem);
             $this->table->addRow([
                 new TableCell('TOTAL  ', ['style' => new TableCellStyle(['align' => 'right', 'options' => 'bold'])]),
-                ProgressBar::render($finished / $this->total * 100, 16, 'blue')
-                . ' ' . count($this->finishedTasks) . '<fg=gray>/</>' . $this->total
-                . ' <fg=gray>' . number_format(microtime(true) - $this->start[''], 1, '.', ' ') . 's</> ' .
-                '<fg=blue>' . TaskProgress::formatMemoryUsage(memory_get_usage(true)) . '</> | ' .
-                '<fg=magenta>' . TaskProgress::formatMemoryUsage($totalMem) . '</> / ' .
-                '<fg=red>' . TaskProgress::formatMemoryUsage($this->maxMem) . '</>',
+                $this->getTotal($finished, $totalMem),
             ]);
         }
 
@@ -235,5 +231,19 @@ final class TableOutput
             $status .= ' <fg=blue>' . $progress->getMemoryUsage() . '</>';
         }
         return $status;
+    }
+
+    private function getTotal(mixed $finished, int $totalMem): string
+    {
+
+        $workers = count(WorkerPool::getWorkers());
+        $workersActive = count(array_filter(WorkerPool::getWorkers(), fn($w) => !$w->isIdle()));
+        return ProgressBar::render($finished / $this->total * 100, 16, 'blue')
+            . ' ' . count($this->finishedTasks) . '<fg=gray>/</>' . $this->total
+            . ' <fg=gray>' . number_format(microtime(true) - $this->start[''], 1, '.', ' ') . 's</> ' .
+            '<fg=blue>' . TaskProgress::formatMemoryUsage(memory_get_usage(true)) . '</> | ' .
+            '<fg=magenta>' . TaskProgress::formatMemoryUsage($totalMem) . '</> / ' .
+            '<fg=red>' . TaskProgress::formatMemoryUsage($this->maxMem) . '</> ' .
+            '<fg=green>' . $workersActive . '</>' . '<fg=gray>/' . $workers . '</> workers';
     }
 }

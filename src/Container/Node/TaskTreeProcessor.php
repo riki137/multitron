@@ -134,7 +134,7 @@ class TaskTreeProcessor
         return $this->index()->dependencies[$node->getId()] ?? [];
     }
 
-    public function ksort(array &$nodes): void
+    public function ksortByPriority(array &$nodes): void
     {
         $this->index();
         uksort($nodes, fn($a, $b) => ($this->priorities[$b] ?? 0) <=> ($this->priorities[$a] ?? 0));
