@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Multitron\Comms;
+namespace Multitron\Comms\Local;
 
 use Amp\Cancellation;
 use Amp\DeferredFuture;

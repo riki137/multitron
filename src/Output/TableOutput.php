@@ -109,9 +109,13 @@ final class TableOutput
             }
             $totalMem += memory_get_usage(true);
             $this->maxMem = max($this->maxMem, $totalMem);
+            $workers = count(WorkerPool::getWorkers());
+            $workersActive = count(array_filter(WorkerPool::getWorkers(), fn($w) => !$w->isIdle()));
+            $total = '<fg=green>' . $workersActive . '</>' . '<fg=gray>/' . $workers . ' workers</> <options=bold>TOTAL</>';
+            $total = str_repeat(' ', max(0,$this->taskWidth - strlen(strip_tags($total)))) . $total;
             $this->table->addRow([
-                new TableCell('TOTAL  ', ['style' => new TableCellStyle(['align' => 'right', 'options' => 'bold'])]),
-                $this->getTotal($finished, $totalMem),
+                $total,
+                $this->getSummary($finished, $totalMem),
             ]);
         }
 
@@ -128,7 +132,10 @@ final class TableOutput
 
         $this->logOutput->write(ob_get_clean() ?: []);
         $this->consoleSection->clear();
-        $this->output->write($this->logOutput->fetch());
+        $output = $this->logOutput->fetch();
+        if ($output !== '') {
+            $this->output->writeln(trim($output, "\n"));
+        }
         $this->consoleSection->write("\n" . $table);
         ob_start();
     }
@@ -233,17 +240,13 @@ final class TableOutput
         return $status;
     }
 
-    private function getTotal(mixed $finished, int $totalMem): string
+    private function getSummary(mixed $finished, int $totalMem): string
     {
-
-        $workers = count(WorkerPool::getWorkers());
-        $workersActive = count(array_filter(WorkerPool::getWorkers(), fn($w) => !$w->isIdle()));
         return ProgressBar::render($finished / $this->total * 100, 16, 'blue')
             . ' ' . count($this->finishedTasks) . '<fg=gray>/</>' . $this->total
             . ' <fg=gray>' . number_format(microtime(true) - $this->start[''], 1, '.', ' ') . 's</> ' .
-            '<fg=blue>' . TaskProgress::formatMemoryUsage(memory_get_usage(true)) . '</> | ' .
-            '<fg=magenta>' . TaskProgress::formatMemoryUsage($totalMem) . '</> / ' .
-            '<fg=red>' . TaskProgress::formatMemoryUsage($this->maxMem) . '</> ' .
-            '<fg=green>' . $workersActive . '</>' . '<fg=gray>/' . $workers . '</> workers';
+            '<fg=gray>MAIN</><fg=blue>' . TaskProgress::formatMemoryUsage(memory_get_usage(true)) . '</> ' .
+            '<fg=gray>SUM</><fg=magenta>' . TaskProgress::formatMemoryUsage($totalMem) . '</> ' .
+            '<fg=gray>MAX</><fg=red>' . TaskProgress::formatMemoryUsage($this->maxMem) . '</></>';
     }
 }

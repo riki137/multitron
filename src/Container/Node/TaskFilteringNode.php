@@ -24,7 +24,7 @@ class TaskFilteringNode extends TaskGroupNode
             foreach ($patterns as $pattern) {
                 if (fnmatch($pattern, $node->getId())) {
                     assert($node instanceof TaskLeafNode);
-                    $this->filterDependencies($node, $patterns);
+                    $node = $this->filterDependencies($node, $patterns);
                     yield $node;
                 }
             }

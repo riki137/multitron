@@ -6,6 +6,7 @@ namespace Multitron\Process;
 use Amp\DeferredCancellation;
 use Amp\Future;
 use Amp\Parallel\Worker\Execution;
+use Multitron\Comms\Server\ChannelServer;
 
 class WorkerTask implements RunningTask
 {
@@ -14,8 +15,9 @@ class WorkerTask implements RunningTask
     public function __construct(
         private readonly Execution $exec,
         private readonly DeferredCancellation $cancel,
+        ChannelServer $server
     ) {
-        $this->centre = new TaskCentre($exec->getChannel(), $this->cancel->getCancellation());
+        $this->centre = new TaskCentre($exec->getChannel(), $server, $this->cancel->getCancellation());
     }
 
     public function getFuture(): Future

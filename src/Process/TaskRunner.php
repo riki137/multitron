@@ -5,6 +5,9 @@ namespace Multitron\Process;
 
 use Amp\DeferredCancellation;
 use Amp\Pipeline\Queue;
+use Multitron\Comms\Server\ChannelServer;
+use Multitron\Comms\Server\Semaphore\SemaphoreHandler;
+use Multitron\Comms\Server\Storage\CentralCache;
 use Multitron\Container\Node\TaskLeafNode;
 use Multitron\Container\Node\TaskTreeProcessor;
 use Throwable;
@@ -15,14 +18,14 @@ class TaskRunner
 {
     private WorkerPool $workerPool;
 
-    private SharedMemory $sharedMemory;
+    private ChannelServer $server;
 
     private Queue $processes;
 
     public function __construct(private readonly TaskTreeProcessor $tree, private readonly int $concurrentTasks, private readonly ?string $bootstrapPath = null)
     {
         $this->workerPool = new WorkerPool();
-        $this->sharedMemory = new SharedMemory(null, null);
+        $this->server = new ChannelServer([new CentralCache(), new SemaphoreHandler()]);
         $this->processes = new Queue();
     }
 
@@ -39,7 +42,7 @@ class TaskRunner
         $queue = new TaskQueue($this->concurrentTasks, $this->tree);
         $all = [];
         foreach ($queue->fetchAll() as $taskId => $taskNode) {
-            $runningTask = $this->runTask($taskNode);
+            $runningTask = $this->runTask($taskNode, $this->server);
             $this->processes->pushAsync([$taskId, $runningTask]);
             $all[] = async(function () use ($taskId, $queue, $runningTask) {
                 try {
@@ -55,10 +58,10 @@ class TaskRunner
         $this->processes->complete();
     }
 
-    private function runTask(TaskLeafNode $task): RunningTask
+    private function runTask(TaskLeafNode $task, ChannelServer $server): RunningTask
     {
         if ($task->isNonBlocking()) {
-            $local = new LocalTask($this->sharedMemory, $task->getTask());
+            $local = new LocalTask($task->getTask(), $server);
             $local->run();
             return $local;
         }
@@ -68,13 +71,14 @@ class TaskRunner
             try {
                 return new WorkerTask(
                     $this->workerPool->submit(
-                        new TaskThread($this->sharedMemory->semaphoreKey, $this->sharedMemory->parcelKey, $this->bootstrapPath, $task->getId()),
+                        new TaskThread($this->bootstrapPath, $task->getId()),
                         $cancel->getCancellation()
                     ),
-                    $cancel
+                    $cancel,
+                    $server
                 );
             } catch (Throwable $e) {
-                Debugger::log($e->getMessage(), 'worker-crash');
+                Debugger::log($e, 'worker-crash');
             }
         }
     }

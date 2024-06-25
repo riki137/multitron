@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Multitron;
 
-use Multitron\Container\Node\NoWorkersNode;
+use Multitron\Container\Node\NonBlockingNode;
 use Multitron\Container\Node\TaskFilteringNode;
 use Multitron\Container\Node\TaskGroupNode;
 use Multitron\Container\Node\TaskTreeProcessor;
@@ -54,10 +54,10 @@ class Multitron extends Command
         Debugger::$strictMode = false;
         $node = $this->rootNode;
         if ($input->getArgument('task') !== '*') {
-            $node = new TaskFilteringNode('root-filtered', $node, $input->getArgument('task'));
+            $node = new TaskFilteringNode('_rootF', $node, $input->getArgument('task'));
         }
         if ($input->getOption('direct')) {
-            $node = new NoWorkersNode('root-no-workers', fn() => yield $node);
+            $node = new NonBlockingNode('_rootD', fn() => yield $node);
         }
         $tree = new TaskTreeProcessor($node);
         $runner = new TaskRunner($tree, $this->concurrentTasks, $this->bootstrapPath);

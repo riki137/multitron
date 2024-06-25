@@ -36,9 +36,9 @@ class TaskQueue
     public function fetchAll(): iterable
     {
         $queue = $this->treeProcessor->getNodes();
-        $this->treeProcessor->ksortByPriority($queue);
         do {
             $chunk = [];
+            $this->treeProcessor->ksortByPriority($queue, $this->finished);
             foreach ($this->throttleConcurrent($queue) as $id => $node) {
                 $deps = array_diff($this->treeProcessor->getDependencies($node), $this->finished);
                 if (empty($deps)) {

@@ -16,9 +16,6 @@ class TaskTreeProcessor
     /** @var array<string, string[]> */
     private array $dependencies = [];
 
-    /** @var array<string, int> */
-    private array $priorities = [];
-
     /** @var array<string, TaskLeafNode> */
     private array $nodes = [];
 
@@ -47,12 +44,11 @@ class TaskTreeProcessor
             foreach ($node->getDependencies() as $dep) {
                 $dfsGraph[$node->getId()][] = $dep;
             }
-            foreach ($this->fetchDependencies($node) as $dep) {
+            foreach ($this->rawDependencies($node) as $dep) {
                 $this->dependencies[$node->getId()][] = $dep;
                 if ($node->getId() === $dep) {
                     throw new RuntimeException("Task {$node->getId()} depends on itself");
                 }
-                $this->priorities[$dep] = ($this->priorities[$dep] ?? 0) + 1;
             }
         }
         $dfs = new CircularDependencyChecker();
@@ -77,7 +73,7 @@ class TaskTreeProcessor
         return $cycle;
     }
 
-    private function fetchDependencies(TaskNode $node): array
+    private function rawDependencies(TaskNode $node): array
     {
         $deps = [];
         foreach ($node->getDependencies() as $dep) {
@@ -134,9 +130,24 @@ class TaskTreeProcessor
         return $this->index()->dependencies[$node->getId()] ?? [];
     }
 
-    public function ksortByPriority(array &$nodes): void
+    /**
+     * This function sorts the task nodes by priority, with the highest priority first.
+     *
+     * @param array $nodes array of task nodes, keyed by task id
+     * @param array<string> $finished array of finished task ids
+     * @return void
+     */
+    public function ksortByPriority(array &$nodes, array $finished): void
     {
         $this->index();
-        uksort($nodes, fn($a, $b) => ($this->priorities[$b] ?? 0) <=> ($this->priorities[$a] ?? 0));
+        uksort($nodes, function ($a, $b) use ($finished) {
+            $aDeps = $this->dependencies[$a] ?? [];
+            $bDeps = $this->dependencies[$b] ?? [];
+            $aUnfinished = array_diff($aDeps, $finished);
+            $bUnfinished = array_diff($bDeps, $finished);
+            $aPriority = count($aUnfinished);
+            $bPriority = count($bUnfinished);
+            return $aPriority <=> $bPriority;
+        });
     }
 }

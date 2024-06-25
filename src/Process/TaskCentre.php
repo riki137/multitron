@@ -12,6 +12,8 @@ use Multitron\Comms\Data\Message\LogLevel;
 use Multitron\Comms\Data\Message\LogMessage;
 use Multitron\Comms\Data\Message\SuccessMessage;
 use Multitron\Comms\Data\Message\TaskProgress;
+use Multitron\Comms\Server\ChannelRequest;
+use Multitron\Comms\Server\ChannelServer;
 use Throwable;
 
 class TaskCentre
@@ -20,7 +22,7 @@ class TaskCentre
 
     private Pipeline $pipeline;
 
-    public function __construct(Channel $channel, Cancellation $cancel)
+    public function __construct(Channel $channel, private readonly ChannelServer $server, Cancellation $cancel)
     {
         $this->progress = new TaskProgress(0);
         $this->pipeline = Pipeline::fromIterable($this->pipeline($channel, $cancel));
@@ -31,6 +33,11 @@ class TaskCentre
         while (true) {
             try {
                 $message = $channel->receive($cancel);
+                if ($message instanceof ChannelRequest) {
+                    $response = $this->server->answer($message);
+                    $channel->send($response);
+                    continue;
+                }
                 if ($message instanceof TaskProgress) {
                     $this->progress->update($message);
                 }

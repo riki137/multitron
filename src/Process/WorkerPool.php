@@ -42,7 +42,11 @@ class WorkerPool
 
     public function pull(): Worker
     {
-        foreach (self::$workers as $worker) {
+        foreach (self::$workers as $key => $worker) {
+            if (!$worker->isRunning()) {
+                unset(self::$workers[$key]);
+                continue;
+            }
             if ($worker->isIdle()) {
                 return $worker;
             }
@@ -67,7 +71,11 @@ class WorkerPool
     public function shutdown(): void
     {
         foreach (self::$workers as $worker) {
-            $worker->shutdown();
+            try {
+                $worker->shutdown();
+            } catch (Throwable $t) {
+                // ignore
+            }
         }
     }
 }

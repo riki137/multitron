@@ -24,8 +24,6 @@ class TaskThread implements AmpTask
     private static ?ContainerInterface $container = null;
 
     public function __construct(
-        private readonly int $semaphoreKey,
-        private readonly int $parcelKey,
         private readonly string $bootstrapPath,
         private readonly string $taskId
     ) {
@@ -38,8 +36,7 @@ class TaskThread implements AmpTask
         }
         self::$inThread = true;
         try {
-            $sharedMemory = new SharedMemory($this->semaphoreKey, $this->parcelKey);
-            $communicator = new TaskCommunicator($sharedMemory, $channel, $cancellation);
+            $communicator = new TaskCommunicator($channel);
 
             $container = self::$container;
             if ($container === null) {

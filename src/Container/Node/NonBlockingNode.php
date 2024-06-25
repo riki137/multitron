@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Multitron\Container\Node;
 
-class NoWorkersNode extends TaskGroupNode
+class NonBlockingNode extends TaskGroupNode
 {
     public function getTasks(): iterable
     {

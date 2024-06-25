@@ -3,14 +3,19 @@ declare(strict_types=1);
 
 namespace Multitron\Comms;
 
-use Amp\Cancellation;
+use Amp\Future;
 use Amp\Sync\Channel;
-use ArrayObject;
 use Multitron\Comms\Data\Message\LogLevel;
 use Multitron\Comms\Data\Message\LogMessage;
 use Multitron\Comms\Data\Message\Message;
 use Multitron\Comms\Data\Message\TaskProgress;
-use Multitron\Process\SharedMemory;
+use Multitron\Comms\Server\ChannelClient;
+use Multitron\Comms\Server\ChannelResponse;
+use Multitron\Comms\Server\OKResponse;
+use Multitron\Comms\Server\Storage\CentralMergeKeyRequest;
+use Multitron\Comms\Server\Storage\CentralReadKeyRequest;
+use Multitron\Comms\Server\Storage\CentralReadResponse;
+use Multitron\Comms\Server\Storage\CentralWriteKeyRequest;
 use Multitron\Process\TaskThread;
 use Multitron\Util\Throttle;
 
@@ -20,11 +25,10 @@ class TaskCommunicator
 
     private TaskProgress $progress;
 
-    public function __construct(
-        private readonly SharedMemory $sharedMemory,
-        private readonly Channel $channel,
-        private readonly Cancellation $cancellation
-    ) {
+    private ChannelClient $client;
+
+    public function __construct(private readonly Channel $channel)
+    {
         $this->progress = new TaskProgress(0);
         $this->throttle = new Throttle(function () {
             if (TaskThread::$inThread) {
@@ -32,16 +36,34 @@ class TaskCommunicator
             }
             $this->sendMessage($this->progress);
         }, 50);
+        $this->client = new ChannelClient($channel);
+        $this->client->start();
     }
 
-    public function read(string $key): ArrayObject
+    public function read(string $key): ?array
     {
-        return $this->sharedMemory->get($key);
+        $response = $this->client->send(new CentralReadKeyRequest($key));
+        assert($response instanceof CentralReadResponse);
+        return $response->data;
     }
 
-    public function update(string $key, callable $updater): void
+    /**
+     * @return Future<OKResponse>
+     */
+    public function write(string $key, array &$data): ChannelResponse
     {
-        $this->sharedMemory->update($key, $updater);
+        return $this->client->send(new CentralWriteKeyRequest($key, $data));
+    }
+
+    /**
+     * @return Future<OKResponse>
+     */
+    public function merge(string $key, array $data): ChannelResponse
+    {
+        if ($data === []) {
+            return new OKResponse();
+        }
+        return $this->client->send(new CentralMergeKeyRequest($key, $data));
     }
 
     public function sendMessage(Message $data): void
@@ -67,11 +89,6 @@ class TaskCommunicator
     public function sendProgress(bool $force = false): void
     {
         $this->throttle->call($force);
-    }
-
-    public function onCancel(callable $callback): void
-    {
-        $this->cancellation->subscribe($callback);
     }
 
     public function setTotal(int $total): void
@@ -107,6 +124,5 @@ class TaskCommunicator
     public function shutdown(): void
     {
         $this->throttle->shutdown();
-        $this->channel->close();
     }
 }
