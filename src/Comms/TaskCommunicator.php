@@ -10,11 +10,11 @@ use Multitron\Comms\Data\Message\LogMessage;
 use Multitron\Comms\Data\Message\Message;
 use Multitron\Comms\Data\Message\TaskProgress;
 use Multitron\Comms\Server\ChannelClient;
-use Multitron\Comms\Server\ChannelResponse;
 use Multitron\Comms\Server\OKResponse;
 use Multitron\Comms\Server\Storage\CentralMergeKeyRequest;
 use Multitron\Comms\Server\Storage\CentralReadKeyRequest;
 use Multitron\Comms\Server\Storage\CentralReadResponse;
+use Multitron\Comms\Server\Storage\CentralReadSubsetRequest;
 use Multitron\Comms\Server\Storage\CentralWriteKeyRequest;
 use Multitron\Process\TaskThread;
 use Multitron\Util\Throttle;
@@ -40,28 +40,35 @@ class TaskCommunicator
         $this->client->start();
     }
 
-    public function read(string $key): ?array
+    public function &read(string $key): ?array
     {
-        $response = $this->client->send(new CentralReadKeyRequest($key));
+        $response = $this->client->send(new CentralReadKeyRequest($key))->await();
+        assert($response instanceof CentralReadResponse);
+        return $response->data;
+    }
+
+    public function &readSubset(string $key, array $subkeys): ?array
+    {
+        $response = $this->client->send(new CentralReadSubsetRequest($key, $subkeys))->await();
         assert($response instanceof CentralReadResponse);
         return $response->data;
     }
 
     /**
-     * @return Future<OKResponse>
+     * @return Future<OKResponse> future is returned after the request is sent
      */
-    public function write(string $key, array &$data): ChannelResponse
+    public function write(string $key, array &$data): Future
     {
         return $this->client->send(new CentralWriteKeyRequest($key, $data));
     }
 
     /**
-     * @return Future<OKResponse>
+     * @return Future<OKResponse> future is returned after the request is sent
      */
-    public function merge(string $key, array $data): ChannelResponse
+    public function merge(string $key, array $data): Future
     {
         if ($data === []) {
-            return new OKResponse();
+            return Future::complete(new OKResponse());
         }
         return $this->client->send(new CentralMergeKeyRequest($key, $data));
     }

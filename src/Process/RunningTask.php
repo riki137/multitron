@@ -10,7 +10,5 @@ interface RunningTask
 {
     public function getFuture(): Future;
 
-    public function cancel(): void;
-
     public function getCentre(): TaskCentre;
 }

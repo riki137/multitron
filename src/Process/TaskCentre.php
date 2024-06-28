@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Multitron\Process;
 
-use Amp\Cancellation;
 use Amp\Pipeline\Pipeline;
 use Amp\Sync\Channel;
+use Amp\Sync\ChannelException;
 use Generator;
 use Multitron\Comms\Data\Message\LogLevel;
 use Multitron\Comms\Data\Message\LogMessage;
@@ -22,17 +22,17 @@ class TaskCentre
 
     private Pipeline $pipeline;
 
-    public function __construct(Channel $channel, private readonly ChannelServer $server, Cancellation $cancel)
+    public function __construct(Channel $channel, private readonly ChannelServer $server)
     {
         $this->progress = new TaskProgress(0);
-        $this->pipeline = Pipeline::fromIterable($this->pipeline($channel, $cancel));
+        $this->pipeline = Pipeline::fromIterable($this->pipeline($channel));
     }
 
-    private function pipeline(Channel $channel, Cancellation $cancel): Generator
+    private function pipeline(Channel $channel): Generator
     {
         while (true) {
             try {
-                $message = $channel->receive($cancel);
+                $message = $channel->receive();
                 if ($message instanceof ChannelRequest) {
                     $response = $this->server->answer($message);
                     $channel->send($response);
@@ -45,6 +45,8 @@ class TaskCentre
                 if ($message instanceof SuccessMessage) {
                     return;
                 }
+            } catch (ChannelException) {
+                return;
             } catch (Throwable $e) {
                 $this->progress->error++;
                 yield new LogMessage($e->getMessage(), LogLevel::ERROR);

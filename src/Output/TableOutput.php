@@ -4,45 +4,36 @@ declare(strict_types=1);
 
 namespace Multitron\Output;
 
+use Amp\Process\Process;
 use Multitron\Comms\Data\Message\LogLevel;
 use Multitron\Comms\Data\Message\LogMessage;
-use Multitron\Comms\Data\Message\TaskProgress;
+use Multitron\Output\Table\ProgressBar;
+use Multitron\Output\Table\TaskTable;
 use Multitron\Process\RunningTask;
 use Multitron\Process\TaskRunner;
-use Multitron\Process\WorkerPool;
-use Multitron\Util\Throttle;
-use Revolt\EventLoop;
-use Symfony\Component\Console\Helper\Table;
-use Symfony\Component\Console\Helper\TableCell;
-use Symfony\Component\Console\Helper\TableCellStyle;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\ConsoleSectionOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
-use Tracy\Debugger;
 use function Amp\async;
+use function Amp\delay;
 
 /**
  * Handles the rendering and updating of a table displaying the progress of tasks.
  */
 final class TableOutput
 {
-    private BufferedOutput $tableOutput;
-
     private BufferedOutput $logOutput;
 
-    private Table $table;
+    private TaskTable $table;
 
     private ConsoleSectionOutput $consoleSection;
 
-    private Throttle $throttle;
-
     private array $runningTasks = [];
 
+    /** @var RunningTask[] */
     private array $finishedTasks = [];
-
-    private array $taskStartTimes = [];
 
     private int $taskWidth = 16;
 
@@ -50,77 +41,77 @@ final class TableOutput
 
     private array $start = [];
 
+    private array $errorCount = [];
+
     private int $maxMem = 0;
+
+    private bool $running = true;
 
     public function __construct(TaskRunner $runner, private readonly ConsoleOutputInterface $output)
     {
-        $this->tableOutput = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL, true);
         $this->logOutput = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL, true);
         $this->consoleSection = $this->output->section();
+        $this->table = new TaskTable();
 
-        $this->table = new Table($this->tableOutput);
-        $this->table->setStyle('compact');
         foreach ($runner->getNodes() as $node) {
-            $this->taskWidth = max(strlen($node->getId()), $this->taskWidth);
+            $this->table->taskWidth = max(strlen($node->getId()), $this->taskWidth);
             $this->total++;
         }
 
-        $this->start[''] = microtime(true);
-        $this->throttle = new Throttle(fn() => $this->rewriteTable(), 100);
-
         async(fn() => $this->start($runner));
+        async(function () {
+            while ($this->running) {
+                delay(0.1);
+                $this->rewriteTable();
+            }
+        });
+        async(function () {
+            $this->monitorMemory();
+        });
+    }
+
+    private function monitorMemory(): void
+    {
+        while ($this->running) {
+            foreach (Process::start('free -b')->getStdout() as $line) {
+                preg_match('/Mem:\s+(\d+)\s+(\d+)\s+/', $line, $matches);
+                [, $total, $used] = $matches;
+                $this->table->ramTotal = (int)$total;
+                $this->table->ramUsed = (int)$used;
+            }
+            delay(1);
+        }
     }
 
     /**
      * Renders the table displaying the tasks' progress.
-     *
-     * @param array|null $tasks
-     * @return string
      */
-    public function renderTable(?array $tasks = null): string
+    public function renderTable(): string
     {
-        $this->table->setRows([]);
+        $table = [];
 
         $totalMem = 0;
         /** @var RunningTask $runningTask */
-        foreach ($tasks ?? $this->runningTasks as $taskId => $runningTask) {
+        foreach ($this->runningTasks as $taskId => $runningTask) {
             $progress = $runningTask->getCentre()->getProgress();
-            $label = str_pad($taskId, $this->taskWidth, ' ', STR_PAD_LEFT);
-
-            if ($progress->total > 0 && $progress->done >= $progress->total) {
-                $label .= ' <fg=green>✔</>';
-            } else {
-                $label .= '  ';
-            }
             $totalMem += $progress->memoryUsage ?? 0;
-
-            $this->table->addRow([
-                "<options=bold>$label</>",
-                $this->getStatus($taskId, $progress),
-            ]);
+            $table[] = $this->table->getRow($taskId, $progress);
         }
-        if ($tasks === null) {
-            $finished = count($this->finishedTasks);
-            foreach ($this->runningTasks as $runningTask) {
-                $prog = $runningTask->getCentre()->getProgress();
-                if ($prog->total > 0) {
-                    $finished += max(0, min(1, $prog->done / $prog->total));
-                }
+
+        $finished = count($this->finishedTasks);
+        foreach ($this->runningTasks as $runningTask) {
+            $prog = $runningTask->getCentre()->getProgress();
+            if ($prog->total > 0) {
+                $finished += max(0, min(1, $prog->done / $prog->total));
             }
-            $totalMem += memory_get_usage(true);
-            $this->maxMem = max($this->maxMem, $totalMem);
-            $workers = count(WorkerPool::getWorkers());
-            $workersActive = count(array_filter(WorkerPool::getWorkers(), fn($w) => !$w->isIdle()));
-            $total = '<fg=green>' . $workersActive . '</>' . '<fg=gray>/' . $workers . ' workers</> <options=bold>TOTAL</>';
-            $total = str_repeat(' ', max(0,$this->taskWidth - strlen(strip_tags($total)))) . $total;
-            $this->table->addRow([
-                $total,
-                $this->getSummary($finished, $totalMem),
-            ]);
         }
+        $totalMem += memory_get_usage(true);
+        $this->maxMem = max($this->maxMem, $totalMem);
+        $table[] = '';
+        $table[] = $this->table->getSummaryRow($finished, $this->total);
+        $table[] = $this->table->getMemoryRow($this->maxMem);
 
-        $this->table->render();
-        return trim($this->tableOutput->fetch(), "\n\r\t");
+        return trim(implode("\n", $table), "\n\r\t");
     }
 
     /**
@@ -147,36 +138,49 @@ final class TableOutput
      */
     public function start(TaskRunner $runner): void
     {
-        EventLoop::setErrorHandler(function (Throwable $t) {
-            $this->logOutput->writeln("ERRL: <fg=red>{$t->getMessage()}</>");
-            $this->logOutput->writeln('Logged in ' . Debugger::log($t, 'EventLoop'));
-            return true;
-        });
-
         $this->rewriteTable();
 
         foreach ($runner->getProcesses() as $taskId => $runningTask) {
             $this->runningTasks[$taskId] = $runningTask;
-            $this->taskStartTimes[$taskId] = microtime(true);
-            $runningTask->getFuture()->catch(function (Throwable $t) use ($runningTask, $taskId) {
-                $runningTask->getCentre()->getProgress()->error++;
+            $this->table->startTimes[$taskId] = microtime(true);
+            $progress = $runningTask->getCentre()->getProgress();
+            $runningTask->getFuture()->catch(function (Throwable $t) use ($progress, $taskId) {
+                $progress->error++;
                 $this->logTask($taskId, $t->getMessage(), LogLevel::ERROR);
             });
-            async(function () use ($taskId, $runningTask) {
-                foreach ($runningTask->getCentre()->getPipeline() as $message) {
-                    if ($message instanceof LogMessage) {
-                        $this->logTask($taskId, $message->status, $message->level);
+            async(function () use ($progress, $taskId, $runningTask) {
+                try {
+                    foreach ($runningTask->getCentre()->getPipeline() as $message) {
+                        if ($message instanceof LogMessage) {
+                            $this->logTask($taskId, $message->message, $message->level);
+                            if (in_array(
+                                $message->level,
+                                [LogLevel::ERROR, LogLevel::CRITICAL, LogLevel::EMERGENCY, LogLevel::ALERT],
+                                true
+                            )) {
+                                $this->errorCount[$taskId] = ($this->errorCount[$taskId] ?? 0) + 1;
+                            }
+                        }
                     }
-                    $this->throttle->call();
+                    try {
+                        $exitCode = $runningTask->getFuture()->await();
+                    } catch (Throwable $e) {
+                        $this->logTask($taskId, $e->getMessage(), LogLevel::ERROR);
+                        $exitCode = 1;
+                    }
+                    if ($exitCode !== 0) {
+                        $runningTask->getCentre()->getProgress()->error++;
+                    }
+                    $this->logTask(null, $this->table->getRow($taskId, $progress), LogLevel::INFO);
+                    unset($this->runningTasks[$taskId]);
+                    $this->finishedTasks[$taskId] = $runningTask;
+                } catch (Throwable $t) {
+                    $this->logTask($taskId, $t->getMessage(), LogLevel::ERROR);
                 }
-
-                $this->logTask(null, $this->renderTable([$taskId => $runningTask]), LogLevel::INFO);
-                unset($this->runningTasks[$taskId]);
-                $this->finishedTasks[$taskId] = $runningTask;
             });
         }
-
         $this->rewriteTable();
+        $this->running = false;
     }
 
     /**
@@ -188,65 +192,11 @@ final class TableOutput
      */
     public function logTask(?string $taskId, string $message, LogLevel $level): void
     {
-        $message = str_replace("\n", "\n" . str_repeat(' ', 18), $message);
+        $message = str_replace("\n", "\n" . str_repeat(' ', $this->taskWidth + 3), $message);
         if ($taskId !== null) {
-            $message = "<fg={$level->toColor()};options=bold>$taskId</>: $message";
+            $message = "<fg={$level->toColor()};options=bold>$taskId</>:  $message";
         }
 
         $this->logOutput->writeln($message);
-        $this->throttle->call();
-    }
-
-    /**
-     * Returns the status string for a task.
-     *
-     * @param string $taskId
-     * @param TaskProgress $progress
-     * @return string
-     */
-    private function getStatus(string $taskId, TaskProgress $progress): string
-    {
-        $status = '';
-        $color = 'green';
-        if ($progress->skipped > 0) {
-            $status .= " <fg=yellow>{$progress->skipped}xSKIP</>";
-            $color = 'yellow';
-        }
-        if ($progress->warning > 0) {
-            $status .= " <fg=yellow>{$progress->warning}xWARN</>";
-            $color = 'yellow';
-        }
-        if ($progress->done > $progress->total) {
-            $color = 'yellow';
-        }
-        $percent = $progress->getPercentage();
-        if ($progress->error > 0) {
-            $status .= " <fg=red>{$progress->error}xERR</>";
-            $color = 'red';
-            if ($percent === 0.0) {
-                $percent = 100.0;
-            }
-        }
-        $status = ProgressBar::render(
-                $percent,
-                16,
-                $color
-            ) . ' ' . $progress->done . '<fg=gray>/</>' . $progress->total . $status;
-
-        $status .= ' <fg=gray>' . number_format(microtime(true) - $this->taskStartTimes[$taskId], 1, '.', ' ') . 's</>';
-        if ($progress->memoryUsage !== null) {
-            $status .= ' <fg=blue>' . $progress->getMemoryUsage() . '</>';
-        }
-        return $status;
-    }
-
-    private function getSummary(mixed $finished, int $totalMem): string
-    {
-        return ProgressBar::render($finished / $this->total * 100, 16, 'blue')
-            . ' ' . count($this->finishedTasks) . '<fg=gray>/</>' . $this->total
-            . ' <fg=gray>' . number_format(microtime(true) - $this->start[''], 1, '.', ' ') . 's</> ' .
-            '<fg=gray>MAIN</><fg=blue>' . TaskProgress::formatMemoryUsage(memory_get_usage(true)) . '</> ' .
-            '<fg=gray>SUM</><fg=magenta>' . TaskProgress::formatMemoryUsage($totalMem) . '</> ' .
-            '<fg=gray>MAX</><fg=red>' . TaskProgress::formatMemoryUsage($this->maxMem) . '</></>';
     }
 }

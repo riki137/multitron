@@ -10,7 +10,7 @@ class CentralReadKeysRequest extends CentralReadRequest
     {
     }
 
-    public function &read(array &$cache): ?array
+    public function &read(array &$cache): array
     {
         $result = [];
         foreach ($this->keys as $key) {

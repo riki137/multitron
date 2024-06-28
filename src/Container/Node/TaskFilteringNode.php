@@ -20,7 +20,7 @@ class TaskFilteringNode extends TaskGroupNode
     public function getTasks(): iterable
     {
         foreach (parent::getTasks() as $node) {
-            $patterns = explode(',', $this->pattern);
+            $patterns = explode(',', str_replace('%', '*', $this->pattern));
             foreach ($patterns as $pattern) {
                 if (fnmatch($pattern, $node->getId())) {
                     assert($node instanceof TaskLeafNode);

@@ -10,7 +10,6 @@ abstract class CentralReadRequest extends ChannelRequest
 {
     /**
      * @param array<string, mixed[]> $cache
-     * @return mixed
      */
-    abstract public function &read(array &$cache): mixed;
+    abstract public function &read(array &$cache): array;
 }

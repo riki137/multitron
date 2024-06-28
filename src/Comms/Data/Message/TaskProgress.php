@@ -35,7 +35,7 @@ final class TaskProgress implements Message
         $this->memoryUsage = $progress->memoryUsage;
     }
 
-    public static function formatMemoryUsage(?int $memoryUsage): string
+    public static function formatMemoryUsage(int $memoryUsage): string
     {
         $memoryUsage /= 1024 * 1024;
         if ($memoryUsage >= 1000) {

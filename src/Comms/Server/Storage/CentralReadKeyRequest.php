@@ -10,13 +10,13 @@ class CentralReadKeyRequest extends CentralReadRequest
     {
     }
 
-    public function &read(array &$cache): ?array
+    public function &read(array &$cache): array
     {
         if (isset($cache[$this->key])) {
             return $cache[$this->key];
         }
 
-        $null = null;
-        return $null;
+        $result = [];
+        return $result;
     }
 }

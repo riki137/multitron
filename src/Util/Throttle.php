@@ -6,6 +6,7 @@ namespace Multitron\Util;
 use Amp\CancelledException;
 use Amp\DeferredCancellation;
 use Amp\Future;
+use Amp\Sync\ChannelException;
 use Closure;
 use function Amp\async;
 use function Amp\delay;
@@ -34,16 +35,24 @@ class Throttle
         }
         if ($this->complete) {
             $this->complete = false;
-            $this->future = async(function () {
-                try {
-                    delay($this->ms / 1000, true, $this->cancel->getCancellation());
-                    $this->lastCall = microtime(true) * 1000;
-                    async($this->callback);
-                } catch (CancelledException) {
-                } finally {
-                    $this->complete = true;
-                }
-            });
+            $this->future = async($this->delayedCallback(...));
+        }
+    }
+
+    private function delayedCallback(): void
+    {
+        try {
+            delay($this->ms / 1000, true, $this->cancel->getCancellation());
+            $this->lastCall = microtime(true) * 1000;
+            $this->complete = true;
+            ($this->callback)();
+        } catch (CancelledException) {
+        } catch (ChannelException $e) {
+            if ($e->getMessage() !== 'Channel has already been closed.') {
+                throw $e;
+            }
+        } finally {
+            $this->complete = true;
         }
     }
 

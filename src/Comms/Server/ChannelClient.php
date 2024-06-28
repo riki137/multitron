@@ -14,6 +14,7 @@ class ChannelClient
 {
     /** @var DeferredFuture[] */
     private array $futures = [];
+
     private Future $cycle;
 
     public function __construct(private readonly Channel $channel)
@@ -24,16 +25,17 @@ class ChannelClient
     {
         $this->cycle = async(function () {
             try {
-            while (true) {
-                $response = $this->channel->receive();
-                assert($response instanceof ChannelResponse);
-                $future = $this->futures[$response->requestId];
-                if ($response instanceof ErrorResponse) {
-                    $future->error(new ChannelServerException($response));
-                } else {
-                    $future->complete($response);
+                while (true) {
+                    $response = $this->channel->receive();
+                    assert($response instanceof ChannelResponse);
+                    $future = $this->futures[$response->requestId];
+                    if ($response instanceof ErrorResponse) {
+                        $future->error(new ChannelServerException($response));
+                    } else {
+                        $future->complete($response);
+                    }
                 }
-            }} catch (ChannelException $e) {
+            } catch (ChannelException $e) {
                 if (!str_contains($e->getMessage(), 'Channel source closed')) {
                     throw $e;
                 }
@@ -41,10 +43,10 @@ class ChannelClient
         });
     }
 
-    public function send(ChannelRequest $request): ChannelResponse
+    public function send(ChannelRequest $request): Future
     {
         $future = $this->futures[$request->getRequestId()] = new DeferredFuture();
         $this->channel->send($request);
-        return $future->getFuture()->await();
+        return $future->getFuture();
     }
 }

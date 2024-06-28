@@ -9,8 +9,8 @@ use Amp\Future;
 use Generator;
 use Multitron\Container\Node\TaskNode;
 use Multitron\Container\Node\TaskTreeProcessor;
+use Multitron\Error\ErrorHandler;
 use Throwable;
-use Tracy\Debugger;
 use function Amp\async;
 use function Amp\delay;
 use function Amp\Future\awaitFirst;
@@ -26,7 +26,7 @@ class TaskQueue
     /** @var string[] */
     private array $finished = [];
 
-    public function __construct(private readonly int $concurrencyLimit, private readonly TaskTreeProcessor $treeProcessor)
+    public function __construct(private readonly int $concurrencyLimit, private readonly TaskTreeProcessor $treeProcessor, private readonly ErrorHandler $errorHandler)
     {
     }
 
@@ -52,7 +52,7 @@ class TaskQueue
                 awaitFirst([async(fn() => delay(0.2)), ...$this->futures]);
                 $this->futures = array_filter($this->futures, fn(Future $future) => !$future->isComplete());
             } catch (Throwable $e) {
-                Debugger::log($e, 'queue-wait');
+                $this->errorHandler->internalError($e);
             }
             yield from $chunk;
         } while ($queue !== []);

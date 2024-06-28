@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Multitron\Process;
 
-use Amp\Cancellation;
 use Amp\Parallel\Context\ProcessContextFactory;
 use Amp\Parallel\Worker\ContextWorkerFactory;
 use Amp\Parallel\Worker\Execution;
@@ -13,11 +12,11 @@ use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\Worker;
 use SplObjectStorage;
 use Throwable;
+use function Amp\async;
 
-class WorkerPool
+class WorkerFactory
 {
-    /** @var Worker[] */
-    private static array $workers = [];
+    private array $workers = [];
 
     private ProcessContextFactory $contextFactory;
 
@@ -25,57 +24,56 @@ class WorkerPool
 
     private SplObjectStorage $stdout;
 
-    public function __construct()
+    public function __construct(private readonly string $bootstrapPath, int $workerBuffer = 8)
     {
         $this->contextFactory = new ProcessContextFactory();
         $this->stderr = new SplObjectStorage();
         $this->stdout = new SplObjectStorage();
-    }
 
-    /**
-     * @return Worker[]
-     */
-    public static function getWorkers(): array
-    {
-        return self::$workers;
-    }
-
-    public function pull(): Worker
-    {
-        foreach (self::$workers as $key => $worker) {
-            if (!$worker->isRunning()) {
-                unset(self::$workers[$key]);
-                continue;
-            }
-            if ($worker->isIdle()) {
-                return $worker;
-            }
+        for ($i = 0; $i < $workerBuffer; $i++) {
+            async($this->bufferWorker(...));
         }
+    }
+
+    private function bufferWorker(): void
+    {
+        $this->workers[] = $this->createWorker();
+    }
+
+    private function createWorker(): Worker
+    {
+        $start = microtime(true);
         $context = $this->contextFactory->start([ContextWorkerFactory::SCRIPT_PATH]);
         $cw = new ContextWorker($context);
+        $cw->submit(new TaskThread(TaskThread::LOAD_CONTAINER, $this->bootstrapPath))->await();
         $this->stderr[$cw] = $context->getStderr();
         $this->stdout[$cw] = $context->getStdout();
-        return self::$workers[] = $cw;
+        register_shutdown_function(function () use ($cw) {
+            try {
+                $cw->shutdown();
+            } catch (Throwable) {
+            }
+        });
+        return $cw;
     }
 
-    public function submit(Task $task, Cancellation $cancellation): Execution
+    private function pull(): Worker
+    {
+        async($this->bufferWorker(...));
+        return array_pop($this->workers) ?? $this->createWorker();
+    }
+
+    public function submit(Task $task): Execution
     {
         $worker = $this->pull();
-        $exec = $worker->submit($task, $cancellation);
+        $exec = $worker->submit($task);
 
         return new Execution($exec->getTask(), $exec->getChannel(), $exec->getFuture()->catch(function (Throwable $e) use ($worker) {
             throw new WorkerException($this->stderr[$worker], $this->stdout[$worker], $e);
+        })->finally(function () use ($worker) {
+            $worker->shutdown();
+            $this->stderr->detach($worker);
+            $this->stdout->detach($worker);
         }));
-    }
-
-    public function shutdown(): void
-    {
-        foreach (self::$workers as $worker) {
-            try {
-                $worker->shutdown();
-            } catch (Throwable $t) {
-                // ignore
-            }
-        }
     }
 }

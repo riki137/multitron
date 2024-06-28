@@ -3,28 +3,28 @@ declare(strict_types=1);
 
 namespace Multitron\Process;
 
-use Amp\DeferredCancellation;
 use Amp\Pipeline\Queue;
 use Multitron\Comms\Server\ChannelServer;
 use Multitron\Comms\Server\Semaphore\SemaphoreHandler;
 use Multitron\Comms\Server\Storage\CentralCache;
 use Multitron\Container\Node\TaskLeafNode;
 use Multitron\Container\Node\TaskTreeProcessor;
+use Multitron\Error\ErrorHandler;
 use Throwable;
-use Tracy\Debugger;
 use function Amp\async;
+use function Amp\Future\awaitAll;
 
 class TaskRunner
 {
-    private WorkerPool $workerPool;
+    private WorkerFactory $workerFactory;
 
     private ChannelServer $server;
 
     private Queue $processes;
 
-    public function __construct(private readonly TaskTreeProcessor $tree, private readonly int $concurrentTasks, private readonly ?string $bootstrapPath = null)
+    public function __construct(private readonly TaskTreeProcessor $tree, private readonly int $concurrentTasks, string $bootstrapPath, private readonly ErrorHandler $errorHandler)
     {
-        $this->workerPool = new WorkerPool();
+        $this->workerFactory = new WorkerFactory($bootstrapPath);
         $this->server = new ChannelServer([new CentralCache(), new SemaphoreHandler()]);
         $this->processes = new Queue();
     }
@@ -39,7 +39,7 @@ class TaskRunner
 
     public function runAll(): void
     {
-        $queue = new TaskQueue($this->concurrentTasks, $this->tree);
+        $queue = new TaskQueue($this->concurrentTasks, $this->tree, $this->errorHandler);
         $all = [];
         foreach ($queue->fetchAll() as $taskId => $taskNode) {
             $runningTask = $this->runTask($taskNode, $this->server);
@@ -52,33 +52,28 @@ class TaskRunner
                 }
             });
         }
-        foreach ($all as $runningTask) {
-            $runningTask->await();
-        }
+        awaitAll($all);
         $this->processes->complete();
     }
 
     private function runTask(TaskLeafNode $task, ChannelServer $server): RunningTask
     {
         if ($task->isNonBlocking()) {
-            $local = new LocalTask($task->getTask(), $server);
+            $local = new LocalTask($task, $server, $this->errorHandler);
             $local->run();
             return $local;
         }
 
-        $cancel = new DeferredCancellation();
         while (true) {
             try {
                 return new WorkerTask(
-                    $this->workerPool->submit(
-                        new TaskThread($this->bootstrapPath, $task->getId()),
-                        $cancel->getCancellation()
+                    $this->workerFactory->submit(
+                        new TaskThread($task->getId()),
                     ),
-                    $cancel,
                     $server
                 );
             } catch (Throwable $e) {
-                Debugger::log($e, 'worker-crash');
+                $this->errorHandler->internalError($e);
             }
         }
     }
@@ -91,10 +86,5 @@ class TaskRunner
         foreach ($this->processes->iterate() as [$taskId, $runningTask]) {
             yield $taskId => $runningTask;
         }
-    }
-
-    public function shutdown(): void
-    {
-        $this->workerPool->shutdown();
     }
 }

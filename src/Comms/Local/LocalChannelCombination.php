@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Multitron\Comms\Local;
 
 use Amp\Cancellation;
-use Amp\Serialization\SerializationException;
 use Amp\Sync\Channel;
-use Amp\Sync\ChannelException;
+use Closure;
 
 class LocalChannelCombination implements Channel
 {
@@ -41,7 +40,7 @@ class LocalChannelCombination implements Channel
         return $this->receiveFrom->isClosed() || $this->sendTo->isClosed();
     }
 
-    public function onClose(\Closure $onClose): void
+    public function onClose(Closure $onClose): void
     {
         $this->receiveFrom->onClose($onClose);
         $this->sendTo->onClose($onClose);

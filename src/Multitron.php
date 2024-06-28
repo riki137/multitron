@@ -7,6 +7,7 @@ use Multitron\Container\Node\NonBlockingNode;
 use Multitron\Container\Node\TaskFilteringNode;
 use Multitron\Container\Node\TaskGroupNode;
 use Multitron\Container\Node\TaskTreeProcessor;
+use Multitron\Error\ErrorHandler;
 use Multitron\Output\TableOutput;
 use Multitron\Process\TaskRunner;
 use Revolt\EventLoop;
@@ -25,7 +26,8 @@ class Multitron extends Command
     public function __construct(
         private readonly TaskGroupNode $rootNode,
         private readonly string $bootstrapPath,
-        ?int $concurrentTasks = null,
+        ?int $concurrentTasks,
+        private readonly ErrorHandler $errorHandler
     ) {
         parent::__construct('multitron');
         $this->concurrentTasks = $concurrentTasks ?? (int)shell_exec('nproc');
@@ -60,14 +62,13 @@ class Multitron extends Command
             $node = new NonBlockingNode('_rootD', fn() => yield $node);
         }
         $tree = new TaskTreeProcessor($node);
-        $runner = new TaskRunner($tree, $this->concurrentTasks, $this->bootstrapPath);
+        $runner = new TaskRunner($tree, $this->concurrentTasks, $this->bootstrapPath, $this->errorHandler);
 
         assert($output instanceof ConsoleOutputInterface);
         new TableOutput($runner, $output);
 
         $runner->runAll();
         EventLoop::run();
-        $runner->shutdown();
 
         return 0;
     }

@@ -10,6 +10,7 @@ use Multitron\Bridge\Nette\NettePsrContainer;
 use Multitron\Comms\Data\Message\SuccessMessage;
 use Multitron\Comms\TaskCommunicator;
 use Multitron\Container\Node\TaskTreeProcessor;
+use Multitron\Error\ErrorHandler;
 use Multitron\Impl\Task;
 use Nette\DI\Container;
 use Psr\Container\ContainerInterface;
@@ -19,37 +20,38 @@ use Tracy\Debugger;
 
 class TaskThread implements AmpTask
 {
+    public const LOAD_CONTAINER = '__loadContainer__';
+
+    private static ContainerInterface $container;
+
     public static bool $inThread = false;
 
-    private static ?ContainerInterface $container = null;
-
     public function __construct(
-        private readonly string $bootstrapPath,
-        private readonly string $taskId
+        private readonly string $taskId,
+        private readonly ?string $bootstrapPath = null
     ) {
     }
 
     public function run(Channel $channel, Cancellation $cancellation): int
     {
-        if (!gc_enabled()) {
-            gc_enable();
-        }
         self::$inThread = true;
-        try {
-            $communicator = new TaskCommunicator($channel);
-
-            $container = self::$container;
-            if ($container === null) {
-                $container = require $this->bootstrapPath;
-                if ($container instanceof Container) {
-                    $container = $container->getByType(NettePsrContainer::class);
-                }
-                if (!$container instanceof ContainerInterface) {
-                    $communicator->error('Container is not an instance of ' . ContainerInterface::class);
-                    throw new RuntimeException('Container is not an instance of ' . ContainerInterface::class);
-                }
-                self::$container = $container;
+        if ($this->taskId === self::LOAD_CONTAINER) {
+            $container = require $this->bootstrapPath;
+            if ($container instanceof Container) {
+                $container = $container->getByType(NettePsrContainer::class);
             }
+            if (!$container instanceof ContainerInterface) {
+                throw new RuntimeException('Container is not an instance of ' . ContainerInterface::class);
+            }
+            self::$container = $container;
+            return 0;
+        }
+
+        try {
+            $container = self::$container;
+            $communicator = new TaskCommunicator($channel);
+            /** @var ErrorHandler $errorHandler */
+            $errorHandler = $container->get(ErrorHandler::class);
 
             $taskTree = $container->get(TaskTreeProcessor::class);
             if (!$taskTree instanceof TaskTreeProcessor) {
@@ -63,20 +65,27 @@ class TaskThread implements AmpTask
                     throw new RuntimeException('Task is not an instance of ' . Task::class);
                 }
 
-                Debugger::$strictMode = false;
                 gc_collect_cycles();
                 $task->execute($communicator);
                 $communicator->sendProgress(true);
                 $communicator->sendMessage(new SuccessMessage());
                 $communicator->shutdown();
             } catch (Throwable $e) {
-                $communicator->error($e->getMessage());
-                Debugger::log($e, 'softCrash');
+                $msg = $errorHandler->taskError($this->taskId, $e);
+                try {
+                    $communicator->error($msg);
+                } catch (Throwable) {
+                }
+                return 1;
             }
         } catch (Throwable $e) {
-            Debugger::log($e, 'TaskThread');
+            if (isset($errorHandler)) {
+                $errorHandler->internalError($e);
+            } else {
+                Debugger::log($e);
+            }
+            return 1;
         }
-        gc_collect_cycles();
         return 0;
     }
 }

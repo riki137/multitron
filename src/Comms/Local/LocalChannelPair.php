@@ -7,6 +7,7 @@ namespace Multitron\Comms\Local;
 final class LocalChannelPair
 {
     public readonly LocalChannelCombination $parent;
+
     public readonly LocalChannelCombination $child;
 
     public function __construct()
