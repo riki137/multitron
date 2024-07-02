@@ -102,7 +102,7 @@ final class TableOutput
         foreach ($this->runningTasks as $runningTask) {
             $prog = $runningTask->getCentre()->getProgress();
             if ($prog->total > 0) {
-                $finished += max(0, min(1, $prog->done / $prog->total));
+                $finished += max(0, min(1, $prog->toFloat()));
             }
         }
         $totalMem += memory_get_usage(true);

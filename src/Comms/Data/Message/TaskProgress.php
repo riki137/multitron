@@ -17,7 +17,7 @@ final class TaskProgress implements Message
 
     public function getPercentage(): float
     {
-        return $this->total === 0 ? 0 : ($this->done / $this->total) * 100;
+        return $this->total === 0 ? 0 : $this->toFloat() * 100;
     }
 
     public function getMemoryUsage(): ?string
@@ -45,5 +45,10 @@ final class TaskProgress implements Message
             return number_format($memoryUsage, 0, '.', '') . 'MB';
         }
         return number_format($memoryUsage, 1, '.', '') . 'MB';
+    }
+
+    public function toFloat(): float
+    {
+        return fdiv($this->done + $this->skipped, $this->total);
     }
 }
