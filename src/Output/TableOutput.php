@@ -194,7 +194,7 @@ final class TableOutput
     {
         $message = str_replace("\n", "\n" . str_repeat(' ', $this->taskWidth + 3), $message);
         if ($taskId !== null) {
-            $message = "<fg={$level->toColor()};options=bold>$taskId</>:  $message";
+            $message = "<fg={$level->toColor()};options=bold>$taskId</>: $message";
         }
 
         $this->logOutput->writeln($message);
