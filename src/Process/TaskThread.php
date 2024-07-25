@@ -28,6 +28,7 @@ class TaskThread implements AmpTask
 
     public function __construct(
         private readonly string $taskId,
+        private readonly array $options = [],
         private readonly ?string $bootstrapPath = null
     ) {
     }
@@ -49,7 +50,7 @@ class TaskThread implements AmpTask
 
         try {
             $container = self::$container;
-            $communicator = new TaskCommunicator($channel);
+            $communicator = new TaskCommunicator($channel, $this->options);
             /** @var ErrorHandler $errorHandler */
             $errorHandler = $container->get(ErrorHandler::class);
 

@@ -21,7 +21,9 @@ class CentralReadSubsetRequest extends CentralReadRequest
 
         $sector = &$cache[$this->key];
         foreach ($this->subkeys as $subkey) {
-            $result[$subkey] = &$sector[$subkey];
+            if (isset($sector[$subkey])) {
+                $result[$subkey] = &$sector[$subkey];
+            }
         }
         return $result;
     }

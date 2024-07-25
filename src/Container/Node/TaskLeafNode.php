@@ -27,7 +27,7 @@ class TaskLeafNode extends TaskNode
 
     /**
      * Use this to mark tasks that can be ran on the same thread because they fully utilize only Revolt Event Loop (AMPHP).
-     * This will avoid creating a new thread for this task and can save some time for simple async tasks.
+     * This will avoid creating a new process and container for this task and can save some time for simple async tasks.
      * @param bool $async
      * @return $this
      */

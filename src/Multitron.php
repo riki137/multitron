@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Multitron;
 
+use Multitron\Console\InputConfiguration;
 use Multitron\Container\Node\NonBlockingNode;
 use Multitron\Container\Node\TaskFilteringNode;
 use Multitron\Container\Node\TaskGroupNode;
@@ -22,6 +23,8 @@ use Tracy\Debugger;
 class Multitron extends Command
 {
     private int $concurrentTasks;
+    private TaskTreeProcessor $tree;
+    private TableOutput $tableOutput;
 
     public function __construct(
         private readonly TaskGroupNode $rootNode,
@@ -29,31 +32,38 @@ class Multitron extends Command
         ?int $concurrentTasks,
         private readonly ErrorHandler $errorHandler
     ) {
-        parent::__construct('multitron');
         $this->concurrentTasks = $concurrentTasks ?? (int)shell_exec('nproc');
+        $this->tableOutput = new TableOutput();
+        parent::__construct('multitron');
     }
 
-    protected function configure()
+    protected function configure(): void
     {
         $this->setDescription('Runs a multitron task tree');
+        $conf = new InputConfiguration();
+        $this->tree = new TaskTreeProcessor($this->rootNode);
+        foreach ($this->tree->getNodes() as $node) {
+            $node->configure($conf);
+        }
+        $this->tableOutput->configure($conf);
+        $this->setDefinition($conf->toDefinition());
         $this->addArgument(
             'task',
             InputArgument::OPTIONAL,
-            'The task to run. Separated by comma. Uses fnmatch() for patterns.',
+            'The tasks to run. Separated by comma. Uses fnmatch() for patterns. You can use % instead of *',
             '*'
         );
         $this->addOption(
             'direct',
             'd',
             InputOption::VALUE_NEGATABLE,
-            'Run tasks directly without workers',
+            'Run all tasks in the main process',
             false
         );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        Debugger::$strictMode = false;
         $node = $this->rootNode;
         if ($input->getArgument('task') !== '*') {
             $node = new TaskFilteringNode('_rootF', $node, $input->getArgument('task'));
@@ -61,15 +71,14 @@ class Multitron extends Command
         if ($input->getOption('direct')) {
             $node = new NonBlockingNode('_rootD', fn() => yield $node);
         }
-        $tree = new TaskTreeProcessor($node);
-        $runner = new TaskRunner($tree, $this->concurrentTasks, $this->bootstrapPath, $this->errorHandler);
-
+        if ($node !== $this->rootNode) {
+            $this->tree = new TaskTreeProcessor($node);
+        }
+        $runner = new TaskRunner($this->tree, $this->concurrentTasks, $this->bootstrapPath, $this->errorHandler, $input->getOptions());
         assert($output instanceof ConsoleOutputInterface);
-        new TableOutput($runner, $output);
-
-        $runner->runAll();
-        EventLoop::run();
-
-        return 0;
+        $tableFuture = $this->tableOutput->run($runner, $input, $output);
+        $exitCode = $runner->runAll();
+        $tableFuture->await();
+        return $exitCode->await();
     }
 }

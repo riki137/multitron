@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Multitron\Process;
 
+use Amp\Future;
 use Amp\Parallel\Context\ProcessContextFactory;
 use Amp\Parallel\Worker\ContextWorkerFactory;
 use Amp\Parallel\Worker\Execution;
@@ -16,6 +17,9 @@ use function Amp\async;
 
 class WorkerFactory
 {
+    /**
+     * @var Future<Worker>[]
+     */
     private array $workers = [];
 
     private ProcessContextFactory $contextFactory;
@@ -24,28 +28,29 @@ class WorkerFactory
 
     private SplObjectStorage $stdout;
 
-    public function __construct(private readonly string $bootstrapPath, int $workerBuffer = 8)
+    public function __construct(private readonly string $bootstrapPath, int $workerBuffer, private int $softLimit)
     {
         $this->contextFactory = new ProcessContextFactory();
         $this->stderr = new SplObjectStorage();
         $this->stdout = new SplObjectStorage();
 
         for ($i = 0; $i < $workerBuffer; $i++) {
-            async($this->bufferWorker(...));
+            $this->bufferWorker();
         }
     }
 
     private function bufferWorker(): void
     {
-        $this->workers[] = $this->createWorker();
+        if (--$this->softLimit > 0) {
+            $this->workers[] = async($this->createWorker(...));
+        }
     }
 
     private function createWorker(): Worker
     {
-        $start = microtime(true);
         $context = $this->contextFactory->start([ContextWorkerFactory::SCRIPT_PATH]);
         $cw = new ContextWorker($context);
-        $cw->submit(new TaskThread(TaskThread::LOAD_CONTAINER, $this->bootstrapPath))->await();
+        $cw->submit(new TaskThread(TaskThread::LOAD_CONTAINER, [], $this->bootstrapPath))->await();
         $this->stderr[$cw] = $context->getStderr();
         $this->stdout[$cw] = $context->getStdout();
         register_shutdown_function(function () use ($cw) {
@@ -59,8 +64,13 @@ class WorkerFactory
 
     private function pull(): Worker
     {
-        async($this->bufferWorker(...));
-        return array_pop($this->workers) ?? $this->createWorker();
+        $this->bufferWorker();
+        $worker = array_shift($this->workers);
+        if ($worker instanceof Future) {
+            return $worker->await();
+        }
+        $this->softLimit--;
+        return $this->createWorker();
     }
 
     public function submit(Task $task): Execution

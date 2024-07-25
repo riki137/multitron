@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Multitron\Container\Node;
 
+use Multitron\Console\InputConfiguration;
+use Symfony\Component\Console\Input\InputDefinition;
+
 abstract class TaskNode
 {
     private array $dependencies = [];
@@ -62,5 +65,9 @@ abstract class TaskNode
     public function getGroups(): array
     {
         return $this->groups;
+    }
+
+    public function configure(InputConfiguration $input): void
+    {
     }
 }

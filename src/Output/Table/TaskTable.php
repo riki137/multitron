@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Multitron\Output\Table;
 
+use Multitron\Comms\Data\Message\LogLevel;
 use Multitron\Comms\Data\Message\TaskProgress;
-use Multitron\Output\Table\ProgressBar;
+use Multitron\Process\TaskRunner;
 
 final class TaskTable
 {
-    public int $taskWidth = 16;
-
     public array $startTimes = [];
 
     public int $ramTotal = 1;
@@ -20,18 +19,35 @@ final class TaskTable
     private TaskProgress $summary;
 
     private int $memoryMax = 0;
+    private int $taskWidth;
 
-    public function __construct()
+    public function __construct(TaskRunner $runner)
     {
-        $this->startTimes['TOTAL'] = microtime(true);
         $this->summary = new TaskProgress(0);
+        $this->taskWidth = 16;
+        foreach ($runner->getNodes() as $node) {
+            $this->taskWidth = max(strlen($node->getId()), $this->taskWidth);
+            $this->summary->total++;
+        }
+
+        $this->startTimes['TOTAL'] = microtime(true);
     }
 
-    public function getRow(string $taskId, TaskProgress $progress): string
+    private static function getPrintTime(): string
     {
+        return '<fg=gray>('.date('H:i:s').')</>';
+    }
+
+    public function getRow(string $taskId, TaskProgress $progress, ?int $exitCode = null): string
+    {
+        $percent = null;
+        if ($exitCode === 0 && $progress->total === 0 && $progress->done === 0) {
+            $percent = 100;
+        }
+
         return implode(' ', array_filter([
-            $this->getRowLabel($taskId),
-            self::getProgressBar($progress),
+            $this->getRowLabel($taskId, $exitCode),
+            self::getProgressBar($progress, $percent),
             self::getCount($progress),
             $this->getTime($taskId),
             self::getMemoryUsageStatus($progress),
@@ -41,13 +57,12 @@ final class TaskTable
         ]));
     }
 
-    public function getSummaryRow(float $done, int $total): string
+    public function getSummaryRow(float $done): string
     {
         $this->summary->done = (int)$done;
-        $this->summary->total = $total;
         return implode(' ', array_filter([
             $this->getRowLabel('TOTAL'),
-            self::getProgressBar($this->summary, ($done / $total * 100), 'blue'),
+            self::getProgressBar($this->summary, (fdiv($done * 100, $this->summary->total)), 'blue'),
             self::getCount($this->summary),
             $this->getTime('TOTAL', 'yellow;options=bold'),
         ]));
@@ -64,14 +79,16 @@ final class TaskTable
         } else {
             $color = 'green';
         }
-        $this->memoryMax = max($this->memoryMax, $memorySum);
+
+        $mainUsage = memory_get_usage(true);
+        $this->memoryMax = max($this->memoryMax, $memorySum + $mainUsage);
 
         return implode(' ', [
             $this->getRowLabel('RAM'),
             "<fg=$color>" . TaskProgress::formatMemoryUsage($used) . '</><fg=gray>/</>' . TaskProgress::formatMemoryUsage($total),
-            '<fg=gray>MAIN</><fg=blue>' . TaskProgress::formatMemoryUsage(memory_get_usage(true)) . '</>',
-            '<fg=gray>SUM</><fg=magenta>' . TaskProgress::formatMemoryUsage($memorySum) . '</>',
-            '<fg=gray>PEAK</><fg=red>' . TaskProgress::formatMemoryUsage($this->memoryMax) . '</></>',
+            '<fg=gray>MAIN</><fg=blue;options=bold>' . TaskProgress::formatMemoryUsage($mainUsage) . '</>',
+            '<fg=gray>SUM</><fg=magenta;options=bold>' . TaskProgress::formatMemoryUsage($memorySum + $mainUsage) . '</>',
+            '<fg=gray>PEAK</><fg=red;options=bold>' . TaskProgress::formatMemoryUsage($this->memoryMax) . '</></>',
         ]);
     }
 
@@ -139,8 +156,26 @@ final class TaskTable
         return "<fg=$color>" . $out . '</>';
     }
 
-    public function getRowLabel(string $label): string
+    public function getRowLabel(string $label, ?int $exitCode = null): string
     {
-        return '<options=bold>' . str_pad($label, $this->taskWidth, ' ', STR_PAD_LEFT) . '</>  ';
+        $exit = '  ';
+        if ($exitCode === 0) {
+            $exit = ' <fg=green>✔</>';
+        } elseif ($exitCode !== null) {
+            $exit = ' <fg=red>✘</>';
+        }
+        return '<options=bold>' . str_pad($label, $this->taskWidth, ' ', STR_PAD_LEFT) . '</>'.$exit;
+    }
+
+    public function getLog(?string $taskId, string $message, LogLevel $level): string
+    {
+        $message = str_replace("\n", "\n" . str_repeat(' ', $this->taskWidth + 3), $message);
+
+        if ($taskId !== null && $taskId !== '') {
+            $taskId = str_pad($taskId, $this->taskWidth, ' ', STR_PAD_LEFT);
+            $message = "<fg={$level->toColor()};options=bold>$taskId</>:  $message";
+        }
+
+        return $message.' '.self::getPrintTime();
     }
 }

@@ -11,11 +11,11 @@ use Multitron\Comms\Data\Message\Message;
 use Multitron\Comms\Data\Message\TaskProgress;
 use Multitron\Comms\Server\ChannelClient;
 use Multitron\Comms\Server\OKResponse;
-use Multitron\Comms\Server\Storage\CentralMergeKeyRequest;
 use Multitron\Comms\Server\Storage\CentralReadKeyRequest;
 use Multitron\Comms\Server\Storage\CentralReadResponse;
 use Multitron\Comms\Server\Storage\CentralReadSubsetRequest;
 use Multitron\Comms\Server\Storage\CentralWriteKeyRequest;
+use Multitron\Output\Table\CentralMergeKeyRequest;
 use Multitron\Process\TaskThread;
 use Multitron\Util\Throttle;
 
@@ -27,7 +27,7 @@ class TaskCommunicator
 
     private ChannelClient $client;
 
-    public function __construct(private readonly Channel $channel)
+    public function __construct(private readonly Channel $channel, private readonly array $options)
     {
         $this->progress = new TaskProgress(0);
         $this->throttle = new Throttle(function () {
@@ -38,6 +38,16 @@ class TaskCommunicator
         }, 50);
         $this->client = new ChannelClient($channel);
         $this->client->start();
+    }
+
+    public function getOption(string $name): mixed
+    {
+        return $this->options[$name] ?? null;
+    }
+
+    public function getOptions(): array
+    {
+        return $this->options;
     }
 
     public function &read(string $key): ?array
@@ -65,12 +75,12 @@ class TaskCommunicator
     /**
      * @return Future<OKResponse> future is returned after the request is sent
      */
-    public function merge(string $key, array $data): Future
+    public function merge(string $key, array $data, int $level = 1): Future
     {
         if ($data === []) {
             return Future::complete(new OKResponse());
         }
-        return $this->client->send(new CentralMergeKeyRequest($key, $data));
+        return $this->client->send(new CentralMergeKeyRequest($key, $data, $level));
     }
 
     public function sendMessage(Message $data): void

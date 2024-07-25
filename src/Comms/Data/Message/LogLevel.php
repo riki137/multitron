@@ -26,4 +26,12 @@ enum LogLevel: string
             default => 'blue',
         };
     }
+
+    public function isFaulty(): bool
+    {
+        return match ($this) {
+            self::ERROR, self::CRITICAL, self::ALERT, self::EMERGENCY => true,
+            default => false,
+        };
+    }
 }

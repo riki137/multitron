@@ -33,7 +33,9 @@ class TaskTreeProcessor
             if (isset($this->nodes[$node->getId()])) {
                 throw new RuntimeException("Task {$node->getId()} is being defined twice");
             }
+
             $this->nodes[$node->getId()] = $node;
+
             foreach ($node->getGroups() as $group) {
                 $this->groupToLeafs[$group][] = $node->getId();
                 if (is_string($dfsGraph[$group] ?? null)) {
@@ -41,10 +43,12 @@ class TaskTreeProcessor
                 }
                 $dfsGraph[$group][] = $node->getId();
             }
+
             foreach ($node->getDependencies() as $dep) {
                 $dfsGraph[$node->getId()][] = $dep;
             }
-            foreach ($this->rawDependencies($node) as $dep) {
+
+            foreach ($this->unpackDependencies($node) as $dep) {
                 $this->dependencies[$node->getId()][] = $dep;
                 if ($node->getId() === $dep) {
                     throw new RuntimeException("Task {$node->getId()} depends on itself");
@@ -73,7 +77,7 @@ class TaskTreeProcessor
         return $cycle;
     }
 
-    private function rawDependencies(TaskNode $node): array
+    private function unpackDependencies(TaskNode $node): array
     {
         $deps = [];
         foreach ($node->getDependencies() as $dep) {

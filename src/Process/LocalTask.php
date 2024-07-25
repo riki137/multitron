@@ -12,6 +12,7 @@ use Multitron\Comms\TaskCommunicator;
 use Multitron\Container\Node\TaskLeafNode;
 use Multitron\Error\ErrorHandler;
 use Multitron\Impl\Task;
+use Symfony\Component\Console\Input\InputInterface;
 use Throwable;
 use function Amp\async;
 
@@ -36,9 +37,9 @@ class LocalTask implements RunningTask
         $this->task = $taskNode->getTask();
     }
 
-    public function run(): void
+    public function run(array $options): void
     {
-        $communicator = new TaskCommunicator($this->channels->child);
+        $communicator = new TaskCommunicator($this->channels->child, $options);
         $catcher = async(function () use ($communicator) {
             try {
                 $this->task->execute($communicator);
