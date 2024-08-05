@@ -73,6 +73,7 @@ class TaskCommunicator
     }
 
     /**
+     * @param int $level the n-dimensional level to merge the data
      * @return Future<OKResponse> future is returned after the request is sent
      */
     public function merge(string $key, array $data, int $level = 1): Future

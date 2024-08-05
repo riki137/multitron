@@ -40,7 +40,8 @@ class TaskQueue
             $chunk = [];
             $this->treeProcessor->ksortByPriority($queue, $this->finished);
             foreach ($this->throttleConcurrent($queue) as $id => $node) {
-                $deps = array_diff($this->treeProcessor->getDependencies($node), $this->finished);
+                $deps = $this->treeProcessor->getDependencies($node);
+                $deps = array_diff($deps, $this->finished);
                 if (empty($deps)) {
                     unset($queue[$id]);
                     $this->deferredFutures[$id] = new DeferredFuture();

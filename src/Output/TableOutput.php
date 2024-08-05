@@ -153,7 +153,7 @@ final class TableOutput
         $table[] = $this->table->getSummaryRow($finished);
         $table[] = $this->table->getMemoryRow($totalMem);
 
-        return trim(implode("\n", $table), "\n\r\t");
+        return PHP_EOL . trim(implode(PHP_EOL, $table), "\n\r\t");
     }
 
     private function log(string $taskId, string $message, LogLevel $level, bool $prepend = true): void

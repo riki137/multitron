@@ -46,17 +46,19 @@ class TaskRunner
     public function runAll(): Future
     {
         return async(function () {
+            $failed = [];
             $exitCode = 0;
             $queue = new TaskQueue($this->concurrentTasks, $this->tree, $this->errorHandler);
             $all = [];
             foreach ($queue->fetchAll() as $taskId => $taskNode) {
-                $runningTask = $this->runTask($taskNode, $this->server);
+                $runningTask = $this->runTask($taskNode, $this->server, $failed);
                 $this->processes->pushAsync([$taskId, $runningTask]);
-                $all[] = async(function () use ($taskId, $queue, $runningTask, &$exitCode) {
+                $all[] = async(function () use ($taskId, $queue, $runningTask, &$exitCode, &$failed) {
                     try {
                         $taskExitCode = $runningTask->getFuture()->await();
                         if (is_int($taskExitCode) && $taskExitCode > 0) {
                             $exitCode = 1;
+                            $failed[$taskId] = true;
                         }
                     } finally {
                         $queue->markFinished($taskId);
@@ -69,8 +71,14 @@ class TaskRunner
         });
     }
 
-    private function runTask(TaskLeafNode $task, ChannelServer $server): RunningTask
+    private function runTask(TaskLeafNode $task, ChannelServer $server, array &$failed): RunningTask
     {
+        foreach($this->tree->getDependencies($task) as $dependency) {
+            if (isset($failed[$dependency])) {
+                return new SkippedTask($server);
+            }
+        }
+
         if ($task->isNonBlocking()) {
             $local = new LocalTask($task, $server, $this->errorHandler);
             $local->run($this->options);

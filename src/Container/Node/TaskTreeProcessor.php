@@ -129,6 +129,9 @@ class TaskTreeProcessor
         return $this->index()->groupToLeafs[$group] ?? [];
     }
 
+    /**
+     * @return string[]
+     */
     public function getDependencies(TaskNode $node): array
     {
         return $this->index()->dependencies[$node->getId()] ?? [];

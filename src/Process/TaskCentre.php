@@ -22,10 +22,10 @@ class TaskCentre
 
     private Pipeline $pipeline;
 
-    public function __construct(Channel $channel, private readonly ChannelServer $server)
+    public function __construct(?Channel $channel, private readonly ChannelServer $server)
     {
         $this->progress = new TaskProgress(0);
-        $this->pipeline = Pipeline::fromIterable($this->pipeline($channel));
+        $this->pipeline = Pipeline::fromIterable($channel ? $this->pipeline($channel) : []);
     }
 
     private function pipeline(Channel $channel): Generator

@@ -22,13 +22,19 @@ class CentralMergeKeyRequest extends CentralWriteRequest
         $this->merge($cache[$this->key], $this->data, $this->level);
     }
 
-    private function merge(array &$cache, array &$data, int $level = 1): void
+    /**
+     * @param int $level n-dimensional level to merge the data
+     */
+    private function merge(array &$cache, array $data, int $level = 1): void
     {
-        foreach ($data as $key => &$value) {
+        foreach ($data as $key => $value) {
             if ($level > 1) {
+                if (!isset($cache[$key]) || !is_array($cache[$key])) {
+                    $cache[$key] = [];
+                }
                 $this->merge($cache[$key], $value, $level - 1);
             } else {
-                $cache[$key] = &$value;
+                $cache[$key] = $value;
             }
         }
     }

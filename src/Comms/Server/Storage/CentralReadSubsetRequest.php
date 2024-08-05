@@ -8,7 +8,7 @@ class CentralReadSubsetRequest extends CentralReadRequest
 {
     public function __construct(
         private readonly string $key,
-        private readonly array &$subkeys
+        private array &$subkeys
     ) {
     }
 
@@ -22,7 +22,7 @@ class CentralReadSubsetRequest extends CentralReadRequest
         $sector = &$cache[$this->key];
         foreach ($this->subkeys as $subkey) {
             if (isset($sector[$subkey])) {
-                $result[$subkey] = &$sector[$subkey];
+                $result[$subkey] = $sector[$subkey];
             }
         }
         return $result;

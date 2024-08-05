@@ -6,6 +6,7 @@ namespace Multitron\Output\Table;
 
 use Multitron\Comms\Data\Message\LogLevel;
 use Multitron\Comms\Data\Message\TaskProgress;
+use Multitron\Process\SkippedTask;
 use Multitron\Process\TaskRunner;
 
 final class TaskTable
@@ -35,7 +36,7 @@ final class TaskTable
 
     private static function getPrintTime(): string
     {
-        return '<fg=gray>('.date('H:i:s').')</>';
+        return '<fg=gray>(' . date('H:i:s') . ')</>';
     }
 
     public function getRow(string $taskId, TaskProgress $progress, ?int $exitCode = null): string
@@ -158,13 +159,19 @@ final class TaskTable
 
     public function getRowLabel(string $label, ?int $exitCode = null): string
     {
-        $exit = '  ';
+        $symbol = '  ';
+        $color = '';
         if ($exitCode === 0) {
-            $exit = ' <fg=green>✔</>';
+            $symbol = ' ✔';
+            $color = 'fg=green;';
+        } elseif ($exitCode === SkippedTask::EXIT_CODE) {
+            $symbol = ' ⚠';
+            $color = 'fg=yellow;';
         } elseif ($exitCode !== null) {
-            $exit = ' <fg=red>✘</>';
+            $symbol = ' ✘';
+            $color = 'fg=red;';
         }
-        return '<options=bold>' . str_pad($label, $this->taskWidth, ' ', STR_PAD_LEFT) . '</>'.$exit;
+        return "<{$color}options=bold>" . str_pad($label, $this->taskWidth, ' ', STR_PAD_LEFT) . $symbol . '</>';
     }
 
     public function getLog(?string $taskId, string $message, LogLevel $level): string
@@ -176,6 +183,6 @@ final class TaskTable
             $message = "<fg={$level->toColor()};options=bold>$taskId</>:  $message";
         }
 
-        return $message.' '.self::getPrintTime();
+        return $message . ' ' . self::getPrintTime();
     }
 }
