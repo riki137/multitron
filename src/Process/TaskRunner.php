@@ -73,7 +73,7 @@ class TaskRunner
 
     private function runTask(TaskLeafNode $task, ChannelServer $server, array &$failed): RunningTask
     {
-        foreach($this->tree->getDependencies($task) as $dependency) {
+        foreach ($this->tree->getDependencies($task) as $dependency) {
             if (isset($failed[$dependency])) {
                 return new SkippedTask($server);
             }

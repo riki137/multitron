@@ -10,6 +10,7 @@ use Multitron\Comms\Server\ChannelServer;
 class SkippedTask implements RunningTask
 {
     public const EXIT_CODE = 512;
+
     private TaskCentre $centre;
 
     public function __construct(ChannelServer $server)
@@ -27,5 +28,4 @@ class SkippedTask implements RunningTask
     {
         return $this->centre;
     }
-
 }

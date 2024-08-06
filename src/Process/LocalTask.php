@@ -12,7 +12,6 @@ use Multitron\Comms\TaskCommunicator;
 use Multitron\Container\Node\TaskLeafNode;
 use Multitron\Error\ErrorHandler;
 use Multitron\Impl\Task;
-use Symfony\Component\Console\Input\InputInterface;
 use Throwable;
 use function Amp\async;
 

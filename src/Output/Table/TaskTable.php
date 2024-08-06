@@ -20,6 +20,7 @@ final class TaskTable
     private TaskProgress $summary;
 
     private int $memoryMax = 0;
+
     private int $taskWidth;
 
     public function __construct(TaskRunner $runner)

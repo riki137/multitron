@@ -16,6 +16,7 @@ use function Amp\delay;
 final class CombinedSectionOutputRenderer extends Output
 {
     private ConsoleSectionOutput $section;
+
     private array $buffer = [];
 
     public function __construct(

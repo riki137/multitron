@@ -28,5 +28,4 @@ class PsrLogErrorHandler implements ErrorHandler
         $this->logger->log($this->internalErrorLevel, $err->getMessage(), ['exception' => $err]);
         return $err->getMessage();
     }
-
 }

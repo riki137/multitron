@@ -19,7 +19,6 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
-
 use function Amp\async;
 use function Amp\delay;
 use function Amp\Future\awaitAll;
@@ -30,10 +29,14 @@ use function Amp\Future\awaitAll;
 final class TableOutput
 {
     private TaskTable $table;
+
     private array $runningTasks = [];
+
     /** @var RunningTask[] */
     private array $finishedTasks = [];
+
     private ?array $summaryLog = null;
+
     private OutputInterface $output;
 
     public function configure(InputConfiguration $conf): void
@@ -170,7 +173,7 @@ final class TableOutput
         $this->output->writeln("\n<fg=magenta;options=bold>" .
             "┌───────────┐\n" .
             "│  SUMMARY  │\n" .
-            "└───────────┘</>");
+            '└───────────┘</>');
 
         foreach ($this->finishedTasks as $taskId => $runningTask) {
             if (is_array($this->summaryLog[$taskId] ?? null)) {
