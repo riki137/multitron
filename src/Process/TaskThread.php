@@ -20,6 +20,8 @@ use Tracy\Debugger;
 
 class TaskThread implements AmpTask
 {
+    public const MEMORY_LIMIT = 'memory-limit';
+
     public const LOAD_CONTAINER = '__loadContainer__';
 
     private static ContainerInterface $container;
@@ -36,6 +38,10 @@ class TaskThread implements AmpTask
     public function run(Channel $channel, Cancellation $cancellation): int
     {
         self::$inThread = true;
+        if (isset($this->options[self::MEMORY_LIMIT])) {
+            ini_set('memory_limit', $this->options[self::MEMORY_LIMIT]);
+        }
+
         if ($this->taskId === self::LOAD_CONTAINER) {
             $container = require $this->bootstrapPath;
             if ($container instanceof Container) {

@@ -11,19 +11,20 @@ use Multitron\Container\Node\TaskTreeProcessor;
 use Multitron\Error\ErrorHandler;
 use Multitron\Output\TableOutput;
 use Multitron\Process\TaskRunner;
-use Revolt\EventLoop;
+use Multitron\Process\TaskThread;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Tracy\Debugger;
 
 class Multitron extends Command
 {
     private int $concurrentTasks;
+
     private TaskTreeProcessor $tree;
+
     private TableOutput $tableOutput;
 
     public function __construct(
@@ -53,17 +54,16 @@ class Multitron extends Command
             'The tasks to run. Separated by comma. Uses fnmatch() for patterns. You can use % instead of *',
             '*'
         );
-        $this->addOption(
-            'direct',
-            'd',
-            InputOption::VALUE_NEGATABLE,
-            'Run all tasks in the main process',
-            false
-        );
+        $this->addOption('direct', 'd', InputOption::VALUE_NEGATABLE, 'Run all tasks in the main process', false);
+        $this->addOption(TaskThread::MEMORY_LIMIT, null, InputOption::VALUE_REQUIRED, 'Set memory limit for each process');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        if ($input->getOption(TaskThread::MEMORY_LIMIT) !== null) {
+            ini_set('memory_limit', $input->getOption(TaskThread::MEMORY_LIMIT));
+        }
+
         $node = $this->rootNode;
         if ($input->getArgument('task') !== '*') {
             $node = new TaskFilteringNode('_rootF', $node, $input->getArgument('task'));
