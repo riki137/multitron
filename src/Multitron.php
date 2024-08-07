@@ -33,6 +33,7 @@ class Multitron extends Command
         ?int $concurrentTasks,
         private readonly ErrorHandler $errorHandler
     ) {
+        $this->tree = new TaskTreeProcessor($this->rootNode);
         $this->concurrentTasks = $concurrentTasks ?? (int)shell_exec('nproc');
         $this->tableOutput = new TableOutput();
         parent::__construct('multitron');
@@ -42,12 +43,12 @@ class Multitron extends Command
     {
         $this->setDescription('Runs a multitron task tree');
         $conf = new InputConfiguration();
-        $this->tree = new TaskTreeProcessor($this->rootNode);
         foreach ($this->tree->getNodes() as $node) {
             $node->configure($conf);
         }
         $this->tableOutput->configure($conf);
         $this->setDefinition($conf->toDefinition());
+
         $this->addArgument(
             'task',
             InputArgument::OPTIONAL,

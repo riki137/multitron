@@ -10,11 +10,12 @@ use Multitron\Comms\Data\Message\LogMessage;
 use Multitron\Comms\Data\Message\Message;
 use Multitron\Comms\Data\Message\TaskProgress;
 use Multitron\Comms\Server\ChannelClient;
+use Multitron\Comms\Server\ChannelRequest;
 use Multitron\Comms\Server\OKResponse;
-use Multitron\Comms\Server\Storage\CentralMultiReadRequest;
 use Multitron\Comms\Server\Storage\CentralReadKeyRequest;
 use Multitron\Comms\Server\Storage\CentralReadResponse;
 use Multitron\Comms\Server\Storage\CentralReadSubsetRequest;
+use Multitron\Comms\Server\Storage\CentralReadSubsetsRequest;
 use Multitron\Comms\Server\Storage\CentralWriteKeyRequest;
 use Multitron\Output\Table\CentralMergeKeyRequest;
 use Multitron\Process\TaskThread;
@@ -71,11 +72,7 @@ class TaskCommunicator
      */
     public function readSubsets(array $subsets): array
     {
-        $requests = new CentralMultiReadRequest();
-        foreach ($subsets as $key => $subkeys) {
-            $requests->with($key, new CentralReadSubsetRequest($key, $subkeys));
-        }
-        $response = $this->client->send($requests)->await();
+        $response = $this->client->send(new CentralReadSubsetsRequest($subsets))->await();
         assert($response instanceof CentralReadResponse);
         return $response->data;
     }
@@ -98,6 +95,11 @@ class TaskCommunicator
             return Future::complete(new OKResponse());
         }
         return $this->client->send(new CentralMergeKeyRequest($key, $data, $level));
+    }
+
+    public function sendRequest(ChannelRequest $request): Future
+    {
+        return $this->client->send($request);
     }
 
     public function sendMessage(Message $data): void

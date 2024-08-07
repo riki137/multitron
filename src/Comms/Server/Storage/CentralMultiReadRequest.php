@@ -11,7 +11,8 @@ class CentralMultiReadRequest extends CentralReadRequest
      */
     private array $requests;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->requests = [];
     }
 

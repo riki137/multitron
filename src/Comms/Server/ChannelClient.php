@@ -15,15 +15,13 @@ class ChannelClient
     /** @var DeferredFuture[] */
     private array $futures = [];
 
-    private Future $cycle;
-
     public function __construct(private readonly Channel $channel)
     {
     }
 
     public function start(): void
     {
-        $this->cycle = async(function () {
+        async(function () {
             try {
                 while (true) {
                     $response = $this->channel->receive();
@@ -40,7 +38,7 @@ class ChannelClient
                     throw $e;
                 }
             }
-        });
+        })->ignore();
     }
 
     public function send(ChannelRequest $request): Future
