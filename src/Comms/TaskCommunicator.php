@@ -11,6 +11,7 @@ use Multitron\Comms\Data\Message\Message;
 use Multitron\Comms\Data\Message\TaskProgress;
 use Multitron\Comms\Server\ChannelClient;
 use Multitron\Comms\Server\OKResponse;
+use Multitron\Comms\Server\Storage\CentralMultiReadRequest;
 use Multitron\Comms\Server\Storage\CentralReadKeyRequest;
 use Multitron\Comms\Server\Storage\CentralReadResponse;
 use Multitron\Comms\Server\Storage\CentralReadSubsetRequest;
@@ -60,6 +61,21 @@ class TaskCommunicator
     public function &readSubset(string $key, array $subkeys): ?array
     {
         $response = $this->client->send(new CentralReadSubsetRequest($key, $subkeys))->await();
+        assert($response instanceof CentralReadResponse);
+        return $response->data;
+    }
+
+    /**
+     * @param array<string, string[]> $subsets
+     * @return array<string, array<string, mixed>>
+     */
+    public function readSubsets(array $subsets): array
+    {
+        $requests = new CentralMultiReadRequest();
+        foreach ($subsets as $key => $subkeys) {
+            $requests->with($key, new CentralReadSubsetRequest($key, $subkeys));
+        }
+        $response = $this->client->send($requests)->await();
         assert($response instanceof CentralReadResponse);
         return $response->data;
     }
