@@ -11,6 +11,7 @@ use Multitron\Comms\Data\Message\SuccessMessage;
 use Multitron\Comms\TaskCommunicator;
 use Multitron\Container\Node\TaskTreeProcessor;
 use Multitron\Error\ErrorHandler;
+use Multitron\Error\WarningHandler;
 use Multitron\Impl\Task;
 use Nette\DI\Container;
 use Psr\Container\ContainerInterface;
@@ -42,6 +43,7 @@ class TaskThread implements AmpTask
             ini_set('memory_limit', $this->options[self::MEMORY_LIMIT]);
         }
 
+
         if ($this->taskId === self::LOAD_CONTAINER) {
             $container = require $this->bootstrapPath;
             if ($container instanceof Container) {
@@ -57,8 +59,11 @@ class TaskThread implements AmpTask
         try {
             $container = self::$container;
             $communicator = new TaskCommunicator($channel, $this->options);
+
             /** @var ErrorHandler $errorHandler */
             $errorHandler = $container->get(ErrorHandler::class);
+            $warningHandler = new WarningHandler($communicator);
+            set_error_handler($warningHandler->handle(...));
 
             $taskTree = $container->get(TaskTreeProcessor::class);
             if (!$taskTree instanceof TaskTreeProcessor) {
@@ -73,7 +78,15 @@ class TaskThread implements AmpTask
                 }
 
                 gc_collect_cycles();
-                $task->execute($communicator);
+                ob_start();
+                try {
+                    $task->execute($communicator);
+                } finally {
+                    $output = ob_get_clean();
+                    if (is_string($output) && trim($output) !== '') {
+                        $communicator->log($output);
+                    }
+                }
                 $communicator->sendProgress(true);
                 $communicator->sendMessage(new SuccessMessage());
                 $communicator->shutdown();
@@ -83,6 +96,7 @@ class TaskThread implements AmpTask
                     $communicator->error($msg);
                 } catch (Throwable) {
                 }
+                $communicator->shutdown();
                 return 1;
             }
         } catch (Throwable $e) {

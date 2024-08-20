@@ -3,6 +3,9 @@
 Multitron is a PHP-based task orchestration and execution library designed to efficiently run and manage complex task trees. 
 It's designed to handle parallel task execution, inter-process communication, and resource management.
 
+> ⚠️ This library is still in early development and may have breaking changes in the future.
+> However, it is already being used in production and actively developed.
+
 ## Features
 
 - Task orchestration and dependency management
