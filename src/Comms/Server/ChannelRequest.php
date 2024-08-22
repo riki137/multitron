@@ -15,8 +15,8 @@ abstract class ChannelRequest
     public function getRequestId(): string
     {
         if ($this->requestId === null) {
-            $pid = (self::$pid ??= getmypid());
-            $this->requestId = $pid . ':' . ++self::$idCounter;
+            self::$pid ??= (getmypid() ?: mt_rand());
+            $this->requestId = self::$pid . ':' . ++self::$idCounter;
         }
         return $this->requestId;
     }

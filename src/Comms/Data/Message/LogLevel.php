@@ -22,8 +22,7 @@ enum LogLevel: string
             self::INFO => 'green',
             self::NOTICE, self::WARNING => 'yellow',
             self::ERROR => 'red',
-            self::CRITICAL, self::ALERT, self::EMERGENCY => 'magenta',
-            default => 'blue',
+            default => 'magenta',
         };
     }
 

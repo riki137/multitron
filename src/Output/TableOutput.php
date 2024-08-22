@@ -182,7 +182,7 @@ final class TableOutput
             }
         }
 
-        foreach ($this->summaryLog as $log) {
+        foreach ($this->summaryLog ?? [] as $log) {
             $this->output->writeln(implode(PHP_EOL, $log));
         }
         $this->output->writeln(PHP_EOL . $this->table->getSummaryRow(count($this->finishedTasks)));

@@ -7,7 +7,7 @@ use Amp\Future;
 use Amp\Pipeline\Queue;
 use Multitron\Comms\Server\ChannelServer;
 use Multitron\Comms\Server\Semaphore\SemaphoreHandler;
-use Multitron\Comms\Server\Storage\CentralCache;
+use Multitron\Comms\Server\Storage\CentralCacheHandler;
 use Multitron\Container\Node\TaskLeafNode;
 use Multitron\Container\Node\TaskTreeProcessor;
 use Multitron\Error\ErrorHandler;
@@ -31,7 +31,7 @@ class TaskRunner
         private readonly array $options
     ) {
         $this->workerFactory = new WorkerFactory($bootstrapPath, min((int)($this->concurrentTasks / 2), 6), count($tree->getNodes()));
-        $this->server = new ChannelServer([new CentralCache(), new SemaphoreHandler()]);
+        $this->server = new ChannelServer([new CentralCacheHandler(), new SemaphoreHandler()]);
         $this->processes = new Queue();
     }
 

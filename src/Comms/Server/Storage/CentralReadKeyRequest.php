@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Multitron\Comms\Server\Storage;
 
-class CentralReadKeyRequest extends CentralReadRequest
+final class CentralReadKeyRequest extends CentralReadRequest
 {
     public function __construct(private readonly string $key)
     {

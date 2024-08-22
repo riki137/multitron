@@ -1,0 +1,32 @@
+name: Composer outdated
+
+on:
+  push:
+    branches:
+      - master
+  pull_request: null
+
+jobs:
+  composer:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: [ '8.1', '8.2', '8.3' ]
+
+    name: Composer outdated - PHP ${{ matrix.php }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+
+      - name: Composer update
+        run: composer update --no-progress --no-interaction
+
+      - name: Composer outdated
+        run: composer outdated -D --strict

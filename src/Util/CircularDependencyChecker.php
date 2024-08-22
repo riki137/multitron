@@ -14,7 +14,7 @@ class CircularDependencyChecker
      * @param array $dependencyGraph The dependency graph.
      * @throws RuntimeException if a circular dependency is detected.
      */
-    public function check(array $dependencyGraph)
+    public function check(array $dependencyGraph): void
     {
         $visited = [];
         $stack = [];
@@ -35,7 +35,7 @@ class CircularDependencyChecker
      * @param array $stack Array to keep track of the recursion stack.
      * @throws RuntimeException if a circular dependency is detected.
      */
-    private function dfs($node, $dependencyGraph, &$visited, &$stack)
+    private function dfs(string $node, array $dependencyGraph, array &$visited, array &$stack): void
     {
         $visited[$node] = true;
         $stack[$node] = true;
@@ -61,7 +61,7 @@ class CircularDependencyChecker
      * @param array $stack The recursion stack.
      * @throws RuntimeException
      */
-    private function throwCircularDependencyException($startNode, $endNode, $stack)
+    private function throwCircularDependencyException(string $startNode, string $endNode, array $stack): void
     {
         $cycle = [];
         $recording = false;

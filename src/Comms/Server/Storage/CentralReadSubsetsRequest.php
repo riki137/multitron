@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Multitron\Comms\Server\Storage;
 
-class CentralReadSubsetsRequest extends CentralReadRequest
+final class CentralReadSubsetsRequest extends CentralReadRequest
 {
     public function __construct(private array $subsets = [])
     {

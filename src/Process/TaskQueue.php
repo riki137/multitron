@@ -7,7 +7,7 @@ namespace Multitron\Process;
 use Amp\DeferredFuture;
 use Amp\Future;
 use Generator;
-use Multitron\Container\Node\TaskNode;
+use Multitron\Container\Node\TaskLeafNode;
 use Multitron\Container\Node\TaskTreeProcessor;
 use Multitron\Error\ErrorHandler;
 use Throwable;
@@ -17,10 +17,10 @@ use function Amp\Future\awaitFirst;
 
 class TaskQueue
 {
-    /** @var array<string, DeferredFuture> */
+    /** @var DeferredFuture[] */
     private array $deferredFutures = [];
 
-    /** @var array<string, Future> */
+    /** @var Future[] */
     private array $futures = [];
 
     /** @var string[] */
@@ -31,7 +31,7 @@ class TaskQueue
     }
 
     /**
-     * @return iterable<string, TaskNode>
+     * @return iterable<string, TaskLeafNode>
      */
     public function fetchAll(): iterable
     {

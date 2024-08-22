@@ -38,11 +38,13 @@ class TaskThread implements AmpTask
 
     public function run(Channel $channel, Cancellation $cancellation): int
     {
+        if (str_contains($this->taskId, 'ProgramsTask')) {
+            spx_profiler_start();
+        }
         self::$inThread = true;
         if (isset($this->options[self::MEMORY_LIMIT])) {
             ini_set('memory_limit', $this->options[self::MEMORY_LIMIT]);
         }
-
 
         if ($this->taskId === self::LOAD_CONTAINER) {
             $container = require $this->bootstrapPath;
@@ -81,6 +83,9 @@ class TaskThread implements AmpTask
                 ob_start();
                 try {
                     $task->execute($communicator);
+                    if (str_contains($this->taskId, 'ProgramsTask')) {
+                        echo spx_profiler_stop();
+                    }
                 } finally {
                     $output = ob_get_clean();
                     if (is_string($output) && trim($output) !== '') {

@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Multitron\Comms\Data\Message;
 
+use Multitron\Process\MemoryUsage;
+
 final class TaskProgress implements Message
 {
     public function __construct(
@@ -22,7 +24,7 @@ final class TaskProgress implements Message
 
     public function getMemoryUsage(): ?string
     {
-        return $this->memoryUsage === null ? null : self::formatMemoryUsage($this->memoryUsage);
+        return $this->memoryUsage === null ? null : MemoryUsage::format($this->memoryUsage);
     }
 
     public function update(TaskProgress $progress): void
@@ -33,18 +35,6 @@ final class TaskProgress implements Message
         $this->warning = $progress->warning;
         $this->skipped = $progress->skipped;
         $this->memoryUsage = $progress->memoryUsage;
-    }
-
-    public static function formatMemoryUsage(int $memoryUsage): string
-    {
-        $memoryUsage /= 1024 * 1024;
-        if ($memoryUsage >= 1000) {
-            return number_format($memoryUsage / 1024, 1, '.', '') . 'GB';
-        }
-        if ($memoryUsage >= 10) {
-            return number_format($memoryUsage, 0, '.', '') . 'MB';
-        }
-        return number_format($memoryUsage, 1, '.', '') . 'MB';
     }
 
     public function toFloat(): float
