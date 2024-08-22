@@ -7,7 +7,9 @@ use Amp\Cancellation;
 use Amp\Parallel\Worker\Task as AmpTask;
 use Amp\Sync\Channel;
 use Multitron\Bridge\Nette\NettePsrContainer;
+use Multitron\Comms\Data\Message\Message;
 use Multitron\Comms\Data\Message\SuccessMessage;
+use Multitron\Comms\Server\ChannelRequest;
 use Multitron\Comms\TaskCommunicator;
 use Multitron\Container\Node\TaskTreeProcessor;
 use Multitron\Error\ErrorHandler;
@@ -19,6 +21,9 @@ use RuntimeException;
 use Throwable;
 use Tracy\Debugger;
 
+/**
+ * @implements AmpTask<int, Message, ChannelRequest>
+ */
 class TaskThread implements AmpTask
 {
     public const MEMORY_LIMIT = 'memory-limit';
@@ -29,6 +34,9 @@ class TaskThread implements AmpTask
 
     public static bool $inThread = false;
 
+    /**
+     * @param array<string, mixed> $options
+     */
     public function __construct(
         private readonly string $taskId,
         private readonly array $options = [],
@@ -38,9 +46,6 @@ class TaskThread implements AmpTask
 
     public function run(Channel $channel, Cancellation $cancellation): int
     {
-        if (str_contains($this->taskId, 'ProgramsTask')) {
-            spx_profiler_start();
-        }
         self::$inThread = true;
         if (isset($this->options[self::MEMORY_LIMIT])) {
             ini_set('memory_limit', $this->options[self::MEMORY_LIMIT]);
@@ -83,9 +88,6 @@ class TaskThread implements AmpTask
                 ob_start();
                 try {
                     $task->execute($communicator);
-                    if (str_contains($this->taskId, 'ProgramsTask')) {
-                        echo spx_profiler_stop();
-                    }
                 } finally {
                     $output = ob_get_clean();
                     if (is_string($output) && trim($output) !== '') {

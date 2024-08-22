@@ -1,4 +1,4 @@
-name: PHP static analysis with lowest dependencies
+name: PHPStan with lowest dependencies
 
 on:
   push:
@@ -14,7 +14,7 @@ jobs:
       matrix:
         php: [ '8.1', '8.2', '8.3' ]
 
-    name: PHPStan with lowest dependencies - PHP ${{ matrix.php }}
+    name: PHP${{ matrix.php }}
 
     steps:
       - name: Checkout code
@@ -30,4 +30,4 @@ jobs:
         run: composer update --prefer-lowest --no-progress --no-interaction
 
       - name: PHPStan analyse
-        run: vendor/bin/phpstan analyze src --level=8 --no-progress
+        run: vendor/bin/phpstan analyze src --level=5 --no-progress

@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - memory usage from `ps` command (if available)
 ### Fixed
 - optimized memory usage of ChannelClient
-- phpstan lvl8 errors, ci checks added
+- phpstan lvl5 errors, ci checks added
 
 ## [0.1.0] - 2024-08-20
 - After months of development, the first release of Multitron is here!

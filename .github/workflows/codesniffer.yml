@@ -1,4 +1,4 @@
-name: PHP code sniffer
+name: Code Formatting
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
 jobs:
   codesniffer:
     runs-on: ubuntu-latest
-    name: PHP code sniffer
+    name: PHPCS
 
     steps:
       - name: Checkout code
