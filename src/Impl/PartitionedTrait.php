@@ -3,9 +3,6 @@ declare(strict_types=1);
 
 namespace Multitron\Impl;
 
-/**
- * @implements PartitionedTask
- */
 trait PartitionedTrait
 {
     protected int $partitionIndex = 0;

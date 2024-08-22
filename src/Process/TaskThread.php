@@ -7,7 +7,9 @@ use Amp\Cancellation;
 use Amp\Parallel\Worker\Task as AmpTask;
 use Amp\Sync\Channel;
 use Multitron\Bridge\Nette\NettePsrContainer;
+use Multitron\Comms\Data\Message\Message;
 use Multitron\Comms\Data\Message\SuccessMessage;
+use Multitron\Comms\Server\ChannelRequest;
 use Multitron\Comms\TaskCommunicator;
 use Multitron\Container\Node\TaskTreeProcessor;
 use Multitron\Error\ErrorHandler;
@@ -19,6 +21,9 @@ use RuntimeException;
 use Throwable;
 use Tracy\Debugger;
 
+/**
+ * @implements AmpTask<int, Message, ChannelRequest>
+ */
 class TaskThread implements AmpTask
 {
     public const MEMORY_LIMIT = 'memory-limit';
@@ -29,6 +34,9 @@ class TaskThread implements AmpTask
 
     public static bool $inThread = false;
 
+    /**
+     * @param array<string, mixed> $options
+     */
     public function __construct(
         private readonly string $taskId,
         private readonly array $options = [],
@@ -42,7 +50,6 @@ class TaskThread implements AmpTask
         if (isset($this->options[self::MEMORY_LIMIT])) {
             ini_set('memory_limit', $this->options[self::MEMORY_LIMIT]);
         }
-
 
         if ($this->taskId === self::LOAD_CONTAINER) {
             $container = require $this->bootstrapPath;

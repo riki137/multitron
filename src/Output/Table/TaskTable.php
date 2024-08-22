@@ -6,6 +6,7 @@ namespace Multitron\Output\Table;
 
 use Multitron\Comms\Data\Message\LogLevel;
 use Multitron\Comms\Data\Message\TaskProgress;
+use Multitron\Process\MemoryUsage;
 use Multitron\Process\SkippedTask;
 use Multitron\Process\TaskRunner;
 
@@ -23,8 +24,11 @@ final class TaskTable
 
     private int $taskWidth;
 
+    private MemoryUsage $memoryUsage;
+
     public function __construct(TaskRunner $runner)
     {
+        $this->memoryUsage = new MemoryUsage();
         $this->summary = new TaskProgress(0);
         $this->taskWidth = 16;
         foreach ($runner->getNodes() as $node) {
@@ -82,15 +86,15 @@ final class TaskTable
             $color = 'green';
         }
 
-        $mainUsage = memory_get_usage(true);
+        $mainUsage = $this->memoryUsage->getMemoryUsage();
         $this->memoryMax = max($this->memoryMax, $memorySum + $mainUsage);
 
         return implode(' ', [
             $this->getRowLabel('RAM'),
-            "<fg=$color>" . TaskProgress::formatMemoryUsage($used) . '</><fg=gray>/</>' . TaskProgress::formatMemoryUsage($total),
-            '<fg=gray>MAIN</><fg=blue;options=bold>' . TaskProgress::formatMemoryUsage($mainUsage) . '</>',
-            '<fg=gray>SUM</><fg=magenta;options=bold>' . TaskProgress::formatMemoryUsage($memorySum + $mainUsage) . '</>',
-            '<fg=gray>PEAK</><fg=red;options=bold>' . TaskProgress::formatMemoryUsage($this->memoryMax) . '</></>',
+            "<fg=$color>" . MemoryUsage::format($used) . '</><fg=gray>/</>' . MemoryUsage::format($total),
+            '<fg=gray>MAIN</><fg=blue;options=bold>' . MemoryUsage::format($mainUsage) . '</>',
+            '<fg=gray>SUM</><fg=magenta;options=bold>' . MemoryUsage::format($memorySum + $mainUsage) . '</>',
+            '<fg=gray>PEAK</><fg=red;options=bold>' . MemoryUsage::format($this->memoryMax) . '</></>',
         ]);
     }
 

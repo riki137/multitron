@@ -15,6 +15,9 @@ class NettePsrContainer implements ContainerInterface
 
     public function get($id): mixed
     {
+        if (!class_exists($id)) {
+            return $this->container->getByName($id);
+        }
         return $this->container->getByType($id);
     }
 

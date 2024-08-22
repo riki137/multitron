@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Multitron\Comms\Server\Storage;
 
-class CentralMultiReadRequest extends CentralReadRequest
+final class CentralMultiReadRequest extends CentralReadRequest
 {
     /**
      * @var CentralReadRequest[]

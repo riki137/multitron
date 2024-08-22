@@ -12,7 +12,7 @@ class TaskGroupNode extends TaskNode
 {
     /**
      * @param string $id
-     * @param Closure(): iterable<TaskNode> $factory
+     * @param Closure(): ?iterable<TaskNode> $factory
      */
     public function __construct(string $id, private readonly Closure $factory)
     {

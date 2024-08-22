@@ -6,6 +6,7 @@ namespace Multitron\Error;
 
 use Throwable;
 use Tracy\Debugger;
+use Tracy\ILogger;
 
 class TracyErrorHandler implements ErrorHandler
 {
@@ -17,7 +18,7 @@ class TracyErrorHandler implements ErrorHandler
     public function taskError(string $taskId, Throwable $err): string
     {
         $filename = mb_ereg_replace('([^\w\s\d\-_~,;\[\]\(\).])', '_', 'task~' . $taskId);
-        $file = Debugger::log($err, $filename);
+        $file = Debugger::log($err, is_string($filename) ? $filename : ILogger::INFO);
         if (!is_string($file)) {
             $file = 'unknown';
         } else {

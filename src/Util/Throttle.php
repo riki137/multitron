@@ -13,6 +13,7 @@ use function Amp\delay;
 
 class Throttle
 {
+    /** @var ?Future<void> */
     private ?Future $future = null;
 
     private bool $complete = true;

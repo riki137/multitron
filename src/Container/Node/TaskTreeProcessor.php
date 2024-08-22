@@ -38,9 +38,6 @@ class TaskTreeProcessor
 
             foreach ($node->getGroups() as $group) {
                 $this->groupToLeafs[$group][] = $node->getId();
-                if (is_string($dfsGraph[$group] ?? null)) {
-                    throw new RuntimeException("Group $group is already a task");
-                }
                 $dfsGraph[$group][] = $node->getId();
             }
 
@@ -59,22 +56,6 @@ class TaskTreeProcessor
         $dfs->check($dfsGraph);
 
         return $this;
-    }
-
-    private function extractCycle($path, $startNode): array
-    {
-        $cycle = [];
-        $found = false;
-        foreach (array_keys($path) as $nodeId) {
-            if ($nodeId == $startNode) {
-                $found = true;
-            }
-            if ($found) {
-                $cycle[] = $nodeId;
-            }
-        }
-        $cycle[] = $startNode; // To complete the cycle
-        return $cycle;
     }
 
     private function unpackDependencies(TaskNode $node): array

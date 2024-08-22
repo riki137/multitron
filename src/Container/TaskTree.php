@@ -35,7 +35,7 @@ abstract class TaskTree extends TaskGroupNode
 
     protected function name(?string $id, string $class): string
     {
-        return $id ?? substr(strrchr($class, '\\'), 1);
+        return $id ?? substr(strrchr($class, '\\') ?: $class, 1);
     }
 
     abstract public function build(): Generator;

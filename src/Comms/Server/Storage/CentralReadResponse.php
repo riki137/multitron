@@ -6,9 +6,15 @@ namespace Multitron\Comms\Server\Storage;
 
 use Multitron\Comms\Server\ChannelResponse;
 
+/**
+ * @template T
+ */
 class CentralReadResponse extends ChannelResponse
 {
-    public function __construct(public ?array &$data)
+    /**
+     * @param T $data
+     */
+    public function __construct(public mixed &$data)
     {
     }
 }
