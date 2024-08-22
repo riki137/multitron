@@ -56,6 +56,5 @@ class ChannelClient
     public function shutdown(): void
     {
         $this->cancel->cancel();
-        $this->futures = [];
     }
 }
