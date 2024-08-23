@@ -12,11 +12,12 @@ use Multitron\Comms\Data\Message\SuccessMessage;
 use Multitron\Comms\Server\ChannelRequest;
 use Multitron\Comms\TaskCommunicator;
 use Multitron\Container\Node\TaskTreeProcessor;
+use Multitron\Error\PlainErrorHandler;
 use Multitron\Error\ErrorHandler;
 use Multitron\Error\WarningHandler;
-use Multitron\Impl\Task;
 use Nette\DI\Container;
 use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use RuntimeException;
 use Throwable;
 use Tracy\Debugger;
@@ -68,23 +69,24 @@ class TaskThread implements AmpTask
             $communicator = new TaskCommunicator($channel, $this->options);
 
             /** @var ErrorHandler $errorHandler */
-            $errorHandler = $container->get(ErrorHandler::class);
+            try {
+                $errorHandler = $container->get(ErrorHandler::class);
+            } catch (NotFoundExceptionInterface) {
+                $errorHandler = new PlainErrorHandler();
+            }
             $warningHandler = new WarningHandler($communicator);
             set_error_handler($warningHandler->handle(...));
 
-            $taskTree = $container->get(TaskTreeProcessor::class);
-            if (!$taskTree instanceof TaskTreeProcessor) {
+            try {
+                $taskTree = $container->get(TaskTreeProcessor::class);
+            } catch (NotFoundExceptionInterface) {
                 $communicator->error('TaskTree is missing');
-                throw new RuntimeException('TaskTree is not an instance of ' . TaskTreeProcessor::class);
+                throw new RuntimeException('Service missing in container: ' . TaskTreeProcessor::class);
             }
 
             try {
                 $task = $taskTree->get($this->taskId);
-                if (!$task instanceof Task) {
-                    throw new RuntimeException('Task is not an instance of ' . Task::class);
-                }
 
-                gc_collect_cycles();
                 ob_start();
                 try {
                     $task->execute($communicator);
@@ -102,6 +104,7 @@ class TaskThread implements AmpTask
                 try {
                     $communicator->error($msg);
                 } catch (Throwable) {
+                    echo $msg . PHP_EOL;
                 }
                 $communicator->shutdown();
                 return 1;
