@@ -68,8 +68,8 @@ class TaskThread implements AmpTask
             $container = self::$container;
             $communicator = new TaskCommunicator($channel, $this->options);
 
-            /** @var ErrorHandler $errorHandler */
             try {
+                /** @var ErrorHandler $errorHandler */
                 $errorHandler = $container->get(ErrorHandler::class);
             } catch (NotFoundExceptionInterface) {
                 $errorHandler = new PlainErrorHandler();
