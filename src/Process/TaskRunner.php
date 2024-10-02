@@ -23,13 +23,15 @@ class TaskRunner
 
     private Queue $processes;
 
+    private int $concurrentTasks;
+
     public function __construct(
         private readonly TaskTreeProcessor $tree,
-        private readonly int $concurrentTasks,
         string $bootstrapPath,
         private readonly ErrorHandler $errorHandler,
         private readonly array $options
     ) {
+        $this->concurrentTasks = (int)($options['concurrency'] ?? (int)shell_exec('nproc'));
         $this->workerFactory = new WorkerFactory($bootstrapPath, min((int)($this->concurrentTasks / 2), 6), count($tree->getNodes()));
         $this->server = new ChannelServer([new CentralCacheHandler(), new SemaphoreHandler()]);
         $this->processes = new Queue();

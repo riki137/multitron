@@ -21,8 +21,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Multitron extends Command
 {
-    private int $concurrentTasks;
-
     private TaskTreeProcessor $tree;
 
     private TableOutput $tableOutput;
@@ -30,11 +28,10 @@ class Multitron extends Command
     public function __construct(
         private readonly TaskGroupNode $rootNode,
         private readonly string $bootstrapPath,
-        ?int $concurrentTasks,
+        private readonly ?int $concurrentTasks,
         private readonly ErrorHandler $errorHandler
     ) {
         $this->tree = new TaskTreeProcessor($this->rootNode);
-        $this->concurrentTasks = $concurrentTasks ?? (int)shell_exec('nproc');
         $this->tableOutput = new TableOutput();
         parent::__construct('multitron');
     }
@@ -57,6 +54,7 @@ class Multitron extends Command
         );
         $this->addOption('direct', 'd', InputOption::VALUE_NEGATABLE, 'Run all tasks in the main process', false);
         $this->addOption(TaskThread::MEMORY_LIMIT, null, InputOption::VALUE_REQUIRED, 'Set memory limit for each process');
+        $this->addOption('concurrency', null, InputOption::VALUE_REQUIRED, 'Set limit for concurrent processes. Defaults to amount of CPU cores (nproc)', $this->concurrentTasks);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -75,7 +73,7 @@ class Multitron extends Command
         if ($node !== $this->rootNode) {
             $this->tree = new TaskTreeProcessor($node);
         }
-        $runner = new TaskRunner($this->tree, $this->concurrentTasks, $this->bootstrapPath, $this->errorHandler, $input->getOptions());
+        $runner = new TaskRunner($this->tree, $this->bootstrapPath, $this->errorHandler, $input->getOptions());
         assert($output instanceof ConsoleOutputInterface);
         $tableFuture = $this->tableOutput->run($runner, $input, $output);
         $exitCode = $runner->runAll();

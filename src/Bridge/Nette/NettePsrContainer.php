@@ -6,7 +6,6 @@ namespace Multitron\Bridge\Nette;
 
 use Nette\DI\Container;
 use Nette\DI\MissingServiceException;
-use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use RuntimeException;

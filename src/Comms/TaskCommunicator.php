@@ -15,7 +15,9 @@ use Multitron\Comms\Server\OKResponse;
 use Multitron\Comms\Server\Storage\CentralReadKeyRequest;
 use Multitron\Comms\Server\Storage\CentralReadResponse;
 use Multitron\Comms\Server\Storage\CentralReadSubsetRequest;
+use Multitron\Comms\Server\Storage\CentralReadSubsetSortedRequest;
 use Multitron\Comms\Server\Storage\CentralReadSubsetsRequest;
+use Multitron\Comms\Server\Storage\CentralReadSubsetsSortedRequest;
 use Multitron\Comms\Server\Storage\CentralWriteKeyRequest;
 use Multitron\Output\Table\CentralMergeKeyRequest;
 use Multitron\Process\MemoryUsage;
@@ -73,6 +75,13 @@ class TaskCommunicator
         return $response->data;
     }
 
+    public function &readSubsetSorted(string $key, array $subkeys): array
+    {
+        /** @var CentralReadResponse<array> $response */
+        $response = $this->client->send(new CentralReadSubsetSortedRequest($key, $subkeys))->await();
+        return $response->data;
+    }
+
     /**
      * @param array<string, string[]> $subsets
      * @return array<string, array<string, mixed>>
@@ -81,6 +90,13 @@ class TaskCommunicator
     {
         /** @var CentralReadResponse<array<string, array<string, mixed>>> $response */
         $response = $this->client->send(new CentralReadSubsetsRequest($subsets))->await();
+        return $response->data;
+    }
+
+    public function readSubsetsSorted(array $subsets): array
+    {
+        /** @var CentralReadResponse<array<string, array<string, mixed>>> $response */
+        $response = $this->client->send(new CentralReadSubsetsSortedRequest($subsets))->await();
         return $response->data;
     }
 
