@@ -7,9 +7,11 @@ namespace Multitron\Process;
 use Amp\DeferredFuture;
 use Amp\Future;
 use Generator;
-use Multitron\Container\Node\TaskLeafNode;
+use Multitron\Container\Node\TaskNode;
+use Multitron\Container\Node\TaskNodeLeaf;
 use Multitron\Container\Node\TaskTreeProcessor;
 use Multitron\Error\ErrorHandler;
+use RuntimeException;
 use Throwable;
 use function Amp\async;
 use function Amp\delay;
@@ -26,22 +28,28 @@ class TaskQueue
     /** @var string[] */
     private array $finished = [];
 
-    public function __construct(private readonly int $concurrencyLimit, private readonly TaskTreeProcessor $treeProcessor, private readonly ErrorHandler $errorHandler)
-    {
+    public function __construct(
+        private readonly int $concurrencyLimit,
+        private readonly TaskTreeProcessor $treeProcessor,
+        private readonly ErrorHandler $errorHandler
+    ) {
     }
 
     /**
-     * @return iterable<string, TaskLeafNode>
+     * @return iterable<string, TaskNodeLeaf>
      */
     public function fetchAll(): iterable
     {
-        $queue = $this->treeProcessor->getNodes();
+        $queue = $this->treeProcessor->getLeaves();
         do {
             $chunk = [];
-            $this->treeProcessor->ksortByPriority($queue, $this->finished);
+            $this->ksortByPriority($queue);
             foreach ($this->throttleConcurrent($queue) as $id => $node) {
-                $deps = $this->treeProcessor->getDependencies($node);
+                $deps = $this->treeProcessor->getDependentIds($node);
                 $deps = array_diff($deps, $this->finished);
+                if (count($deps) !== count(array_unique($deps))) {
+                    throw new RuntimeException($id . ' Deps are not unique: ' . implode(', ', $deps));
+                }
                 if (empty($deps)) {
                     unset($queue[$id]);
                     $this->deferredFutures[$id] = new DeferredFuture();
@@ -54,6 +62,7 @@ class TaskQueue
                 $this->futures = array_filter($this->futures, fn(Future $future) => !$future->isComplete());
             } catch (Throwable $e) {
                 $this->errorHandler->internalError($e);
+                throw $e;
             }
             yield from $chunk;
         } while ($queue !== []);
@@ -61,14 +70,14 @@ class TaskQueue
 
     private function throttleConcurrent(iterable $items): Generator
     {
+        if ($this->concurrencyLimit === 0) {
+            yield from $items;
+            return;
+        }
         foreach ($items as $id => $item) {
-            if ($this->concurrencyLimit === 0) {
-                yield $id => $item;
-                continue;
-            }
             $futures = array_filter($this->futures, fn(Future $future) => !$future->isComplete());
-            $count = count($futures);
-            if ($count >= $this->concurrencyLimit) {
+            $currentlyRunning = count($futures);
+            if ($currentlyRunning >= $this->concurrencyLimit) {
                 return;
             }
             yield $id => $item;
@@ -83,5 +92,22 @@ class TaskQueue
         $this->finished[] = $id;
         $this->deferredFutures[$id]->complete($id);
         unset($this->deferredFutures[$id], $this->futures[$id]);
+    }
+
+    /**
+     * This function sorts the task nodes by priority, with the highest priority first.
+     *
+     * @param array<string, TaskNodeLeaf> $nodes array of task nodes, keyed by task id
+     * @return void
+     */
+    public function ksortByPriority(array &$nodes): void
+    {
+        uksort($nodes, function (string $a, string $b) {
+            $aDeps = $this->treeProcessor->getDependentIds($a);
+            $bDeps = $this->treeProcessor->getDependentIds($b);
+            $aUnfinished = array_diff($aDeps, $this->finished);
+            $bUnfinished = array_diff($bDeps, $this->finished);
+            return count($aUnfinished) <=> count($bUnfinished);
+        });
     }
 }

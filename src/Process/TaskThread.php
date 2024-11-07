@@ -6,18 +6,21 @@ namespace Multitron\Process;
 use Amp\Cancellation;
 use Amp\Parallel\Worker\Task as AmpTask;
 use Amp\Sync\Channel;
+use ErrorException;
 use Multitron\Bridge\Nette\NettePsrContainer;
 use Multitron\Comms\Data\Message\Message;
 use Multitron\Comms\Data\Message\SuccessMessage;
 use Multitron\Comms\Server\ChannelRequest;
 use Multitron\Comms\TaskCommunicator;
 use Multitron\Container\Node\TaskTreeProcessor;
+use Multitron\Container\TaskRootTree;
 use Multitron\Error\ErrorHandler;
 use Multitron\Error\PlainErrorHandler;
 use Multitron\Error\WarningHandler;
 use Nette\DI\Container;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
+use Revolt\EventLoop;
 use RuntimeException;
 use Throwable;
 use Tracy\Debugger;
@@ -43,6 +46,9 @@ class TaskThread implements AmpTask
         private readonly array $options = [],
         private readonly ?string $bootstrapPath = null
     ) {
+        EventLoop::setErrorHandler(function (Throwable $t) {
+            Debugger::log($t, 'eventloop');
+        });
     }
 
     public function run(Channel $channel, Cancellation $cancellation): int
@@ -78,14 +84,15 @@ class TaskThread implements AmpTask
             set_error_handler($warningHandler->handle(...));
 
             try {
-                $taskTree = $container->get(TaskTreeProcessor::class);
+                $rootTree = $container->get(TaskRootTree::class);
             } catch (NotFoundExceptionInterface) {
-                $communicator->error('TaskTree is missing');
-                throw new RuntimeException('Service missing in container: ' . TaskTreeProcessor::class);
+                $communicator->error('TaskRootTree is missing');
+                throw new RuntimeException('Service missing in container: ' . TaskRootTree::class);
             }
 
             try {
-                $task = $taskTree->get($this->taskId);
+                $treeProcessor = new TaskTreeProcessor($rootTree);
+                $task = $treeProcessor->get($this->taskId);
 
                 ob_start();
                 try {

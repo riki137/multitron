@@ -21,7 +21,7 @@ final class InputConfiguration
      */
     public function addOption(string $name, string $shortcut = null, int $mode = null, string $description = '', mixed $default = null): self
     {
-        $this->options[] = new InputOption($name, $shortcut, $mode, $description, $default);
+        $this->options[$name] = new InputOption($name, $shortcut, $mode, $description, $default);
         return $this;
     }
 

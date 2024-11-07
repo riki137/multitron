@@ -9,7 +9,7 @@ use Multitron\Comms\Data\Message\SuccessMessage;
 use Multitron\Comms\Local\LocalChannelPair;
 use Multitron\Comms\Server\ChannelServer;
 use Multitron\Comms\TaskCommunicator;
-use Multitron\Container\Node\TaskLeafNode;
+use Multitron\Container\Node\TaskNodeLeaf;
 use Multitron\Error\ErrorHandler;
 use Multitron\Impl\Task;
 use Throwable;
@@ -27,7 +27,7 @@ class LocalTask implements RunningTask
 
     private Task $task;
 
-    public function __construct(TaskLeafNode $taskNode, ChannelServer $server, private readonly ErrorHandler $errorHandler)
+    public function __construct(TaskNodeLeaf $taskNode, ChannelServer $server, private readonly ErrorHandler $errorHandler)
     {
         $this->channels = new LocalChannelPair();
         $this->future = new DeferredFuture();

@@ -11,17 +11,13 @@ abstract class SimpleTask implements Task
 {
     public function execute(TaskCommunicator $comm): void
     {
-        try {
-            $comm->setTotal(1);
-            $success = $this->run($comm);
-            if ($success) {
-                $comm->addDone();
-                $comm->sendProgress(true);
-            } else {
-                $comm->error('Task failed');
-            }
-        } catch (Throwable $e) {
-            $comm->error($e->getMessage());
+        $comm->setTotal(1);
+        $success = $this->run($comm);
+        if ($success) {
+            $comm->addDone();
+            $comm->sendProgress(true);
+        } else {
+            $comm->error('Task failed');
         }
     }
 

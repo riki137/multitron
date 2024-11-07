@@ -30,22 +30,17 @@ composer require riki137/multitron
 Define your custom tasks by implementing the `Task` interface or extending the `SimpleTask` abstract class. Inject these tasks into a task tree using a dependency injection container.
 
 ```php
-use Multitron\Container\TaskTree;
+use Multitron\Container\TaskRootTree;
 use Psr\Container\ContainerInterface;
 
-class MyTaskTree extends TaskTree
+class MyTaskTree extends TaskRootTree
 {
-    public function __construct(ContainerInterface $container)
+    public function getNodes(): iterable
     {
-        parent::__construct($container);
-    }
-
-    public function build(): Generator
-    {
-        yield $cacheClear = $this->group('cache-clear', function() {
-            yield $this->task(ClearCacheTask::class);
-            yield $this->task(ClearLogsTask::class);
-        });
+        yield $cacheClear = $this->group('cache-clear', [
+            $this->task(ClearCacheTask::class),
+            $this->task(ClearLogsTask::class),
+        ]);
         yield $this->task(OtherCacheClearTask::class)->belongsTo($cacheClear);
         
         yield $this->task(MyFirstTask::class);
@@ -59,22 +54,24 @@ class MyTaskTree extends TaskTree
 
 ### Running the Task Tree
 
-To run the task tree, instantiate the `Multitron` command class with the appropriate arguments:
+To run the task tree, ...
 
 ```php
 use Multitron\Multitron;
+use Multitron\Console\MultitronConfig;
 use Multitron\Error\TracyErrorHandler;
 use Symfony\Component\Console\Application;
 
+/** @var \Multitron\Container\TaskRootTree $taskTree */
 $taskTree = new MyTaskTree($container);
-$bootstrapPath = '/path/to/bootstrap.php'; // Path to the bootstrap file that returns an instance of a PSR container or Nette Container
-$concurrentTasks = 4; // Number of concurrent tasks
-$errorHandler = new TracyErrorHandler(); // see below for PSR logger
-
-$multitron = new Multitron($taskTree, $bootstrapPath, $concurrentTasks, $errorHandler);
+$config = new MultitronConfig(
+    bootstrapPath: '/path/to/bootstrap.php', // Path to the bootstrap file that returns an instance of a PSR container or Nette Container
+    concurrentTasks: 4, // Number of concurrent tasks
+    errorHandler: new TracyErrorHandler(), // see below for PSR logger
+);
 
 $application = new Application();
-$application->add($multitron);
+$application->add($taskTree->buildCommand());
 $application->run();
 ```
 
@@ -98,8 +95,7 @@ $errorHandler = new PsrLogErrorHandler($logger);
 #### Tracy
 
 ```php
-use Multitron\Error\TracyErrorHandler;
-$errorHandler = new TracyErrorHandler();
+$errorHandler = new Multitron\Error\TracyErrorHandler();
 ```
 
 ### Progress Reporting and Logging
@@ -120,16 +116,17 @@ $tableOutput->configure($inputConfiguration);
 Partition tasks to run chunks of tasks in parallel, each of which operates on a subset of data.
 
 ```php
-use Multitron\Container\Node\PartitionedTaskGroupNode;
+use Multitron\Container\Node\PartitionedTaskNodeGroup;
 
-$partitionedNode = new PartitionedTaskGroupNode("MyPartitionedTask", function() use ($container) {
+$partitionedNode = new PartitionedTaskNodeGroup("MyPartitionedTask", function() use ($container) {
     return $container->get(MyPartitionedTask::class);
 }, 4); // Partition into 4 chunks
 ```
 
 ### Central Cache with TaskCommunicator
 
-The Central Cache in Multitron offers a global shared memory space for tasks to read and write data efficiently across different task instances. This functionality is facilitated through the `TaskCommunicator`, which serves as an intermediary for these operations within the `execute` method of a task.
+The Central Cache in Multitron offers a global shared memory space for tasks to read and write data efficiently across different task instances. 
+This functionality is facilitated through the `TaskCommunicator`, which serves as an intermediary for these operations within the `execute` method of a task.
 
 #### Operations Provided by TaskCommunicator
 
@@ -138,8 +135,6 @@ Within the context of a task's execution, the `TaskCommunicator` provides four k
 1. **`$comm->read(string $key): ?array`**
 
    This method allows a task to read data from the Central Cache associated with the specified key. If the key exists, it retrieves the corresponding data and returns it as an array. If the key does not exist, it returns `null`.
-
-   **Example Usage:**
 
    ```php
    $data = $comm->read('task_result');
@@ -152,9 +147,10 @@ Within the context of a task's execution, the `TaskCommunicator` provides four k
 
 2. **`$comm->readSubset(string $key, array $subkeys): ?array`**
 
-   This method reads a subset of the data stored under a specified key. It takes a key and an array of subkeys. It retrieves data for each of the provided subkeys if they exist, returning an associative array containing the subkeys and their corresponding values. If any subkey is not found, it will simply omit them from the result.
-
-   **Example Usage:**
+   This method reads a subset of the data stored under a specified key. 
+   It takes a key and an array of subkeys. 
+   It retrieves data for each of the provided subkeys if they exist, returning an associative array containing the subkeys and their corresponding values. 
+   If any subkey is not found, it will simply omit them from the result.
 
    ```php
    $subData = $comm->readSubset('user_emails', [123,126]); // Retrieve emails for user IDs 123 and 126
@@ -166,8 +162,6 @@ Within the context of a task's execution, the `TaskCommunicator` provides four k
 
    This method allows tasks to write or update data in the Central Cache associated with a specified key. It takes the key and a reference to the data array to be stored. The method asynchronously writes the data and returns a `Future`, allowing the task to continue execution without blocking.
 
-   **Example Usage:**
-
    ```php
    $dataToStore = [123 => 'richard@popelis.sk', 124 => 'fero@example.org'];
    $comm->write('user_emails', $dataToStore)->await();
@@ -177,25 +171,17 @@ Within the context of a task's execution, the `TaskCommunicator` provides four k
 
    The `merge` method is used to merge new data into the existing data structure under a specified key in the Central Cache. It takes a key, the data to merge, and an optional merge level indicating how deep the array structure should be merged. This is particularly useful for hierarchical or nested data structures.
 
-   **Example Usage:**
-
    ```php
    $newResults = ['subtask1' => ['status' => 'done'], 'subtask2' => ['status' => 'pending']];
    $comm->merge('project_results', $newResults, 1)->await();
    // The project_results key will have its data updated without overwriting existing entries
    ```
 
-### Summary of Use
-
-The `TaskCommunicator` thus serves as a powerful tool for managing shared state through the Central Cache. By leveraging the above methods, tasks can effectively record and retrieve data needed for their execution, enhancing coordination and state management across a potentially complex and parallelized workflow.
-
-Each of these methods is designed to facilitate easy and efficient data-sharing during the task execution phase, allowing developers to build scalable and responsive systems that make full use of available resources while maintaining the integrity of shared data.
-
 ## Contributing
 
 Contributions, issues, and feature requests are welcome!
 
-Feel free to check [issues page](https://github.com/username/multitron/issues) if you want to contribute.
+Feel free to check [issues page](https://github.com/riki137/multitron/issues) if you want to contribute.
 
 ## License
 
