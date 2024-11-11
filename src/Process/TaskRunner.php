@@ -74,7 +74,7 @@ class TaskRunner
                     }
                 });
             }
-            await($all);
+            awaitAll($all);
             $this->processes->complete();
             return $exitCode;
         });

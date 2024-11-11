@@ -155,22 +155,11 @@ class Multitron extends Command
         return await([$tableFuture, $exitCode])[1];
     }
 
-    /**
-     * Validates the input parameters.
-     *
-     * @param InputInterface $input Command input interface
-     * @throws InvalidArgumentException If validation fails
-     */
     private function validateInput(InputInterface $input): void
     {
         $filterPattern = $input->getArgument('filter');
         if (!is_string($filterPattern)) {
             throw new InvalidArgumentException('Filter pattern must be a string');
-        }
-
-        // Validate filter pattern format
-        if (!preg_match('/^[a-zA-Z0-9\-_%,.* ]+$/', $filterPattern)) {
-            throw new InvalidArgumentException('Filter pattern contains invalid characters');
         }
     }
 }
