@@ -150,9 +150,9 @@ class Multitron extends Command
         }
 
         if (($memoryLimit = $input->getOption(TaskThread::MEMORY_LIMIT)) !== null) {
-            if (!preg_match('/^\d+[KMG]?$/i', $memoryLimit)) {
+            if (!preg_match('/^(-1|\d+[KMG]?)$/i', $memoryLimit)) {
                 throw new InvalidArgumentException(
-                    'Invalid memory limit format. Use format like "128M", "1G", etc.'
+                    'Invalid memory limit format. Use format like "128M", "1G", or "-1" for unlimited'
                 );
             }
         }
