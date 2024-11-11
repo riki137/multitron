@@ -110,28 +110,15 @@ class Multitron extends Command
      * @param InputInterface $input Command input interface
      * @param OutputInterface $output Command output interface
      *
-     * @throws InvalidArgumentException If input validation fails
      * @return int Exit code (0 for success, non-zero for failure)
+     * @throws InvalidArgumentException If input validation fails
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->validateInput($input);
 
-        if ($input->getOption(TaskThread::MEMORY_LIMIT) !== null) {
-            $memoryLimit = $input->getOption(TaskThread::MEMORY_LIMIT);
-            if (!preg_match('/^\d+[KMG]?$/i', $memoryLimit)) {
-                throw new InvalidArgumentException(
-                    'Invalid memory limit format. Use format like "128M", "1G", etc.'
-                );
-            }
+        if (($memoryLimit = $input->getOption(TaskThread::MEMORY_LIMIT)) !== null) {
             ini_set('memory_limit', $memoryLimit);
-        }
-
-        $concurrency = (int)$input->getOption('concurrency');
-        if ($concurrency < self::MIN_CONCURRENCY || $concurrency > self::MAX_CONCURRENCY) {
-            throw new InvalidArgumentException(
-                sprintf('Concurrency must be between %d and %d', self::MIN_CONCURRENCY, self::MAX_CONCURRENCY)
-            );
         }
 
         if (!$output instanceof ConsoleOutputInterface) {
@@ -160,6 +147,21 @@ class Multitron extends Command
         $filterPattern = $input->getArgument('filter');
         if (!is_string($filterPattern)) {
             throw new InvalidArgumentException('Filter pattern must be a string');
+        }
+
+        if (($memoryLimit = $input->getOption(TaskThread::MEMORY_LIMIT)) !== null) {
+            if (!preg_match('/^\d+[KMG]?$/i', $memoryLimit)) {
+                throw new InvalidArgumentException(
+                    'Invalid memory limit format. Use format like "128M", "1G", etc.'
+                );
+            }
+        }
+
+        $concurrency = (int)$input->getOption('concurrency');
+        if ($concurrency < self::MIN_CONCURRENCY || $concurrency > self::MAX_CONCURRENCY) {
+            throw new InvalidArgumentException(
+                sprintf('Concurrency must be between %d and %d', self::MIN_CONCURRENCY, self::MAX_CONCURRENCY)
+            );
         }
     }
 }
