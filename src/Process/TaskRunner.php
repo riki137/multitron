@@ -69,6 +69,9 @@ class TaskRunner
                             $exitCode = 1;
                             $failed[$taskId] = true;
                         }
+                    } catch (Throwable) {
+                        $exitCode = 1;
+                        $failed[$taskId] = true;
                     } finally {
                         $queue->markFinished($taskId);
                     }
