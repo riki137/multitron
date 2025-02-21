@@ -8,15 +8,18 @@ use Amp\Pipeline\Queue;
 use Multitron\Comms\Server\ChannelServer;
 use Multitron\Comms\Server\Semaphore\SemaphoreHandler;
 use Multitron\Comms\Server\Storage\CentralCacheHandler;
-use Multitron\Container\Node\TaskLeafNode;
+use Multitron\Console\MultitronConfig;
+use Multitron\Container\Node\TaskNode;
+use Multitron\Container\Node\TaskNodeLeaf;
 use Multitron\Container\Node\TaskTreeProcessor;
-use Multitron\Error\ErrorHandler;
 use Throwable;
 use function Amp\async;
 use function Amp\Future\awaitAll;
 
 class TaskRunner
 {
+    public const NON_BLOCKING = '__NB__';
+
     private WorkerFactory $workerFactory;
 
     private ChannelServer $server;
@@ -25,24 +28,26 @@ class TaskRunner
 
     private int $concurrentTasks;
 
+    private TaskTreeProcessor $tree;
+
     public function __construct(
-        private readonly TaskTreeProcessor $tree,
-        string $bootstrapPath,
-        private readonly ErrorHandler $errorHandler,
+        TaskNode $rootNode,
+        private readonly MultitronConfig $config,
         private readonly array $options
     ) {
+        $this->tree = new TaskTreeProcessor($rootNode);
         $this->concurrentTasks = (int)($options['concurrency'] ?? (int)shell_exec('nproc'));
-        $this->workerFactory = new WorkerFactory($bootstrapPath, min((int)($this->concurrentTasks / 2), 6), count($tree->getNodes()));
+        $this->workerFactory = new WorkerFactory($config->getBootstrapPath(), min((int)($this->concurrentTasks / 2), 6), count($this->tree->getLeaves()));
         $this->server = new ChannelServer([new CentralCacheHandler(), new SemaphoreHandler()]);
         $this->processes = new Queue();
     }
 
     /**
-     * @return iterable<TaskLeafNode>
+     * @return iterable<TaskNodeLeaf>
      */
-    public function getNodes(): iterable
+    public function getLeaves(): iterable
     {
-        return $this->tree->getNodes();
+        return $this->tree->getLeaves();
     }
 
     public function runAll(): Future
@@ -50,7 +55,7 @@ class TaskRunner
         return async(function () {
             $failed = [];
             $exitCode = 0;
-            $queue = new TaskQueue($this->concurrentTasks, $this->tree, $this->errorHandler);
+            $queue = new TaskQueue($this->concurrentTasks, $this->tree, $this->config->getErrorHandler());
             $all = [];
             foreach ($queue->fetchAll() as $taskId => $taskNode) {
                 $runningTask = $this->runTask($taskNode, $this->server, $failed);
@@ -62,6 +67,9 @@ class TaskRunner
                             $exitCode = 1;
                             $failed[$taskId] = true;
                         }
+                    } catch (Throwable) {
+                        $exitCode = 1;
+                        $failed[$taskId] = true;
                     } finally {
                         $queue->markFinished($taskId);
                     }
@@ -73,16 +81,16 @@ class TaskRunner
         });
     }
 
-    private function runTask(TaskLeafNode $task, ChannelServer $server, array &$failed): RunningTask
+    private function runTask(TaskNodeLeaf $task, ChannelServer $server, array &$failed): RunningTask
     {
-        foreach ($this->tree->getDependencies($task) as $dependency) {
+        foreach ($this->tree->getDependentIds($task) as $dependency) {
             if (isset($failed[$dependency])) {
                 return new SkippedTask($server);
             }
         }
 
-        if ($task->isNonBlocking()) {
-            $local = new LocalTask($task, $server, $this->errorHandler);
+        if ($task->hasGroup(self::NON_BLOCKING)) {
+            $local = new LocalTask($task, $server, $this->config->getErrorHandler());
             $local->run($this->options);
             return $local;
         }
@@ -96,7 +104,7 @@ class TaskRunner
                     $server
                 );
             } catch (Throwable $e) {
-                $this->errorHandler->internalError($e);
+                $this->config->getErrorHandler()->internalError($e);
             }
         }
     }

@@ -31,7 +31,7 @@ final class TaskTable
         $this->memoryUsage = new MemoryUsage();
         $this->summary = new TaskProgress(0);
         $this->taskWidth = 16;
-        foreach ($runner->getNodes() as $node) {
+        foreach ($runner->getLeaves() as $node) {
             $this->taskWidth = max(strlen($node->getId()), $this->taskWidth);
             $this->summary->total++;
         }

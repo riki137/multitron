@@ -41,4 +41,9 @@ final class TaskProgress implements Message
     {
         return fdiv($this->done + $this->skipped, $this->total);
     }
+
+    public function isPristine(): bool
+    {
+        return $this->total === 0 && $this->done === 0 && $this->error === 0 && $this->warning === 0 && $this->skipped === 0;
+    }
 }
