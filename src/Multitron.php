@@ -31,7 +31,6 @@ use function Amp\Future\awaitAll;
 class Multitron extends Command
 {
     private const DEFAULT_NAME = 'multitron';
-    private const MIN_CONCURRENCY = 1;
     private const MAX_CONCURRENCY = 128;
 
     private TableOutput $tableOutput;
@@ -155,13 +154,6 @@ class Multitron extends Command
                     'Invalid memory limit format. Use format like "128M", "1G", or "-1" for unlimited'
                 );
             }
-        }
-
-        $concurrency = (int)$input->getOption('concurrency');
-        if ($concurrency < self::MIN_CONCURRENCY || $concurrency > self::MAX_CONCURRENCY) {
-            throw new InvalidArgumentException(
-                sprintf('Concurrency must be between %d and %d', self::MIN_CONCURRENCY, self::MAX_CONCURRENCY)
-            );
         }
     }
 }
