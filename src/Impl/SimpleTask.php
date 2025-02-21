@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Multitron\Impl;
 
 use Multitron\Comms\TaskCommunicator;
-use Throwable;
 
 abstract class SimpleTask implements Task
 {

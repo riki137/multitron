@@ -43,6 +43,7 @@ final class ClosureTaskNodeGroup extends TaskNode
     {
         try {
             foreach (($this->factory)() as $node) {
+                /** @var TaskNode|mixed $node */
                 if (!$node instanceof TaskNode) {
                     throw new RuntimeException(
                         sprintf(

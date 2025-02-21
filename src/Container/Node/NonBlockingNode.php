@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Multitron\Container\Node;
 
 use Generator;
-use Multitron\Process\TaskRunner;
 use InvalidArgumentException;
+use Multitron\Process\TaskRunner;
 
 /**
  * NonBlockingNode decorator that marks nodes for non-blocking processing.

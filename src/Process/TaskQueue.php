@@ -7,7 +7,6 @@ namespace Multitron\Process;
 use Amp\DeferredFuture;
 use Amp\Future;
 use Generator;
-use Multitron\Container\Node\TaskNode;
 use Multitron\Container\Node\TaskNodeLeaf;
 use Multitron\Container\Node\TaskTreeProcessor;
 use Multitron\Error\ErrorHandler;

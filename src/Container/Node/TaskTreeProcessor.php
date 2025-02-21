@@ -55,9 +55,14 @@ final class TaskTreeProcessor
      */
     private function processNodeGroups(TaskNode $node, array &$dfsGraph): void
     {
+        $nodeId = $node->getId();
+        if ($nodeId === null) {
+            return;
+        }
+
         foreach ($node->getGroups() as $group) {
-            $this->groupToLeafs[$group][] = $node->getId();
-            $dfsGraph[$group][] = $node->getId();
+            $this->groupToLeafs[$group][] = $nodeId;
+            $dfsGraph[$group][] = $nodeId;
         }
     }
 

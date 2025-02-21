@@ -6,9 +6,9 @@ namespace Multitron\Container\Node;
 
 use LogicException;
 use Multitron\Impl\Task;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
-use Psr\Container\ContainerExceptionInterface;
 
 /**
  * A task node that retrieves tasks from a PSR-11 container.
@@ -60,8 +60,12 @@ final class ContainerTaskNode extends TaskNodeLeaf
 
         if (!$task instanceof Task) {
             throw new LogicException(
-                sprintf('Service "%s" (%s) must implement %s',
-                    $this->serviceId, get_class($task), Task::class)
+                sprintf(
+                    'Service "%s" (%s) must implement %s',
+                    $this->serviceId,
+                    get_class($task),
+                    Task::class
+                )
             );
         }
 

@@ -6,7 +6,6 @@ namespace Multitron\Error;
 
 use Multitron\Comms\Data\Message\LogLevel;
 use Multitron\Comms\TaskCommunicator;
-use Tracy\Debugger;
 
 final class WarningHandler
 {

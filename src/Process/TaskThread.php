@@ -6,7 +6,6 @@ namespace Multitron\Process;
 use Amp\Cancellation;
 use Amp\Parallel\Worker\Task as AmpTask;
 use Amp\Sync\Channel;
-use ErrorException;
 use Multitron\Bridge\Nette\NettePsrContainer;
 use Multitron\Comms\Data\Message\Message;
 use Multitron\Comms\Data\Message\SuccessMessage;

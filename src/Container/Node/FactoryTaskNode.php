@@ -6,9 +6,9 @@ namespace Multitron\Container\Node;
 
 use Closure;
 use InvalidArgumentException;
+use Multitron\Impl\Task;
 use RuntimeException;
 use Throwable;
-use Multitron\Impl\Task;
 
 /**
  * A factory node that creates Task instances using a provided factory closure.
@@ -20,7 +20,8 @@ class FactoryTaskNode extends TaskNodeLeaf
      * @param Closure(): Task $factory The factory closure that creates Task instances
      * @throws InvalidArgumentException If the ID is empty
      */
-    public function __construct(string $id, private readonly Closure $factory) {
+    public function __construct(string $id, private readonly Closure $factory)
+    {
         parent::__construct($id);
     }
 
@@ -34,7 +35,7 @@ class FactoryTaskNode extends TaskNodeLeaf
     {
         try {
             $task = ($this->factory)();
-
+            /** @var Task|mixed $task */
             if (!($task instanceof Task)) {
                 throw new RuntimeException(
                     sprintf(

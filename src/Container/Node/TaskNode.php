@@ -65,6 +65,7 @@ abstract class TaskNode
         }
 
         foreach ($this->getNodes() as $node) {
+            /** @var TaskNode|mixed $node */
             if (!$node instanceof TaskNode) {
                 throw new LogicException('Invalid node type returned from getNodes()');
             }

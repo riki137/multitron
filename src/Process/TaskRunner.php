@@ -9,13 +9,11 @@ use Multitron\Comms\Server\ChannelServer;
 use Multitron\Comms\Server\Semaphore\SemaphoreHandler;
 use Multitron\Comms\Server\Storage\CentralCacheHandler;
 use Multitron\Console\MultitronConfig;
-use Multitron\Container\Node\NonBlockingNode;
 use Multitron\Container\Node\TaskNode;
 use Multitron\Container\Node\TaskNodeLeaf;
 use Multitron\Container\Node\TaskTreeProcessor;
 use Throwable;
 use function Amp\async;
-use function Amp\Future\await;
 use function Amp\Future\awaitAll;
 
 class TaskRunner

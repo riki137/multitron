@@ -91,7 +91,8 @@ class FilteringTaskNode extends DecoratorNode
      * @param array<string|int, TaskNode> $nodes
      * @param array<string, array<TaskNode>> $groupsToNodes
      */
-    private function processDependencies(TaskNode $node, array $nodes, array $groupsToNodes): void {
+    private function processDependencies(TaskNode $node, array $nodes, array $groupsToNodes): void
+    {
         foreach ($node->getDependencies() as $dep) {
             if (isset($groupsToNodes[$dep])) {
                 $node->doesNotDependOn($dep);

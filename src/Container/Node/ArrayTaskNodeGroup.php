@@ -28,7 +28,7 @@ class ArrayTaskNodeGroup extends TaskNode
     /**
      * Validates that all elements in the array are instances of TaskNode.
      *
-     * @param TaskNode[] $nodes
+     * @param array<TaskNode|mixed> $nodes
      * @throws InvalidArgumentException if the array contains non-TaskNode elements.
      */
     private function validateNodes(array $nodes): void

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Multitron;
 
-use ErrorException;
+use InvalidArgumentException;
 use Multitron\Console\InputConfiguration;
 use Multitron\Console\MultitronConfig;
 use Multitron\Container\Node\FilteringTaskNode;
@@ -19,11 +19,9 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use InvalidArgumentException;
 use Throwable;
 use Tracy\Debugger;
 use function Amp\Future\await;
-use function Amp\Future\awaitAll;
 
 /**
  * Multitron command for running task trees concurrently.
@@ -31,7 +29,6 @@ use function Amp\Future\awaitAll;
 class Multitron extends Command
 {
     private const DEFAULT_NAME = 'multitron';
-    private const MAX_CONCURRENCY = 128;
 
     private TableOutput $tableOutput;
 
@@ -62,7 +59,7 @@ class Multitron extends Command
      */
     protected function configure(): void
     {
-        $this->setDescription(sprintf("Runs a multitron task tree (%s)", $this->rootNode->getId()));
+        $this->setDescription(sprintf('Runs a multitron task tree (%s)', $this->rootNode->getId()));
         $input = new InputConfiguration();
 
         foreach ($this->rootNode->getProcessedNodes() as $node) {
