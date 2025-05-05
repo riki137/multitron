@@ -30,7 +30,7 @@ composer require riki137/multitron
 Define your custom tasks by implementing the `Task` interface or extending the `SimpleTask` abstract class. Inject these tasks into a task tree using a dependency injection container.
 
 ```php
-use Multitron\Container\TaskRootTree;
+use old\Container\TaskRootTree;
 use Psr\Container\ContainerInterface;
 
 class MyTaskTree extends TaskRootTree
@@ -57,12 +57,12 @@ class MyTaskTree extends TaskRootTree
 To run the task tree, ...
 
 ```php
-use Multitron\Multitron;
-use Multitron\Console\MultitronConfig;
-use Multitron\Error\TracyErrorHandler;
+use old\Multitron;
+use old\Console\MultitronConfig;
+use old\Error\TracyErrorHandler;
 use Symfony\Component\Console\Application;
 
-/** @var \Multitron\Container\TaskRootTree $taskTree */
+/** @var \old\Container\TaskRootTree $taskTree */
 $taskTree = new MyTaskTree($container);
 $config = new MultitronConfig(
     bootstrapPath: '/path/to/bootstrap.php', // Path to the bootstrap file that returns an instance of a PSR container or Nette Container
@@ -84,7 +84,7 @@ Configure error handling by using either a PSR-3 logger or Tracy for detailed er
 ```php
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
-use Multitron\Error\PsrLogErrorHandler;
+use old\Error\PsrLogErrorHandler;
 
 $logger = new Logger('multitron');
 $logger->pushHandler(new StreamHandler('path/to/logfile.log', Logger::ERROR));
@@ -95,7 +95,7 @@ $errorHandler = new PsrLogErrorHandler($logger);
 #### Tracy
 
 ```php
-$errorHandler = new Multitron\Error\TracyErrorHandler();
+$errorHandler = new old\Error\TracyErrorHandler();
 ```
 
 ### Progress Reporting and Logging
@@ -103,7 +103,7 @@ $errorHandler = new Multitron\Error\TracyErrorHandler();
 Multitron provides real-time logging and progress updates that can be configured using the provided classes.
 
 ```php
-use Multitron\Output\TableOutput;
+use old\Output\TableOutput;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 
@@ -116,7 +116,7 @@ $tableOutput->configure($inputConfiguration);
 Partition tasks to run chunks of tasks in parallel, each of which operates on a subset of data.
 
 ```php
-use Multitron\Container\Node\PartitionedTaskNodeGroup;
+use old\Container\Node\PartitionedTaskNodeGroup;
 
 $partitionedNode = new PartitionedTaskNodeGroup("MyPartitionedTask", function() use ($container) {
     return $container->get(MyPartitionedTask::class);

@@ -1,0 +1,88 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Multitron\Orchestrator;
+
+use LogicException;
+use Multitron\Tree\TaskNode;
+use SplPriorityQueue;
+use SplQueue;
+
+/**
+ * A queue that produces the next ready TaskNode, up to a concurrency limit.
+ */
+final class TaskQueue
+{
+    private TaskGraph $graph;
+    private SplPriorityQueue $readyQueue;
+    private int $maxConcurrent;
+    private array $running = [];
+
+    /**
+     * @param TaskNode $root The root of the task tree.
+     * @param int $maxConcurrent How many tasks to allow in flight.
+     * @throws LogicException if maxConcurrent < 1 or dependencies invalid.
+     */
+    public function __construct(TaskNode $root, int $maxConcurrent)
+    {
+        if ($maxConcurrent < 1) {
+            throw new LogicException('Concurrency must be at least 1.');
+        }
+        $this->maxConcurrent = $maxConcurrent;
+        $this->graph = TaskGraph::buildFrom($root);
+
+        $this->readyQueue = new SplPriorityQueue();
+        foreach ($this->graph->initialReadyTasks() as $id) {
+            $priority = count($this->graph->getDependents($id));
+            $this->readyQueue->insert($id, $priority);
+        }
+
+        $this->running = [];
+    }
+
+
+    /**
+     * Return the next TaskNode that's ready, or true if there are more tasks to run.
+     */
+    public function getNextTask(): TaskNode|bool
+    {
+        // respect concurrency limit
+        if (count($this->running) >= $this->maxConcurrent) {
+            return true;
+        }
+
+        // pull highest-priority ready task
+        while (!$this->readyQueue->isEmpty()) {
+            $id = $this->readyQueue->extract();
+            if (isset($this->running[$id]) || $this->graph->isCompleted($id)) {
+                continue;
+            }
+
+            // mark running and return the node
+            $this->running[$id] = true;
+            return $this->graph->getNode($id);
+        }
+
+        return count($this->running) > 0;
+    }
+
+    /**
+     * Mark a task as finished, free up a slot, and enqueue any newly-ready tasks.
+     *
+     * @param string $id The ID of the task that just completed.
+     * @throws LogicException if you try to complete a task that wasn’t running.
+     */
+    public function completeTask(string $id): void
+    {
+        if (!isset($this->running[$id])) {
+            throw new LogicException("Cannot complete task '$id' because it is not marked running.");
+        }
+        unset($this->running[$id]);
+        $newReadyIds = $this->graph->complete($id);
+        foreach ($newReadyIds as $newId) {
+            $prio = count($this->graph->getDependents($newId));
+            $this->readyQueue->insert($newId, $prio);
+        }
+    }
+}

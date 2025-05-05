@@ -1,0 +1,112 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Multitron\Orchestrator;
+
+use LogicException;
+use Multitron\Tree\TaskNode;
+
+/**
+ * Internal graph of task dependencies, with topological order support.
+ */
+class TaskGraph
+{
+    /** @var array<string, TaskNode> */
+    private array $nodes = [];
+    /** @var array<string, int> */
+    private array $inDegree = [];
+    /** @var array<string, string[]> */
+    private array $dependents = [];
+    /** @var array<string, bool> */
+    private array $completed = [];
+
+    private function __construct()
+    {
+    }
+
+    /**
+     * Build the graph from the root TaskNode.
+     * @throws LogicException on unknown dependencies or cycles.
+     */
+    public static function buildFrom(TaskNode $root): self
+    {
+        $g = new self();
+        $g->collect($root);
+        // Initialize in-degrees
+        foreach ($g->nodes as $id => $node) {
+            $g->inDegree[$id] = 0;
+            $g->dependents[$id] = [];
+        }
+        // Build edges
+        foreach ($g->nodes as $id => $node) {
+            foreach ($node->getDependencies() as $dep) {
+                if (!isset($g->nodes[$dep])) {
+                    throw new LogicException("Task '$id' depends on unknown '$dep'.");
+                }
+                $g->inDegree[$id]++;
+                $g->dependents[$dep][] = $id;
+            }
+        }
+        return $g;
+    }
+
+    private function collect(TaskNode $node): void
+    {
+        $id = $node->getId();
+        if (isset($this->nodes[$id])) {
+            return;
+        }
+        $this->nodes[$id] = $node;
+        foreach ($node->getChildren() as $child) {
+            $this->collect($child);
+        }
+    }
+
+    /**
+     * Return the IDs of tasks with no unmet dependencies.
+     * @return string[]
+     */
+    public function initialReadyTasks(): array
+    {
+        return array_keys(array_filter($this->inDegree, fn($deg) => $deg === 0));
+    }
+
+    /**
+     * Get the TaskNode by ID.
+     */
+    public function getNode(string $id): TaskNode
+    {
+        return $this->nodes[$id];
+    }
+
+    /**
+     * Check if a task is marked completed.
+     */
+    public function isCompleted(string $id): bool
+    {
+        return isset($this->completed[$id]);
+    }
+
+    /**
+     * Mark a task as complete and enqueue new ready tasks.
+     * Returns newly ready task IDs.
+     */
+    public function complete(string $id): array
+    {
+        $this->completed[$id] = true;
+        unset($this->inDegree[$id]);
+        $ready = [];
+        foreach ($this->dependents[$id] as $dep) {
+            if (--$this->inDegree[$dep] === 0) {
+                $ready[] = $dep;
+            }
+        }
+        return $ready;
+    }
+
+    public function getDependents(string $id): array
+    {
+        return $this->dependents[$id] ?? [];
+    }
+}

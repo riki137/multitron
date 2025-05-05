@@ -8,6 +8,12 @@
             "Multitron\\": "src/"
         }
     },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../php-stream-ipc"
+        }
+    ],
     "authors": [
         {
             "name": "Richard Riki Popeliš",
@@ -15,12 +21,14 @@
         }
     ],
     "require": {
-        "php": "^8.1",
+        "php": "^8.2",
         "ext-pcntl": "*",
         "ext-mbstring": "*",
-        "symfony/console": "^5.4|^6.0|^7.0",
-        "amphp/parallel": "^2.2",
-        "amphp/sync": "^2.2"
+        "symfony/console": "^7.2",
+        "symfony/process": "^7.2",
+        "amphp/byte-stream": "^2.1",
+        "amphp/process": "^2.0",
+        "riki137/php-stream-ipc": "dev-main"
     },
     "require-dev": {
         "tracy/tracy": "^2.10",
