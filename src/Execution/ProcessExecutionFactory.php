@@ -59,8 +59,8 @@ final class ProcessExecutionFactory implements ExecutionFactory
 
     public function shutdown(): void
     {
-        foreach ($this->processes as $worker) {
-            $worker->kill();
+        foreach ($this->processes as [$process]) {
+            $process->kill();
         }
         $this->processes = [];
     }
