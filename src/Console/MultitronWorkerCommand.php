@@ -34,7 +34,7 @@ final class MultitronWorkerCommand extends Command
         $session = $this->peer->createStdioSession();
         $session->onRequest(static fn(Message $message) => $message instanceof ContainerLoadedMessage ? $message : null);
         $startTask = null;
-        $session->onRequest(function (Message $message) use ($session, $input, &$startTask) {
+        $session->onRequest(function (Message $message) use (&$startTask) {
             if (!$message instanceof StartTaskMessage) {
                 return null;
             }

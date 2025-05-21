@@ -1,4 +1,2 @@
 parameters:
     level: 5
-    ignoreErrors:
-        - '#PartitionedTrait is used zero times#'

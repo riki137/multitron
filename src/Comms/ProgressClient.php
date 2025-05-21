@@ -14,7 +14,7 @@ final class ProgressClient
 
     public function __construct(private readonly IpcSession $session, private readonly float $interval = 0.1)
     {
-        $this->progress = new TaskProgress(0);
+        $this->progress = new TaskProgress();
     }
 
     public function flush(bool $force = false): void
