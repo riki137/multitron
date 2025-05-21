@@ -44,7 +44,8 @@ final class ChainProgressOutput implements ProgressOutput
         }
     }
 
-    public function render(): void {
+    public function render(): void
+    {
         foreach ($this->outputs as $output) {
             $output->render();
         }

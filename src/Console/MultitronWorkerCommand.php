@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Multitron\Console;
 
-use JetBrains\PhpStorm\NoReturn;
 use Multitron\Comms\TaskCommunicator;
 use Multitron\Message\ContainerLoadedMessage;
 use Multitron\Message\StartTaskMessage;
 use Multitron\Orchestrator\TaskList;
-use Multitron\Execution\Task;
 use PhpStreamIpc\IpcPeer;
 use PhpStreamIpc\Message\LogMessage;
 use PhpStreamIpc\Message\Message;

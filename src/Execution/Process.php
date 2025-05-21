@@ -9,7 +9,9 @@ use RuntimeException;
 class Process
 {
     private $process;
+
     private array $pipes = [];
+
     private ?int $exitCode = null;
 
     /**

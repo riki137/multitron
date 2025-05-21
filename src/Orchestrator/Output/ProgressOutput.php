@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Multitron\Orchestrator\Output;
 
 use Multitron\Orchestrator\TaskState;
-use Symfony\Component\Console\Output\OutputInterface;
 
 interface ProgressOutput
 {

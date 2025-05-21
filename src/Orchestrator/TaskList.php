@@ -13,6 +13,7 @@ class TaskList
 {
     /** @var array<string, TaskNode> */
     private array $nodes = [];
+
     private TaskTreeBuilder $builder;
 
     public function __construct(ContainerInterface $container, TaskNode $root, InputInterface $options)

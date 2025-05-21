@@ -12,6 +12,7 @@ use PhpStreamIpc\Message\Message;
 final readonly class TaskCommunicator
 {
     private MasterCacheClient $cache;
+
     private ProgressClient $progress;
 
     public function __construct(
@@ -63,5 +64,4 @@ final readonly class TaskCommunicator
     {
         $this->progress->flush(true);
     }
-
 }

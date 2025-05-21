@@ -9,6 +9,7 @@ use PhpStreamIpc\IpcSession;
 final class ProgressClient
 {
     private readonly TaskProgress $progress;
+
     private float $lastNotified = 0.0;
 
     public function __construct(private readonly IpcSession $session, private readonly float $interval = 0.1)

@@ -6,9 +6,7 @@ namespace Multitron\Tree;
 
 use Closure;
 use Multitron\Execution\Task;
-use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\OptionsResolver\OptionsResolver;
 
 final readonly class ClosureTaskNode implements TaskNode
 {

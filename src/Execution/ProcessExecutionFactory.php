@@ -15,6 +15,7 @@ final class ProcessExecutionFactory implements ExecutionFactory
 
     /** @var array<array{ProcessExecution, ResponsePromise}> */
     private array $processes = [];
+
     private bool $initialized = false;
 
     public function __construct(

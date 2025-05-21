@@ -14,7 +14,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 final class TableOutput implements ProgressOutput
 {
     private readonly OutputInterface $section;
+
     private array $logBuffer = [];
+
     private readonly TaskTable $table;
 
     /** @var array<string, TaskState> */

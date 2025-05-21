@@ -9,7 +9,9 @@ use PhpStreamIpc\Message\Message;
 final class TaskProgress implements Message
 {
     public int $total = 0;
+
     public int $done = 0;
+
     /** @var array<string, int> */
     public array $occurences = [];
 

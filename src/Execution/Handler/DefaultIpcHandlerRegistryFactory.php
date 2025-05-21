@@ -12,7 +12,6 @@ final class DefaultIpcHandlerRegistryFactory implements IpcHandlerRegistryFactor
     {
     }
 
-
     public function create(): IpcHandlerRegistry
     {
         $registry = new IpcHandlerRegistry();

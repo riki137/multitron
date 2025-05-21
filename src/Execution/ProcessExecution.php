@@ -11,6 +11,7 @@ use PhpStreamIpc\IpcSession;
 final readonly class ProcessExecution implements Execution
 {
     private Process $process;
+
     private IpcSession $session;
 
     public function __construct(IpcPeer $ipcPeer)
