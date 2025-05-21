@@ -6,10 +6,8 @@ namespace Multitron\Orchestrator;
 
 use LogicException;
 use Multitron\Tree\TaskNode;
-use Multitron\Tree\TaskRootTree;
 use Psr\Container\ContainerInterface;
 use SplPriorityQueue;
-use SplQueue;
 use Symfony\Component\Console\Input\InputInterface;
 
 /**
@@ -18,8 +16,11 @@ use Symfony\Component\Console\Input\InputInterface;
 final class TaskQueue
 {
     private TaskGraph $graph;
+
     private SplPriorityQueue $readyQueue;
+
     private int $maxConcurrent;
+
     private array $running = [];
 
     /**
@@ -42,7 +43,6 @@ final class TaskQueue
 
         $this->running = [];
     }
-
 
     /**
      * Return the next TaskNode that's ready, or true if there are more tasks to run.
@@ -86,5 +86,19 @@ final class TaskQueue
             $prio = count($this->graph->getDependents($newId));
             $this->readyQueue->insert($newId, $prio);
         }
+    }
+
+    /**
+     * Mark a task as failed and skip all dependents.
+     *
+     * @return string[] IDs of tasks that were skipped due to this failure.
+     */
+    public function failTask(string $id): array
+    {
+        if (!isset($this->running[$id])) {
+            throw new LogicException("Cannot fail task '$id' because it is not marked running.");
+        }
+        unset($this->running[$id]);
+        return $this->graph->skipDependents($id);
     }
 }

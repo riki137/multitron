@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Multitron\Console;
 
 use Multitron\Message\TaskProgress;
-use Multitron\Orchestrator\TaskGraph;
 use Multitron\Orchestrator\TaskStatus;
 
 final class TaskTable
@@ -61,7 +60,7 @@ final class TaskTable
         ]));
     }
 
-    private static function getOccurenceStatus(TaskProgress $progress): ?string
+    private static function getOccurenceStatus(TaskProgress $progress): string
     {
         $ret = [];
         foreach ($progress->occurences as $key => $count) {
@@ -97,7 +96,10 @@ final class TaskTable
 
     private function getTime(string $taskId, string $color = 'white'): string
     {
-        $startTime = $this->startTimes[$taskId];
+        $startTime = $this->startTimes[$taskId] ?? null;
+        if ($startTime === null) {
+            return "<fg=$color>" . str_pad('-', 5) . '</>';
+        }
         $time = microtime(true) - $startTime;
         $minutes = floor($time / 60);
         $seconds = fmod($time, 60);

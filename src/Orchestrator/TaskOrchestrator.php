@@ -75,22 +75,25 @@ final class TaskOrchestrator
 
             // poll each running task for completion
             foreach ($states as $id => $state) {
-                $exit = $state->getExecution()->getExitCode();
+                $execution = $state->getExecution();
+                $exit = $execution?->getExitCode();
                 if ($exit !== null) {
-                    // mark it completed in the graph
-                    $queue->completeTask($id);
                     if ($exit === 0) {
+                        $queue->completeTask($id);
                         $state->setStatus(TaskStatus::SUCCESS);
+                        $output->onTaskCompleted($state);
                     } else {
+                        $skipped = $queue->failTask($id);
                         $state->setStatus(TaskStatus::ERROR);
-                    }
-                    $output->onTaskCompleted($state);
-                    unset($states[$id]);
-
-                    // record if anything failed
-                    if ($exit !== 0) {
+                        $output->onTaskCompleted($state);
+                        foreach ($skipped as $sid) {
+                            $skipState = new TaskState($sid);
+                            $skipState->setStatus(TaskStatus::SKIP);
+                            $output->onTaskCompleted($skipState);
+                        }
                         $hadError = true;
                     }
+                    unset($states[$id]);
                 }
             }
             $output->render();

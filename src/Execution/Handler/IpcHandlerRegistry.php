@@ -11,6 +11,7 @@ use PhpStreamIpc\Message\Message;
 final class IpcHandlerRegistry
 {
     private array $requestHandlers = [];
+
     private array $messageHandlers = [];
 
     public function onRequest(Closure $handler): void
@@ -25,7 +26,11 @@ final class IpcHandlerRegistry
 
     public function attach(TaskState $state): void
     {
-        $session = $state->getExecution()->getSession();
+        $execution = $state->getExecution();
+        if ($execution === null) {
+            return;
+        }
+        $session = $execution->getSession();
         foreach ($this->requestHandlers as $handler) {
             $session->onRequest(fn(Message $message) => $handler($message, $state));
         }

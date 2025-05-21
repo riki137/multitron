@@ -15,12 +15,15 @@ final class MasterCacheServer
     {
     }
 
-    public function handleRequest(SmartMasterCacheWriteRequest|SmartMasterCacheReadRequest $request): Message
+    public function handleRequest(Message $request): ?Message
     {
         if ($request instanceof SmartMasterCacheWriteRequest) {
             return $request->doWrite($this->storage);
         }
-        return $request->doRead($this->storage);
+        if ($request instanceof SmartMasterCacheReadRequest) {
+            return $request->doRead($this->storage);
+        }
+        return null;
     }
 
     /**

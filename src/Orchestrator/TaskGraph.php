@@ -6,7 +6,6 @@ namespace Multitron\Orchestrator;
 
 use LogicException;
 use Multitron\Tree\TaskNode;
-use Multitron\Tree\TaskRootTree;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 
@@ -17,10 +16,13 @@ class TaskGraph
 {
     /** @var array<string, TaskNode> */
     private array $nodes = [];
+
     /** @var array<string, int> */
     private array $inDegree = [];
+
     /** @var array<string, string[]> */
     private array $dependents = [];
+
     /** @var array<string, bool> */
     private array $completed = [];
 
@@ -89,7 +91,7 @@ class TaskGraph
         unset($this->inDegree[$id]);
         $ready = [];
         foreach ($this->dependents[$id] as $dep) {
-            if (--$this->inDegree[$dep] === 0) {
+            if (isset($this->inDegree[$dep]) && --$this->inDegree[$dep] === 0) {
                 $ready[] = $dep;
             }
         }
@@ -99,5 +101,44 @@ class TaskGraph
     public function getDependents(string $id): array
     {
         return $this->dependents[$id] ?? [];
+    }
+
+    /**
+     * Mark the given task and all its dependents as completed without
+     * enqueuing any of them for execution. Returns all skipped task IDs
+     * (excluding the provided one).
+     *
+     * @return string[]
+     */
+    public function skipDependents(string $id): array
+    {
+        $this->markCompleted($id);
+        $skipped = [];
+        foreach ($this->dependents[$id] as $dep) {
+            $skipped = array_merge($skipped, $this->skipRecursive($dep));
+        }
+        return $skipped;
+    }
+
+    /**
+     * @return string[]
+     */
+    private function skipRecursive(string $id): array
+    {
+        if ($this->isCompleted($id)) {
+            return [];
+        }
+        $this->markCompleted($id);
+        $result = [$id];
+        foreach ($this->dependents[$id] as $dep) {
+            $result = array_merge($result, $this->skipRecursive($dep));
+        }
+        return $result;
+    }
+
+    private function markCompleted(string $id): void
+    {
+        $this->completed[$id] = true;
+        unset($this->inDegree[$id]);
     }
 }

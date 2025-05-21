@@ -7,17 +7,18 @@ namespace Multitron\Orchestrator;
 use DateTime;
 use Multitron\Execution\Execution;
 use Multitron\Message\TaskProgress;
-use Symfony\Component\Process\Process;
 
 class TaskState
 {
     private TaskStatus $status = TaskStatus::RUNNING;
+
     private readonly DateTime $startedAt;
+
     private TaskProgress $progress;
 
     public function __construct(
         private readonly string $taskId,
-        private readonly Execution $execution,
+        private readonly ?Execution $execution = null,
     ) {
         $this->startedAt = new DateTime();
         $this->progress = new TaskProgress();
@@ -38,7 +39,7 @@ class TaskState
         $this->status = $status;
     }
 
-    public function getExecution(): Execution
+    public function getExecution(): ?Execution
     {
         return $this->execution;
     }

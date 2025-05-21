@@ -6,11 +6,14 @@ namespace Multitron\Execution\Handler;
 
 use Multitron\Message\TaskProgress;
 use Multitron\Orchestrator\TaskState;
+use PhpStreamIpc\Message\Message;
 
 final class ProgressServer
 {
-    public function handleProgress(TaskProgress $progress, TaskState $state): void
+    public function handleProgress(Message $progress, TaskState $state): void
     {
-        $state->getProgress()->inherit($progress);
+        if ($progress instanceof TaskProgress) {
+            $state->getProgress()->inherit($progress);
+        }
     }
 }
