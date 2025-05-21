@@ -97,8 +97,9 @@ final class TaskOrchestrator
                 }
             }
             $output->render();
-
-            $this->ipcPeer->tickFor(0.1);
+            if ($task === true) {
+                $this->ipcPeer->tickFor(0.1);
+            }
         }
 
         return $hadError ? 1 : 0;
