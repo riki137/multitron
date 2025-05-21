@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Multitron\Orchestrator;
 
 use Multitron\Tree\TaskNode;
+use Multitron\Tree\TaskGroupNode;
 use Multitron\Tree\TaskTreeBuilder;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Console\Input\InputInterface;
@@ -29,9 +30,11 @@ class TaskList
             return;
         }
         $this->nodes[$id] = $node;
-        $node->getChildren($this->builder, $options);
-        foreach ($this->builder->consume() as $child) {
-            $this->collect($child, $options);
+        if ($node instanceof TaskGroupNode) {
+            $node->getChildren($this->builder, $options);
+            foreach ($this->builder->consume() as $child) {
+                $this->collect($child, $options);
+            }
         }
     }
 

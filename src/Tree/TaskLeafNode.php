@@ -7,12 +7,10 @@ namespace Multitron\Tree;
 use Multitron\Execution\Task;
 use Symfony\Component\Console\Input\InputInterface;
 
-interface TaskNode
+interface TaskLeafNode extends TaskNode
 {
-    public function getId(): string;
-
     /**
-     * @return string[]
+     * @return callable(): Task
      */
-    public function getDependencies(InputInterface $options): array;
+    public function getFactory(InputInterface $options): callable;
 }

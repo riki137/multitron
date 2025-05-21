@@ -6,7 +6,7 @@ namespace Multitron\Tree;
 
 use Symfony\Component\Console\Input\InputInterface;
 
-abstract class AbstractTaskGroupNode implements TaskNode
+abstract class AbstractTaskGroupNode implements TaskGroupNode
 {
     private readonly array $dependencies;
 
@@ -25,8 +25,4 @@ abstract class AbstractTaskGroupNode implements TaskNode
         return $this->dependencies;
     }
 
-    public function getFactory(InputInterface $options): ?callable
-    {
-        return null;
-    }
 }

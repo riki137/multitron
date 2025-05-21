@@ -10,6 +10,7 @@ use Multitron\Execution\Handler\IpcHandlerRegistryFactory;
 use Multitron\Orchestrator\Output\ProgressOutput;
 use Multitron\Orchestrator\Output\ProgressOutputFactory;
 use Multitron\Tree\TaskNode;
+use Multitron\Tree\TaskLeafNode;
 use PhpStreamIpc\IpcPeer;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Console\Input\InputInterface;
@@ -64,7 +65,7 @@ final class TaskOrchestrator
         while (true) {
             $task = $queue->getNextTask();
 
-            if ($task instanceof TaskNode) {
+            if ($task instanceof TaskLeafNode) {
                 // launch a new task
                 $execution = $this->executionFactory->launch($commandName, $task->getId(), $options);
                 $states[$task->getId()] = $state = new TaskState($task->getId(), $execution);

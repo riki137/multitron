@@ -66,9 +66,9 @@ final class TaskTreeBuilder
         return $this->node(new PartitionedTaskGroupNode($id, $partitionCount, $factory, $dependencies));
     }
 
-    public function group(string $id, array $children, array $dependencies = []): TaskGroupNode
+    public function group(string $id, array $children, array $dependencies = []): SimpleTaskGroupNode
     {
-        return $this->node(new TaskGroupNode($id, $children, $dependencies));
+        return $this->node(new SimpleTaskGroupNode($id, $children, $dependencies));
     }
 
     /**

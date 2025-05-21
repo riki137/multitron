@@ -8,6 +8,7 @@ use Multitron\Comms\TaskCommunicator;
 use Multitron\Message\ContainerLoadedMessage;
 use Multitron\Message\StartTaskMessage;
 use Multitron\Orchestrator\TaskList;
+use Multitron\Tree\TaskLeafNode;
 use PhpStreamIpc\IpcPeer;
 use PhpStreamIpc\Message\LogMessage;
 use PhpStreamIpc\Message\Message;
@@ -51,7 +52,7 @@ final class MultitronWorkerCommand extends Command
         }
         $list = new TaskList($this->container, $command->getRootNode(), $input);
         foreach ($list->getNodes() as $node) {
-            if ($node->getId() === $startTask->taskId) {
+            if ($node->getId() === $startTask->taskId && $node instanceof TaskLeafNode) {
                 $comm = new TaskCommunicator($session, $startTask->options);
                 ($node->getFactory($input))()->execute($comm);
                 $comm->shutdown();

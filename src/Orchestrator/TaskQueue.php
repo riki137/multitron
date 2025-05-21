@@ -6,12 +6,14 @@ namespace Multitron\Orchestrator;
 
 use LogicException;
 use Multitron\Tree\TaskNode;
+use Multitron\Tree\TaskGroupNode;
+use Multitron\Tree\TaskLeafNode;
 use Psr\Container\ContainerInterface;
 use SplPriorityQueue;
 use Symfony\Component\Console\Input\InputInterface;
 
 /**
- * A queue that produces the next ready TaskNode, up to a concurrency limit.
+ * A queue that produces the next ready TaskLeafNode, up to a concurrency limit.
  */
 final class TaskQueue
 {
@@ -45,9 +47,9 @@ final class TaskQueue
     }
 
     /**
-     * Return the next TaskNode that's ready, or true if there are more tasks to run.
+     * Return the next TaskLeafNode that's ready, or true if there are more tasks to run.
      */
-    public function getNextTask(): TaskNode|bool
+    public function getNextTask(): TaskLeafNode|bool
     {
         // respect concurrency limit
         if (count($this->running) >= $this->maxConcurrent) {
@@ -61,9 +63,21 @@ final class TaskQueue
                 continue;
             }
 
+            $node = $this->graph->getNode($id);
+
+            if ($node instanceof TaskGroupNode) {
+                $newIds = $this->graph->complete($id);
+                foreach ($newIds as $newId) {
+                    $prio = count($this->graph->getDependents($newId));
+                    $this->readyQueue->insert($newId, $prio);
+                }
+                continue;
+            }
+
             // mark running and return the node
             $this->running[$id] = true;
-            return $this->graph->getNode($id);
+            /** @var TaskLeafNode $node */
+            return $node;
         }
 
         return count($this->running) > 0;

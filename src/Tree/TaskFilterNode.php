@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Multitron\Tree;
 
-interface TaskFilterNode extends TaskNode
+interface TaskFilterNode extends TaskGroupNode
 {
     public function filter(iterable $leaves): iterable;
 }

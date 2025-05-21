@@ -8,7 +8,7 @@ use Closure;
 use Multitron\Execution\Task;
 use Symfony\Component\Console\Input\InputInterface;
 
-final readonly class ClosureTaskNode implements TaskNode
+final readonly class ClosureTaskNode implements TaskLeafNode
 {
     private array $dependencies;
 
@@ -37,9 +37,6 @@ final readonly class ClosureTaskNode implements TaskNode
         return $this->dependencies;
     }
 
-    public function getChildren(TaskTreeBuilder $builder, InputInterface $options): void
-    {
-    }
 
     public static function castDependencies(array $dependencies): array
     {

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Multitron\Console;
 
 use Multitron\Orchestrator\TaskOrchestrator;
-use Multitron\Tree\TaskGroupNode;
+use Multitron\Tree\SimpleTaskGroupNode;
 use Multitron\Tree\TaskNode;
 use Multitron\Tree\TaskTreeBuilder;
 use Psr\Container\ContainerInterface;
@@ -32,7 +32,7 @@ abstract class AbstractMultitronCommand extends Command
     {
         $builder = new TaskTreeBuilder($this->container);
         $this->getNodes($builder);
-        return new TaskGroupNode($this->getName(), $builder->consume());
+        return new SimpleTaskGroupNode($this->getName(), $builder->consume());
     }
 
     final protected function execute(InputInterface $input, OutputInterface $output): int
