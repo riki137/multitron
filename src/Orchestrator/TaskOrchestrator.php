@@ -79,7 +79,11 @@ final class TaskOrchestrator
                 if ($exit !== null) {
                     // mark it completed in the graph
                     $queue->completeTask($id);
-                    $state->setStatus(TaskStatus::SUCCESS);
+                    if ($exit === 0) {
+                        $state->setStatus(TaskStatus::SUCCESS);
+                    } else {
+                        $state->setStatus(TaskStatus::ERROR);
+                    }
                     $output->onTaskCompleted($state);
                     unset($states[$id]);
 
