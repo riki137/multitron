@@ -6,8 +6,11 @@ namespace Multitron\Orchestrator;
 
 use LogicException;
 use Multitron\Tree\TaskNode;
+use Multitron\Tree\TaskRootTree;
+use Psr\Container\ContainerInterface;
 use SplPriorityQueue;
 use SplQueue;
+use Symfony\Component\Console\Input\InputInterface;
 
 /**
  * A queue that produces the next ready TaskNode, up to a concurrency limit.
@@ -20,17 +23,16 @@ final class TaskQueue
     private array $running = [];
 
     /**
-     * @param TaskNode $root The root of the task tree.
      * @param int $maxConcurrent How many tasks to allow in flight.
      * @throws LogicException if maxConcurrent < 1 or dependencies invalid.
      */
-    public function __construct(TaskNode $root, int $maxConcurrent)
+    public function __construct(ContainerInterface $container, TaskNode $root, int $maxConcurrent, InputInterface $options)
     {
         if ($maxConcurrent < 1) {
             throw new LogicException('Concurrency must be at least 1.');
         }
         $this->maxConcurrent = $maxConcurrent;
-        $this->graph = TaskGraph::buildFrom($root);
+        $this->graph = TaskGraph::buildFrom($container, $root, $options);
 
         $this->readyQueue = new SplPriorityQueue();
         foreach ($this->graph->initialReadyTasks() as $id) {

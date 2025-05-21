@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Multitron\Execution;
 
-use Amp\Process\Process;
-use Closure;
+use Multitron\Console\MultitronWorkerCommand;
 use PhpStreamIpc\IpcPeer;
 use PhpStreamIpc\IpcSession;
 
@@ -14,13 +13,18 @@ final readonly class ProcessExecution implements Execution
     private Process $process;
     private IpcSession $session;
 
-    public function __construct(IpcPeer $ipcPeer, string $bootstrapPath) {
-        $this->process = Process::start([
+    public function __construct(IpcPeer $ipcPeer)
+    {
+        $this->process = new Process([
             PHP_BINARY,
-            __DIR__ . '/multitron_worker.php',
-            '--bootstrap=' . escapeshellarg($bootstrapPath),
+            $_SERVER['SCRIPT_FILENAME'] ?? $_SERVER['argv'][0],
+            MultitronWorkerCommand::NAME,
         ]);
-        $this->session = $ipcPeer->createProcessSession($this->process);
+        $this->session = $ipcPeer->createStreamSession(
+            $this->process->getStdin(),
+            $this->process->getStdout(),
+            $this->process->getStderr()
+        );
     }
 
     public function getSession(): IpcSession
@@ -28,19 +32,14 @@ final readonly class ProcessExecution implements Execution
         return $this->session;
     }
 
-    public function statusCode(): ?int
+    public function getExitCode(): ?int
     {
-        return $this->process->isRunning() ? null : $this->process->join();
+        return $this->process->getExitCode();
     }
 
-    public function stop(): void
+    public function kill(): void
     {
         $this->process->kill();
-    }
-
-    public function await(): int
-    {
-        return $this->process->join();
     }
 
     public function __destruct()

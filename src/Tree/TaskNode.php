@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Multitron\Tree;
 
-use Closure;
+use Multitron\Execution\Task;
+use Symfony\Component\Console\Input\InputDefinition;
+use Symfony\Component\Console\Input\InputInterface;
 
 interface TaskNode
 {
@@ -16,15 +18,12 @@ interface TaskNode
     /**
      * @return string[]
      */
-    public function getDependencies(): array;
+    public function getDependencies(InputInterface $options): array;
 
-    /**
-     * @return iterable<TaskNode[]>
-     */
-    public function getChildren(): iterable;
+    public function getChildren(TaskTreeBuilder $builder, InputInterface $options): void;
 
     /**
      * @return null|callable(): Task
      */
-    public function getFactory(): ?callable;
+    public function getFactory(InputInterface $options): ?callable;
 }

@@ -1,0 +1,36 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Multitron\Execution\Handler;
+
+use Closure;
+use Multitron\Orchestrator\TaskState;
+use PhpStreamIpc\Message\Message;
+
+final class IpcHandlerRegistry
+{
+    private array $requestHandlers = [];
+    private array $messageHandlers = [];
+
+    public function onRequest(Closure $handler): void
+    {
+        $this->requestHandlers[] = $handler;
+    }
+
+    public function onMessage(Closure $handler): void
+    {
+        $this->messageHandlers[] = $handler;
+    }
+
+    public function attach(TaskState $state): void
+    {
+        $session = $state->getExecution()->getSession();
+        foreach ($this->requestHandlers as $handler) {
+            $session->onRequest(fn(Message $message) => $handler($message, $state));
+        }
+        foreach ($this->messageHandlers as $handler) {
+            $session->onMessage(fn(Message $message) => $handler($message, $state));
+        }
+    }
+}

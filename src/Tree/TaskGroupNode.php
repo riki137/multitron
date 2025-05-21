@@ -1,0 +1,44 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Multitron\Tree;
+
+use Symfony\Component\Console\Input\InputInterface;
+
+final readonly class TaskGroupNode implements TaskNode
+{
+    private array $dependencies;
+
+    /**
+     * @param string $id
+     * @param TaskNode[] $children
+     * @param (string|TaskNode)[] $dependencies
+     */
+    public function __construct(private string $id, private array $children = [], array $dependencies = [])
+    {
+        $this->dependencies = ClosureTaskNode::castDependencies($dependencies);
+    }
+
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    public function getFactory(InputInterface $options): ?callable
+    {
+        return null;
+    }
+
+    public function getDependencies(InputInterface $options): array
+    {
+        return $this->dependencies;
+    }
+
+    public function getChildren(TaskTreeBuilder $builder, InputInterface $options): void
+    {
+        foreach ($this->children as $child) {
+            $builder->node($child);
+        }
+    }
+}

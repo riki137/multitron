@@ -6,6 +6,9 @@ namespace Multitron\Orchestrator;
 
 use LogicException;
 use Multitron\Tree\TaskNode;
+use Multitron\Tree\TaskRootTree;
+use Psr\Container\ContainerInterface;
+use Symfony\Component\Console\Input\InputInterface;
 
 /**
  * Internal graph of task dependencies, with topological order support.
@@ -29,10 +32,10 @@ class TaskGraph
      * Build the graph from the root TaskNode.
      * @throws LogicException on unknown dependencies or cycles.
      */
-    public static function buildFrom(TaskNode $root): self
+    public static function buildFrom(ContainerInterface $container, TaskNode $root, InputInterface $options): self
     {
         $g = new self();
-        $g->collect($root);
+        $g->nodes = (new TaskList($container, $root, $options))->getNodes();
         // Initialize in-degrees
         foreach ($g->nodes as $id => $node) {
             $g->inDegree[$id] = 0;
@@ -40,7 +43,7 @@ class TaskGraph
         }
         // Build edges
         foreach ($g->nodes as $id => $node) {
-            foreach ($node->getDependencies() as $dep) {
+            foreach ($node->getDependencies($options) as $dep) {
                 if (!isset($g->nodes[$dep])) {
                     throw new LogicException("Task '$id' depends on unknown '$dep'.");
                 }
@@ -49,18 +52,6 @@ class TaskGraph
             }
         }
         return $g;
-    }
-
-    private function collect(TaskNode $node): void
-    {
-        $id = $node->getId();
-        if (isset($this->nodes[$id])) {
-            return;
-        }
-        $this->nodes[$id] = $node;
-        foreach ($node->getChildren() as $child) {
-            $this->collect($child);
-        }
     }
 
     /**

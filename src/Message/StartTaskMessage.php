@@ -8,7 +8,7 @@ use PhpStreamIpc\Message\Message;
 
 final readonly class StartTaskMessage implements Message
 {
-    public function __construct(public string $taskId)
+    public function __construct(public string $commandName, public string $taskId, public array $options = [])
     {
     }
 }

@@ -10,9 +10,7 @@ interface Execution
 {
     public function getSession(): IpcSession;
 
-    public function statusCode(): ?int;
+    public function getExitCode(): ?int;
 
-    public function stop(): void;
-
-    public function await(): int;
+    public function kill(): void;
 }

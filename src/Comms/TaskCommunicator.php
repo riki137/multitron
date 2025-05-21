@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Multitron\Comms;
 
-use Multitron\Execution\Handler\MasterCache\MasterCacheClient;
-use Multitron\Execution\Handler\ProgressClient;
+use PhpStreamIpc\Envelope\ResponsePromise;
 use PhpStreamIpc\IpcSession;
+use PhpStreamIpc\Message\LogMessage;
+use PhpStreamIpc\Message\Message;
 
 final readonly class TaskCommunicator
 {
@@ -14,13 +15,23 @@ final readonly class TaskCommunicator
     private ProgressClient $progress;
 
     public function __construct(
-        IpcSession $session,
+        private IpcSession $session,
         private array $options,
         ?MasterCacheClient $cache = null,
         ?ProgressClient $progress = null
     ) {
         $this->cache = $cache ?? new MasterCacheClient($session);
         $this->progress = $progress ?? new ProgressClient($session);
+    }
+
+    public function notify(Message $message): void
+    {
+        $this->session->notify($message);
+    }
+
+    public function request(Message $message): ResponsePromise
+    {
+        return $this->session->request($message);
     }
 
     public function getOption(string $name): mixed
@@ -41,6 +52,16 @@ final readonly class TaskCommunicator
     public function progress(): ProgressClient
     {
         return $this->progress;
+    }
+
+    public function log(string $message): void
+    {
+        $this->session->notify(new LogMessage($message));
+    }
+
+    public function shutdown(): void
+    {
+        $this->progress->flush(true);
     }
 
 }

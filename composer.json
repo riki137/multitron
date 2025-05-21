@@ -8,6 +8,11 @@
             "Multitron\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Multitron\\Tests\\": "tests/"
+        }
+    },
     "repositories": [
         {
             "type": "path",
@@ -25,15 +30,16 @@
         "ext-pcntl": "*",
         "ext-mbstring": "*",
         "symfony/console": "^7.2",
-        "symfony/process": "^7.2",
-        "amphp/byte-stream": "^2.1",
-        "amphp/process": "^2.0",
-        "riki137/php-stream-ipc": "dev-main"
+        "riki137/php-stream-ipc": "dev-main",
+        "psr/container": "^2.0",
+        "psr/container-implementation": "*",
+        "symfony/options-resolver": "^7.2"
     },
     "require-dev": {
         "tracy/tracy": "^2.10",
         "psr/log": "^3.0",
         "nette/di": "^3.2",
-        "phpstan/phpstan": "^2.1"
+        "phpstan/phpstan": "^2.1",
+        "contributte/psr11-container-interface": "^0.6.0"
     }
 }
