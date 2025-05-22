@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Multitron\Orchestrator\Output;
 
 use Multitron\Execution\Handler\IpcHandlerRegistry;
+use Multitron\Orchestrator\TaskList;
 use Symfony\Component\Console\Output\OutputInterface;
 
 final class ChainProgressOutputFactory implements ProgressOutputFactory
@@ -19,11 +20,11 @@ final class ChainProgressOutputFactory implements ProgressOutputFactory
         $this->factories = $factories;
     }
 
-    public function create(OutputInterface $output, IpcHandlerRegistry $registry): ProgressOutput
+    public function create(TaskList $taskList, OutputInterface $output, IpcHandlerRegistry $registry): ProgressOutput
     {
         $outputs = [];
         foreach ($this->factories as $factory) {
-            $outputs[] = $factory->create($output, $registry);
+            $outputs[] = $factory->create($taskList, $output, $registry);
         }
         return new ChainProgressOutput(...$outputs);
     }

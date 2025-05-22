@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Multitron\Orchestrator\Output;
 
 use Multitron\Console\TaskTable;
+use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskState;
 use Multitron\Orchestrator\TaskStatus;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
@@ -22,14 +23,14 @@ final class TableOutput implements ProgressOutput
     /** @var array<string, TaskState> */
     private array $states = [];
 
-    public function __construct(private readonly OutputInterface $output)
+    public function __construct(private readonly OutputInterface $output, TaskList $taskList)
     {
         if ($output instanceof ConsoleOutputInterface) {
             $this->section = $output->section();
         } else {
             $this->section = $output;
         }
-        $this->table = new TaskTable();
+        $this->table = new TaskTable($taskList);
     }
 
     public function onTaskStarted(TaskState $state): void
@@ -44,7 +45,11 @@ final class TableOutput implements ProgressOutput
 
     public function onTaskCompleted(TaskState $state): void
     {
-        $this->states[$state->getTaskId()] = $state;
+        unset($this->states[$state->getTaskId()]);
+        $this->logBuffer[] = $this->table->getLog(
+            null,
+            $this->table->getRow($state->getTaskId(), $state->getProgress(), $state->getStatus())
+        );
     }
 
     public function log(TaskState $state, string $message): void

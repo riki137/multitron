@@ -29,13 +29,13 @@ final class TaskQueue
      * @param int $maxConcurrent How many tasks to allow in flight.
      * @throws LogicException if maxConcurrent < 1 or dependencies invalid.
      */
-    public function __construct(ContainerInterface $container, TaskNode $root, int $maxConcurrent, InputInterface $options)
+    public function __construct(TaskList $taskList, InputInterface $input, int $maxConcurrent)
     {
         if ($maxConcurrent < 1) {
             throw new LogicException('Concurrency must be at least 1.');
         }
         $this->maxConcurrent = $maxConcurrent;
-        $this->graph = TaskGraph::buildFrom($container, $root, $options);
+        $this->graph = TaskGraph::buildFrom($taskList, $input);
 
         $this->readyQueue = new SplPriorityQueue();
         foreach ($this->graph->initialReadyTasks() as $id) {

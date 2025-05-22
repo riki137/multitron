@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Multitron\Orchestrator\Output;
 
 use Multitron\Execution\Handler\IpcHandlerRegistry;
+use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskState;
 use PhpStreamIpc\Message\LogMessage;
 use PhpStreamIpc\Message\Message;
@@ -13,9 +14,9 @@ use Tracy\Debugger;
 
 final class TableOutputFactory implements ProgressOutputFactory
 {
-    public function create(OutputInterface $output, IpcHandlerRegistry $registry): TableOutput
+    public function create(TaskList $taskList, OutputInterface $output, IpcHandlerRegistry $registry): TableOutput
     {
-        $table = new TableOutput($output);
+        $table = new TableOutput($output, $taskList);
         $registry->onMessage(function (Message $message, TaskState $state) use ($table) {
             Debugger::log($message, 'onMessage');
             if ($message instanceof LogMessage) {

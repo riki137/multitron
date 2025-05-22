@@ -38,11 +38,12 @@ final class TaskOrchestrator
         $concurrency = $input->getOption(self::OPTION_CONCURRENCY) ?? $this->detectCpuCount();
 
         $registry = $this->handlerFactory->create();
+        $taskList = new TaskList($this->container, $root, $input);
         $result = $this->doRun(
             $commandName,
             $input->getOptions(),
-            new TaskQueue($this->container, $root, $concurrency, $input),
-            $this->outputFactory->create($output, $registry),
+            new TaskQueue($taskList, $input, $concurrency),
+            $this->outputFactory->create($taskList, $output, $registry),
             $registry
         );
         $this->executionFactory->shutdown();

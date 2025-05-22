@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Multitron\Console;
 
 use Multitron\Message\TaskProgress;
+use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskStatus;
+use Multitron\Tree\TaskLeafNode;
 
 final class TaskTable
 {
@@ -15,10 +17,15 @@ final class TaskTable
 
     private int $taskWidth;
 
-    public function __construct()
+    public function __construct(TaskList $taskList)
     {
         $this->summary = new TaskProgress();
         $this->taskWidth = 16;
+        foreach ($taskList->getNodes() as $taskId => $task) {
+            if (!$task instanceof TaskLeafNode) continue;
+            $this->summary->total++;
+            $this->taskWidth = max($this->taskWidth, strlen($taskId));
+        }
 
         $this->startTimes['TOTAL'] = microtime(true);
     }

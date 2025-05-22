@@ -34,10 +34,10 @@ class TaskGraph
      * Build the graph from the root TaskNode.
      * @throws LogicException on unknown dependencies or cycles.
      */
-    public static function buildFrom(ContainerInterface $container, TaskNode $root, InputInterface $options): self
+    public static function buildFrom(TaskList $taskList, InputInterface $options): self
     {
         $g = new self();
-        $g->nodes = (new TaskList($container, $root, $options))->getNodes();
+        $g->nodes = $taskList->getNodes();
         // Initialize in-degrees
         foreach ($g->nodes as $id => $node) {
             $g->inDegree[$id] = 0;
