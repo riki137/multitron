@@ -13,6 +13,9 @@ final readonly class MasterCacheReadKeysPromise
     {
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function await(): array
     {
         $response = $this->promise->await();

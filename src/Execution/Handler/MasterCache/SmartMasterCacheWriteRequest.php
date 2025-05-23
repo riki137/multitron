@@ -9,7 +9,7 @@ final class SmartMasterCacheWriteRequest implements MasterCacheWriteRequest
     /** @var array<array{string[], mixed}> */
     public array $writeOps = [];
 
-    /** @var array<array{string[], mixed}> */
+    /** @var array<array{string[], array<string, mixed>}> */
     public array $mergeOps = [];
 
     public function __construct()
@@ -31,6 +31,7 @@ final class SmartMasterCacheWriteRequest implements MasterCacheWriteRequest
      * Queue a deep‐merge at $path (arrays only).
      *
      * @param string[] $path
+     * @param array<string, mixed> $value
      */
     public function merge(array $path, array $value): self
     {
@@ -38,6 +39,9 @@ final class SmartMasterCacheWriteRequest implements MasterCacheWriteRequest
         return $this;
     }
 
+    /**
+     * @param array<string, mixed> $storage
+     */
     public function doWrite(array &$storage): MasterCacheWriteResponse
     {
         // batch 0 = write, batch 1 = merge
@@ -66,9 +70,13 @@ final class SmartMasterCacheWriteRequest implements MasterCacheWriteRequest
 
                 if ($merge) {
                     $existing = $ref[$lastKey] ?? [];
-                    $ref[$lastKey] = is_array($existing)
-                        ? array_merge($existing, $value)
-                        : $value;
+                    if (is_array($existing)) {
+                        /** @var array<string, mixed> $existing */
+                        /** @var array<string, mixed> $value */
+                        $ref[$lastKey] = array_merge($existing, $value);
+                    } else {
+                        $ref[$lastKey] = $value;
+                    }
                 } else {
                     $ref[$lastKey] = $value;
                 }

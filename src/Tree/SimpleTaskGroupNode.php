@@ -8,12 +8,17 @@ use Symfony\Component\Console\Input\InputInterface;
 
 final readonly class SimpleTaskGroupNode implements TaskGroupNode
 {
+    /** @var string[] */
     private array $dependencies;
 
     /**
      * @param string $id
      * @param TaskNode[] $children
      * @param (string|TaskNode)[] $dependencies
+     */
+    /**
+     * @param TaskNode[] $children
+     * @param array<string|TaskNode> $dependencies
      */
     public function __construct(private string $id, private array $children = [], array $dependencies = [])
     {
@@ -25,6 +30,9 @@ final readonly class SimpleTaskGroupNode implements TaskGroupNode
         return $this->id;
     }
 
+    /**
+     * @return string[]
+     */
     public function getDependencies(InputInterface $options): array
     {
         return $this->dependencies;

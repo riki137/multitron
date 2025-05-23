@@ -8,5 +8,8 @@ use PhpStreamIpc\Message\Message;
 
 interface MasterCacheWriteRequest extends Message
 {
+    /**
+     * @param array<string, mixed> $storage
+     */
     public function doWrite(array &$storage): MasterCacheWriteResponse;
 }

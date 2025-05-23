@@ -16,11 +16,9 @@ class TaskList
     private array $nodes = [];
 
     private TaskTreeBuilder $builder;
-    private TaskTreeBuilderFactory $factory;
 
     public function __construct(TaskTreeBuilderFactory $factory, TaskNode $root, InputInterface $options)
     {
-        $this->factory = $factory;
         $this->builder = $factory->create();
         $this->collect($root, $options);
     }
@@ -40,6 +38,9 @@ class TaskList
         }
     }
 
+    /**
+     * @return array<string, TaskNode>
+     */
     public function getNodes(): array
     {
         return $this->nodes;

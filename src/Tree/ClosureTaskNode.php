@@ -10,6 +10,7 @@ use Symfony\Component\Console\Input\InputInterface;
 
 final readonly class ClosureTaskNode implements TaskLeafNode
 {
+    /** @var string[] */
     private array $dependencies;
 
     /**
@@ -17,6 +18,10 @@ final readonly class ClosureTaskNode implements TaskLeafNode
      * @param Closure(InputInterface): Task $factory
      * @param (string|TaskNode)[] $dependencies
  */
+    /**
+     * @param Closure(InputInterface): Task $factory
+     * @param array<string|TaskNode> $dependencies
+     */
     public function __construct(private string $id, private Closure $factory, array $dependencies = [])
     {
         $this->dependencies = self::castDependencies($dependencies);
@@ -32,11 +37,18 @@ final readonly class ClosureTaskNode implements TaskLeafNode
         return fn() => ($this->factory)($options);
     }
 
+    /**
+     * @return string[]
+     */
     public function getDependencies(InputInterface $options): array
     {
         return $this->dependencies;
     }
 
+    /**
+     * @param array<string|TaskNode> $dependencies
+     * @return string[]
+     */
     public static function castDependencies(array $dependencies): array
     {
         return array_map(static fn($dependency) => $dependency instanceof TaskNode ? $dependency->getId() : $dependency, $dependencies);

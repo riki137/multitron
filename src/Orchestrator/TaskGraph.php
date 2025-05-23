@@ -57,6 +57,7 @@ class TaskGraph
 
     /**
      * Return the IDs of tasks with no unmet dependencies.
+     *
      * @return string[]
      */
     public function initialReadyTasks(): array
@@ -82,7 +83,8 @@ class TaskGraph
 
     /**
      * Mark a task as complete and enqueue new ready tasks.
-     * Returns newly ready task IDs.
+     *
+     * @return string[] Newly ready task IDs
      */
     public function complete(string $id): array
     {
@@ -97,6 +99,9 @@ class TaskGraph
         return $ready;
     }
 
+    /**
+     * @return string[]
+     */
     public function getDependents(string $id): array
     {
         return $this->dependents[$id] ?? [];

@@ -7,20 +7,27 @@ namespace Multitron\Execution\Handler;
 use Closure;
 use Multitron\Orchestrator\TaskState;
 use PhpStreamIpc\Message\Message;
+use PhpStreamIpc\IpcSession;
 
 final class IpcHandlerRegistry
 {
-    /** @var array<Closure(Message, TaskState): mixed> */
+    /** @var array<Closure(Message, TaskState): (Message|null)> */
     private array $requestHandlers = [];
 
-    /** @var array<Closure(Message, TaskState): mixed> */
+    /** @var array<Closure(Message, TaskState): void> */
     private array $messageHandlers = [];
 
+    /**
+     * @param Closure(Message, TaskState): (Message|null) $handler
+     */
     public function onRequest(Closure $handler): void
     {
         $this->requestHandlers[] = $handler;
     }
 
+    /**
+     * @param Closure(Message, TaskState): void $handler
+     */
     public function onMessage(Closure $handler): void
     {
         $this->messageHandlers[] = $handler;
@@ -34,10 +41,14 @@ final class IpcHandlerRegistry
         }
         $session = $execution->getSession();
         foreach ($this->requestHandlers as $handler) {
-            $session->onRequest(fn(Message $message) => $handler($message, $state));
+            $session->onRequest(
+                fn(Message $message, IpcSession $session) => $handler($message, $state)
+            );
         }
         foreach ($this->messageHandlers as $handler) {
-            $session->onMessage(fn(Message $message) => $handler($message, $state));
+            $session->onMessage(
+                fn(Message $message, IpcSession $session) => $handler($message, $state)
+            );
         }
     }
 }

@@ -7,7 +7,7 @@ namespace Multitron\Execution\Handler\MasterCache;
 final readonly class SmartMasterCacheReadRequest implements MasterCacheReadRequest
 {
     /**
-     * @param array $keys ["key1", "key2"] to read top-level keys
+     * @param array<int|string, mixed> $keys ["key1", "key2"] to read top-level keys
      * [ "key1" => ["key1_1"], "key2" => ["key2_1", "key2_2"] ] to read nested keys
      * [ "key1", "key2" => ["key2_1", "key2_2"], "key3" => ["key3_1" => ["key3_1_1"]] ] feel free to mix depths
      */
@@ -17,6 +17,8 @@ final readonly class SmartMasterCacheReadRequest implements MasterCacheReadReque
 
     /**
      * Handles a request to read data from the cache.
+     *
+     * @param array<string, mixed> $storage
      */
     public function doRead(array &$storage): MasterCacheReadResponse
     {
@@ -26,6 +28,10 @@ final readonly class SmartMasterCacheReadRequest implements MasterCacheReadReque
 
     /**
      * Recursively retrieves entries from $source according to $keysSpec.
+     *
+     * @param array<string, mixed> $source
+     * @param array<int|string, mixed> $keysSpec
+     * @return array<string, mixed>
      */
     private function fetchKeys(array &$source, array $keysSpec): array
     {
@@ -39,7 +45,9 @@ final readonly class SmartMasterCacheReadRequest implements MasterCacheReadReque
                 }
                 // nested structure
             } elseif (is_array($innerSpec) && isset($source[$outerKey]) && is_array($source[$outerKey])) {
-                $nested = $this->fetchKeys($source[$outerKey], $innerSpec);
+                $nestedSource = $source[$outerKey];
+                /** @var array<string, mixed> $nestedSource */
+                $nested = $this->fetchKeys($nestedSource, $innerSpec);
                 if ($nested !== []) {
                     $result[$outerKey] = $nested;
                 }

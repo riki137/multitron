@@ -8,5 +8,8 @@ use PhpStreamIpc\Message\Message;
 
 interface MasterCacheReadRequest extends Message
 {
+    /**
+     * @param array<string, mixed> $storage
+     */
     public function doRead(array &$storage): MasterCacheReadResponse;
 }

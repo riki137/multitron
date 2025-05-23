@@ -11,6 +11,7 @@ use Symfony\Component\Console\Input\InputInterface;
 
 final class TaskTreeBuilder
 {
+    /** @var array<string, TaskNode> */
     private array $nodes = [];
 
     public function __construct(private ContainerInterface $container)
@@ -46,6 +47,10 @@ final class TaskTreeBuilder
      * @param array $dependencies
      * @return ClosureTaskNode
      */
+    /**
+     * @param Closure(InputInterface): Task $factory
+     * @param array<string|TaskNode> $dependencies
+     */
     public function closure(string $id, Closure $factory, array $dependencies = []): ClosureTaskNode
     {
         return $this->node(new ClosureTaskNode($id, $factory, $dependencies));
@@ -68,7 +73,8 @@ final class TaskTreeBuilder
     }
 
     /**
-     * @param string[]|TaskNode[] $dependencies
+     * @param Closure(InputInterface): Partition\PartitionedTaskInterface $factory
+     * @param array<string|TaskNode> $dependencies
      */
     public function partitionedClosure(string $id, int $partitionCount, Closure $factory, array $dependencies = []): PartitionedTaskGroupNode
     {
@@ -77,7 +83,7 @@ final class TaskTreeBuilder
 
     /**
      * @param TaskNode[] $children
-     * @param string[]|TaskNode[] $dependencies
+     * @param array<string|TaskNode> $dependencies
      */
     public function group(string $id, array $children, array $dependencies = []): SimpleTaskGroupNode
     {

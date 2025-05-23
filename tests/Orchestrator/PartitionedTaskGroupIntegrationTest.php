@@ -56,13 +56,14 @@ final class PartitionedTaskGroupIntegrationTest extends TestCase
             $this->assertInstanceOf(TaskLeafNode::class, $node);
             $ids[] = $node->getId();
             $factory = $node->getFactory($input);
+            /** @var DummyPartitionedTask $task */
             $task = $factory();
             $info[] = $task->getInfo();
             $queue->completeTask($node->getId());
         }
 
         sort($ids);
-        sort($info);
+        usort($info, fn(array $a, array $b) => $a[0] <=> $b[0]);
         $this->assertSame(['build 1/3', 'build 2/3', 'build 3/3'], $ids);
         $this->assertSame([[0,3], [1,3], [2,3]], $info);
         $this->assertFalse($queue->getNextTask());

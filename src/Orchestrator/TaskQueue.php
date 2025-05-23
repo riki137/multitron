@@ -17,10 +17,12 @@ final class TaskQueue
 {
     private TaskGraph $graph;
 
+    /** @var SplPriorityQueue<int, string> */
     private SplPriorityQueue $readyQueue;
 
     private int $maxConcurrent;
 
+    /** @var array<string, bool> */
     private array $running = [];
 
     /**
@@ -35,7 +37,9 @@ final class TaskQueue
         $this->maxConcurrent = $maxConcurrent;
         $this->graph = TaskGraph::buildFrom($taskList, $input);
 
-        $this->readyQueue = new SplPriorityQueue();
+        /** @var SplPriorityQueue<int, string> $queue */
+        $queue = new SplPriorityQueue();
+        $this->readyQueue = $queue;
         foreach ($this->graph->initialReadyTasks() as $id) {
             $priority = count($this->graph->getDependents($id));
             $this->readyQueue->insert($id, $priority);
@@ -57,6 +61,7 @@ final class TaskQueue
         // pull highest-priority ready task
         while (!$this->readyQueue->isEmpty()) {
             $id = $this->readyQueue->extract();
+            /** @var string $id */
             if (isset($this->running[$id]) || $this->graph->isCompleted($id)) {
                 continue;
             }

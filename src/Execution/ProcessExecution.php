@@ -7,6 +7,7 @@ namespace Multitron\Execution;
 use Multitron\Console\MultitronWorkerCommand;
 use PhpStreamIpc\IpcPeer;
 use PhpStreamIpc\IpcSession;
+use RuntimeException;
 
 final readonly class ProcessExecution implements Execution
 {
@@ -16,9 +17,13 @@ final readonly class ProcessExecution implements Execution
 
     public function __construct(IpcPeer $ipcPeer)
     {
+        $script = $_ENV['MULTITRON_SCRIPTNAME'] ?? $_SERVER['SCRIPT_FILENAME'] ?? $_SERVER['argv'][0] ?? null;
+        if ($script === null) {
+            throw new RuntimeException('Could not determine currently running script filename');
+        }
         $this->process = new Process([
             PHP_BINARY,
-            $_SERVER['SCRIPT_FILENAME'] ?? $_SERVER['argv'][0],
+            $script,
             MultitronWorkerCommand::NAME,
         ]);
         $this->session = $ipcPeer->createStreamSession(

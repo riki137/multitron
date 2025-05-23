@@ -15,6 +15,7 @@ final class TableOutput implements ProgressOutput
 {
     private readonly OutputInterface $section;
 
+    /** @var list<string> */
     private array $logBuffer = [];
 
     private readonly TaskTable $table;

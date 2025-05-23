@@ -8,10 +8,11 @@ use Multitron\Message\ContainerLoadedMessage;
 use Multitron\Message\StartTaskMessage;
 use PhpStreamIpc\Envelope\ResponsePromise;
 use PhpStreamIpc\IpcPeer;
+use RuntimeException;
 
 final class ProcessExecutionFactory implements ExecutionFactory
 {
-    public const DEFAULT_PROCESS_BUFFER_SIZE = 4;
+    public const DEFAULT_PROCESS_BUFFER_SIZE = 2;
 
     /** @var array<array{ProcessExecution, ResponsePromise}> */
     private array $processes = [];
@@ -42,7 +43,11 @@ final class ProcessExecutionFactory implements ExecutionFactory
         }
 
         $this->buffer();
-        [$process, $response] = array_shift($this->processes);
+        $entry = array_shift($this->processes);
+        if ($entry === null) {
+            throw new RuntimeException('No buffered process available (should not happen)');
+        }
+        [$process, $response] = $entry;
         $response->await();
         return $process;
     }

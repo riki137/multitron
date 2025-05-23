@@ -8,6 +8,7 @@ use Symfony\Component\Console\Input\InputInterface;
 
 abstract class AbstractTaskGroupNode implements TaskGroupNode
 {
+    /** @var string[] */
     private readonly array $dependencies;
 
     /**

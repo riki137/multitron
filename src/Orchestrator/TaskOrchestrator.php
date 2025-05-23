@@ -35,7 +35,8 @@ final class TaskOrchestrator
      */
     public function run(string $commandName, TaskNode $root, InputInterface $input, OutputInterface $output): int
     {
-        $concurrency = $input->getOption(self::OPTION_CONCURRENCY) ?? $this->detectCpuCount();
+        $option = $input->getOption(self::OPTION_CONCURRENCY);
+        $concurrency = is_numeric($option) ? (int)$option : $this->detectCpuCount();
 
         $registry = $this->handlerFactory->create();
         $taskList = new TaskList($this->builderFactory, $root, $input);
@@ -51,6 +52,9 @@ final class TaskOrchestrator
     /**
      * Runs all tasks respecting dependencies and concurrency.
      * Returns 0 if all tasks succeeded, or 1 if any failed.
+     */
+    /**
+     * @param array<string, mixed> $options
      */
     public function doRun(
         string $commandName,

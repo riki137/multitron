@@ -11,14 +11,15 @@ class Process
     /** @var resource */
     private $process;
 
+    /** @var array<int, resource> */
     private array $pipes = [];
 
     private ?int $exitCode = null;
 
     /**
-     * @param string[]       $command Array of command + args, e.g. ['ls', '-l', '/tmp']
-     * @param string|null    $cwd     Working directory to launch in (or inherit)
-     * @param array|null     $env     Environment overrides (or inherit)
+     * @param list<string>              $command Array of command + args
+     * @param string|null               $cwd     Working directory
+     * @param array<string, string>|null $env    Environment overrides
      */
     public function __construct(array $command, ?string $cwd = null, ?array $env = null)
     {
@@ -28,7 +29,7 @@ class Process
             2 => ['pipe', 'w'],
         ];
 
-        $this->process = proc_open(
+        $proc = proc_open(
             $command,
             $descriptors,
             $this->pipes,
@@ -37,9 +38,10 @@ class Process
             ['bypass_shell' => true]
         );
 
-        if (!is_resource($this->process)) {
+        if (!is_resource($proc)) {
             throw new RuntimeException('Failed to start process: ' . implode(' ', $command));
         }
+        $this->process = $proc;
         if (count($this->pipes) !== 3) {
             throw new RuntimeException('Process pipes were not set up correctly');
         }

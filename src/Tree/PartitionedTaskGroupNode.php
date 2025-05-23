@@ -14,7 +14,7 @@ final class PartitionedTaskGroupNode extends AbstractTaskGroupNode
     /**
      * @param string $id
      * @param int $partitionCount
-     * @param Closure(): PartitionedTaskInterface $factory
+     * @param Closure(InputInterface): PartitionedTaskInterface $factory
      * @param (string|TaskNode)[] $dependencies
      */
     public function __construct(
@@ -29,13 +29,16 @@ final class PartitionedTaskGroupNode extends AbstractTaskGroupNode
     public function getChildren(TaskTreeBuilder $builder, InputInterface $options): void
     {
         for ($i = 0; $i < $this->partitionCount; $i++) {
-            $builder->closure($this->getId() . ' ' . ($i + 1) . '/' . $this->partitionCount, fn() => $this->createPartition($i));
+            $builder->closure(
+                $this->getId() . ' ' . ($i + 1) . '/' . $this->partitionCount,
+                fn(InputInterface $input): PartitionedTaskInterface => $this->createPartition($input, $i)
+            );
         }
     }
 
-    private function createPartition(int $index): Task
+    private function createPartition(InputInterface $input, int $index): PartitionedTaskInterface
     {
-        $task = ($this->factory)();
+        $task = ($this->factory)($input);
         $task->setPartitioning($index, $this->partitionCount);
         return $task;
     }
