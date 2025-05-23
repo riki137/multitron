@@ -94,9 +94,37 @@ final class MyTask implements Task
     {
         $data = $comm->read('key');
         $comm->merge('key', ['result' => 'done']);
+        // advanced operations
+        $cache = $comm->cache();
+        $values = $cache->readKeys(['foo', 'stats' => ['hits']])->await();
+        $cache->set(['foo', 'bar'], 'baz');
+        $cache->merge('stats', ['hits' => ($values['stats']['hits'] ?? 0) + 1]);
     }
 }
 ```
+
+### Reporting Progress
+
+Tasks can update progress counters that Multitron displays while running. Use
+the `ProgressClient` provided by the communicator:
+
+```php
+final class DownloadTask implements Task
+{
+    public function execute(TaskCommunicator $comm): void
+    {
+        $progress = $comm->progress();
+        $progress->setTotal(100);
+        for ($i = 0; $i < 100; $i++) {
+            // ... work
+            $progress->addDone();
+        }
+    }
+}
+```
+
+You may also call `addOccurrence()` or `addWarning()` to report additional
+metrics or warnings.
 
 ### Partitioned Tasks
 
@@ -116,7 +144,44 @@ final class BuildReportTask extends PartitionedTask
 $builder->partitioned(BuildReportTask::class, 4);
 ```
 
+### Accessing CLI Options
+
+Options passed on the command line are forwarded to each task. Retrieve them via
+`TaskCommunicator`:
+
+```php
+final class ProcessUsersTask implements Task
+{
+    public function execute(TaskCommunicator $comm): void
+    {
+        $limit = (int)($comm->getOption('limit') ?? 0);
+        // ... process with the given $limit
+    }
+}
+```
+
+Call `getOptions()` to receive the entire array of options if needed.
+
+
+### Custom Progress Output
+
+Multitron renders progress using a `ProgressOutputFactory`. Replace the default table display or combine outputs with `ChainProgressOutputFactory`:
+
+```php
+use Multitron\Orchestrator\Output\ChainProgressOutputFactory;
+use Multitron\Orchestrator\Output\TableOutputFactory;
+
+$factory = new ChainProgressOutputFactory(
+    new TableOutputFactory(),
+    new JsonOutputFactory(), // your custom factory
+);
+$orchestrator = new TaskOrchestrator($ipc, $container, $execFactory, $factory, $handlerFactory);
+```
+
+Implement the factory to send progress anywhere you like.
+
 ## Contributing
+
 
 Issues and pull requests are welcome. Feel free to open a discussion on GitHub.
 
