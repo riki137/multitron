@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Multitron\Tree;
 
 use Closure;
+use LogicException;
 use Multitron\Execution\Task;
+use Multitron\Tree\Partition\PartitionedTaskInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 
@@ -14,7 +16,7 @@ final class TaskTreeBuilder
     /** @var array<string, TaskNode> */
     private array $nodes = [];
 
-    public function __construct(private ContainerInterface $container)
+    public function __construct(private readonly ContainerInterface $container)
     {
     }
 
@@ -61,7 +63,7 @@ final class TaskTreeBuilder
      */
     public function service(string $class, array $dependencies = []): ClosureTaskNode
     {
-        return $this->closure($this->getShortClassName($class), fn() => $this->container->get($class), $dependencies);
+        return $this->closure($this->getShortClassName($class), fn() => $this->fetchTask($class), $dependencies);
     }
 
     /**
@@ -69,11 +71,11 @@ final class TaskTreeBuilder
      */
     public function partitioned(string $class, int $partitionCount, array $dependencies = []): PartitionedTaskGroupNode
     {
-        return $this->partitionedClosure($this->getShortClassName($class), $partitionCount, fn() => $this->container->get($class), $dependencies);
+        return $this->partitionedClosure($this->getShortClassName($class), $partitionCount, fn() => $this->fetchPartitionedTask($class), $dependencies);
     }
 
     /**
-     * @param Closure(InputInterface): Partition\PartitionedTaskInterface $factory
+     * @param Closure(InputInterface): PartitionedTaskInterface $factory
      * @param array<string|TaskNode> $dependencies
      */
     public function partitionedClosure(string $id, int $partitionCount, Closure $factory, array $dependencies = []): PartitionedTaskGroupNode
@@ -88,6 +90,24 @@ final class TaskTreeBuilder
     public function group(string $id, array $children, array $dependencies = []): SimpleTaskGroupNode
     {
         return $this->node(new SimpleTaskGroupNode($id, $children, $dependencies));
+    }
+
+    private function fetchTask(string $class): Task
+    {
+        $task = $this->container->get($class);
+        if (!$task instanceof Task) {
+            throw new LogicException('Service ' . $class . ' is not a Task');
+        }
+        return $task;
+    }
+
+    private function fetchPartitionedTask(string $class): PartitionedTaskInterface
+    {
+        $task = $this->container->get($class);
+        if (!$task instanceof PartitionedTaskInterface) {
+            throw new LogicException('Service ' . $class . ' is not a PartitionedTask');
+        }
+        return $task;
     }
 
     /**

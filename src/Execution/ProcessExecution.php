@@ -17,9 +17,15 @@ final readonly class ProcessExecution implements Execution
 
     public function __construct(IpcPeer $ipcPeer)
     {
-        $script = $_ENV['MULTITRON_SCRIPTNAME'] ?? $_SERVER['SCRIPT_FILENAME'] ?? $_SERVER['argv'][0] ?? null;
+        /** @var string|null $script */
+        $script = $_ENV['MULTITRON_SCRIPTNAME'] ?? $_SERVER['SCRIPT_FILENAME'] ?? null;
         if ($script === null) {
-            throw new RuntimeException('Could not determine currently running script filename');
+            if (is_array($_SERVER['argv'] ?? null) && is_string($_SERVER['argv'][0] ?? null)) {
+                $script = $_SERVER['argv'][0];
+            }
+            if ($script === null) {
+                throw new RuntimeException('Could not determine currently running script filename');
+            }
         }
         $this->process = new Process([
             PHP_BINARY,
