@@ -6,6 +6,7 @@ namespace Multitron\Orchestrator;
 
 use LogicException;
 use Multitron\Tree\TaskNode;
+use Multitron\Orchestrator\TaskList;
 use Symfony\Component\Console\Input\InputInterface;
 
 /**
@@ -48,6 +49,20 @@ class TaskGraph
                 if (!isset($g->nodes[$dep])) {
                     throw new LogicException("Task '$id' depends on unknown '$dep'.");
                 }
+
+                if ($taskList->isGroup($dep)) {
+                    if ($taskList->isMemberOf($dep, $id)) {
+                        $g->inDegree[$id]++;
+                        $g->dependents[$dep][] = $id;
+                    } else {
+                        foreach ($taskList->getGroupMembers($dep) as $member) {
+                            $g->inDegree[$id]++;
+                            $g->dependents[$member][] = $id;
+                        }
+                    }
+                    continue;
+                }
+
                 $g->inDegree[$id]++;
                 $g->dependents[$dep][] = $id;
             }
