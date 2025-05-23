@@ -11,6 +11,7 @@ use Multitron\Orchestrator\TaskQueue;
 use Multitron\Tree\ClosureTaskNode;
 use Multitron\Tree\SimpleTaskGroupNode;
 use Multitron\Tree\TaskTreeBuilder;
+use Multitron\Tree\TaskTreeBuilderFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -35,7 +36,8 @@ final class TaskQueueGroupIntegrationTest extends TestCase
     public function testGroupNodesAreExpandedAndDependentsReady(): void
     {
         $container = $this->createContainer();
-        $builder   = new TaskTreeBuilder($container);
+        $factory   = new TaskTreeBuilderFactory($container);
+        $builder   = $factory->create();
 
         $task1 = new ClosureTaskNode('task1', fn() => $this->createDummyTask());
         $task2 = new ClosureTaskNode('task2', fn() => $this->createDummyTask(), ['group']);
@@ -46,7 +48,7 @@ final class TaskQueueGroupIntegrationTest extends TestCase
 
         $input = new ArrayInput([]);
 
-        $taskList = new TaskList($container, $root, $input);
+        $taskList = new TaskList($factory, $root, $input);
         $queue    = new TaskQueue($taskList, $input, 1);
 
         $next = $queue->getNextTask();

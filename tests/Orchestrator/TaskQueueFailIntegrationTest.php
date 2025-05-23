@@ -8,9 +8,10 @@ use Multitron\Comms\TaskCommunicator;
 use Multitron\Execution\Task;
 use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskQueue;
+use Multitron\Tree\TaskTreeBuilder;
+use Multitron\Tree\TaskTreeBuilderFactory;
 use Multitron\Tree\ClosureTaskNode;
 use Multitron\Tree\SimpleTaskGroupNode;
-use Multitron\Tree\TaskTreeBuilder;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -35,7 +36,8 @@ final class TaskQueueFailIntegrationTest extends TestCase
     public function testFailingTaskSkipsDependentsOutsideGroup(): void
     {
         $container = $this->createContainer();
-        $builder   = new TaskTreeBuilder($container);
+        $factory   = new TaskTreeBuilderFactory($container);
+        $builder   = $factory->create();
 
         $taskA = new ClosureTaskNode('taskA', fn() => $this->createDummyTask());
         $taskB = new ClosureTaskNode('taskB', fn() => $this->createDummyTask());
@@ -45,7 +47,7 @@ final class TaskQueueFailIntegrationTest extends TestCase
 
         $input = new ArrayInput([]);
 
-        $taskList = new TaskList($container, $root, $input);
+        $taskList = new TaskList($factory, $root, $input);
         $queue    = new TaskQueue($taskList, $input, 1);
 
         $first = $queue->getNextTask();

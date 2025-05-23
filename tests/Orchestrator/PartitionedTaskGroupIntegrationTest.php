@@ -7,6 +7,7 @@ namespace Multitron\Tests\Orchestrator;
 use Multitron\Comms\TaskCommunicator;
 use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskQueue;
+use Multitron\Tree\TaskTreeBuilderFactory;
 use Multitron\Tree\Partition\PartitionedTask;
 use Multitron\Tree\PartitionedTaskGroupNode;
 use PHPUnit\Framework\TestCase;
@@ -35,11 +36,12 @@ final class PartitionedTaskGroupIntegrationTest extends TestCase
 
     public function testPartitionedTasksAreCreatedWithCorrectIndices(): void
     {
-        $container = $this->createContainer();
-        $group = new PartitionedTaskGroupNode('build', 3, fn() => new DummyPartitionedTask(), []);
-        $input  = new ArrayInput([]);
+        $container     = $this->createContainer();
+        $builderFactory = new TaskTreeBuilderFactory($container);
+        $group         = new PartitionedTaskGroupNode('build', 3, fn() => new DummyPartitionedTask(), []);
+        $input     = new ArrayInput([]);
 
-        $taskList = new TaskList($container, $group, $input);
+        $taskList = new TaskList($builderFactory, $group, $input);
         $queue    = new TaskQueue($taskList, $input, 3);
 
         $ids = [];
