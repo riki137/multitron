@@ -6,7 +6,6 @@ namespace Multitron\Orchestrator;
 
 use LogicException;
 use Multitron\Tree\TaskNode;
-use Psr\Container\ContainerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 
 /**

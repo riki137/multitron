@@ -25,7 +25,6 @@ final readonly class SimpleTaskGroupNode implements TaskGroupNode
         return $this->id;
     }
 
-
     public function getDependencies(InputInterface $options): array
     {
         return $this->dependencies;

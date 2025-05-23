@@ -7,7 +7,6 @@ namespace Multitron\Orchestrator\Output;
 use Multitron\Console\TaskTable;
 use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskState;
-use Multitron\Orchestrator\TaskStatus;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\ConsoleSectionOutput;
 use Symfony\Component\Console\Output\OutputInterface;

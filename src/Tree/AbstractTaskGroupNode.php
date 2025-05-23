@@ -24,5 +24,4 @@ abstract class AbstractTaskGroupNode implements TaskGroupNode
     {
         return $this->dependencies;
     }
-
 }

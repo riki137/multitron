@@ -37,7 +37,6 @@ final readonly class ClosureTaskNode implements TaskLeafNode
         return $this->dependencies;
     }
 
-
     public static function castDependencies(array $dependencies): array
     {
         return array_map(static fn($dependency) => $dependency instanceof TaskNode ? $dependency->getId() : $dependency, $dependencies);

@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Multitron\Orchestrator;
 
 use LogicException;
-use Multitron\Tree\TaskNode;
 use Multitron\Tree\TaskGroupNode;
 use Multitron\Tree\TaskLeafNode;
-use Psr\Container\ContainerInterface;
 use SplPriorityQueue;
 use Symfony\Component\Console\Input\InputInterface;
 

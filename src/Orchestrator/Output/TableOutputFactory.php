@@ -10,7 +10,6 @@ use Multitron\Orchestrator\TaskState;
 use PhpStreamIpc\Message\LogMessage;
 use PhpStreamIpc\Message\Message;
 use Symfony\Component\Console\Output\OutputInterface;
-use Tracy\Debugger;
 
 final class TableOutputFactory implements ProgressOutputFactory
 {
