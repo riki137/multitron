@@ -50,6 +50,7 @@ final class TableOutput implements ProgressOutput
             null,
             $this->table->getRow($state->getTaskId(), $state->getProgress(), $state->getStatus())
         );
+        $this->table->markFinished($state->getTaskId());
     }
 
     public function log(TaskState $state, string $message): void

@@ -35,6 +35,12 @@ final class TaskTable
         $this->startTimes[$taskId] = microtime(true);
     }
 
+    public function markFinished(string $taskId): void
+    {
+        unset($this->startTimes[$taskId]);
+        $this->summary->done++;
+    }
+
     private static function getPrintTime(): string
     {
         return '<fg=gray>(' . date('H:i:s') . ')</>';
