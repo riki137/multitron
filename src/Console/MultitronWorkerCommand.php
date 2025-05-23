@@ -46,7 +46,11 @@ final class MultitronWorkerCommand extends Command
             $this->peer->tick();
         }
 
-        $command = $this->getApplication()->find($startTask->commandName);
+        $application = $this->getApplication();
+        if ($application === null) {
+            throw new RuntimeException('Console Application not initialized. You need to run the command in a console context.');
+        }
+        $command = $application->find($startTask->commandName);
         if (!$command instanceof AbstractMultitronCommand) {
             throw new RuntimeException('Command not found');
         }

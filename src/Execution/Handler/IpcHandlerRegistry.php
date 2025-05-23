@@ -10,8 +10,10 @@ use PhpStreamIpc\Message\Message;
 
 final class IpcHandlerRegistry
 {
+    /** @var array<Closure(Message, TaskState): mixed> */
     private array $requestHandlers = [];
 
+    /** @var array<Closure(Message, TaskState): mixed> */
     private array $messageHandlers = [];
 
     public function onRequest(Closure $handler): void

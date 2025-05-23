@@ -11,6 +11,7 @@ use Multitron\Orchestrator\TaskQueue;
 use Multitron\Tree\ClosureTaskNode;
 use Multitron\Tree\SimpleTaskGroupNode;
 use Multitron\Tree\TaskTreeBuilderFactory;
+use Multitron\Tree\TaskLeafNode;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -48,15 +49,18 @@ final class TaskQueueIntegrationTest extends TestCase
         $queue    = new TaskQueue($taskList, $input, 1);
 
         $next = $queue->getNextTask();
+        $this->assertInstanceOf(TaskLeafNode::class, $next);
         $this->assertSame('task1', $next->getId());
         $this->assertTrue($queue->getNextTask()); // concurrency limit reached
         $queue->completeTask('task1');
 
         $next = $queue->getNextTask();
+        $this->assertInstanceOf(TaskLeafNode::class, $next);
         $this->assertSame('task2', $next->getId());
         $queue->completeTask('task2');
 
         $next = $queue->getNextTask();
+        $this->assertInstanceOf(TaskLeafNode::class, $next);
         $this->assertSame('task3', $next->getId());
         $queue->completeTask('task3');
 
@@ -79,10 +83,12 @@ final class TaskQueueIntegrationTest extends TestCase
         $queue    = new TaskQueue($taskList, $input, 2);
 
         $next = $queue->getNextTask();
+        $this->assertInstanceOf(TaskLeafNode::class, $next);
         $this->assertSame('task1', $next->getId());
         $queue->completeTask('task1');
 
         $next = $queue->getNextTask();
+        $this->assertInstanceOf(TaskLeafNode::class, $next);
         $this->assertSame('task2', $next->getId());
 
         $skipped = $queue->failTask('task2');

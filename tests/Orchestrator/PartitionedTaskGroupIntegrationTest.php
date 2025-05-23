@@ -10,6 +10,7 @@ use Multitron\Orchestrator\TaskQueue;
 use Multitron\Tree\TaskTreeBuilderFactory;
 use Multitron\Tree\Partition\PartitionedTask;
 use Multitron\Tree\PartitionedTaskGroupNode;
+use Multitron\Tree\TaskLeafNode;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -18,6 +19,9 @@ final class DummyPartitionedTask extends PartitionedTask
 {
     public function execute(TaskCommunicator $comm): void {}
 
+    /**
+     * @return array{int, int}
+     */
     public function getInfo(): array
     {
         return [$this->partitionIndex, $this->partitionCount];
@@ -45,9 +49,11 @@ final class PartitionedTaskGroupIntegrationTest extends TestCase
         $queue    = new TaskQueue($taskList, $input, 3);
 
         $ids = [];
+        /** @var list<array{int, int}> $info */
         $info = [];
         for ($i = 0; $i < 3; $i++) {
             $node = $queue->getNextTask();
+            $this->assertInstanceOf(TaskLeafNode::class, $node);
             $ids[] = $node->getId();
             $factory = $node->getFactory($input);
             $task = $factory();

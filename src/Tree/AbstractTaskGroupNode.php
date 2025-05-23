@@ -10,6 +10,9 @@ abstract class AbstractTaskGroupNode implements TaskGroupNode
 {
     private readonly array $dependencies;
 
+    /**
+     * @param string[]|TaskNode[] $dependencies
+     */
     public function __construct(private readonly string $id, array $dependencies = [])
     {
         $this->dependencies = ClosureTaskNode::castDependencies($dependencies);
@@ -20,6 +23,9 @@ abstract class AbstractTaskGroupNode implements TaskGroupNode
         return $this->id;
     }
 
+    /**
+     * @return string[]
+     */
     public function getDependencies(InputInterface $options): array
     {
         return $this->dependencies;

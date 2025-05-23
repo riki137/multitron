@@ -17,6 +17,7 @@ final readonly class TaskCommunicator
 
     public function __construct(
         private IpcSession $session,
+        /** @var array<string, mixed> $options */
         private array $options,
         ?MasterCacheClient $cache = null,
         ?ProgressClient $progress = null
@@ -40,6 +41,9 @@ final readonly class TaskCommunicator
         return $this->options[$name] ?? null;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getOptions(): array
     {
         return $this->options;

@@ -12,6 +12,7 @@ use Multitron\Tree\TaskTreeBuilder;
 use Multitron\Tree\TaskTreeBuilderFactory;
 use Multitron\Tree\ClosureTaskNode;
 use Multitron\Tree\SimpleTaskGroupNode;
+use Multitron\Tree\TaskLeafNode;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -51,10 +52,12 @@ final class TaskQueueFailIntegrationTest extends TestCase
         $queue    = new TaskQueue($taskList, $input, 1);
 
         $first = $queue->getNextTask();
+        $this->assertInstanceOf(TaskLeafNode::class, $first);
         $skipped = $queue->failTask($first->getId());
         $this->assertSame(['final'], $skipped);
 
         $second = $queue->getNextTask();
+        $this->assertInstanceOf(TaskLeafNode::class, $second);
         $queue->completeTask($second->getId());
 
         $this->assertFalse($queue->getNextTask());

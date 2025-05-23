@@ -11,6 +11,7 @@ use Multitron\Tree\TaskLeafNode;
 
 final class TaskTable
 {
+    /** @var array<string, float> */
     public array $startTimes = [];
 
     private TaskProgress $summary;

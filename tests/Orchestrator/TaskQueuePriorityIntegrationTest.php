@@ -12,6 +12,7 @@ use Multitron\Tree\ClosureTaskNode;
 use Multitron\Tree\SimpleTaskGroupNode;
 use Multitron\Tree\TaskTreeBuilder;
 use Multitron\Tree\TaskTreeBuilderFactory;
+use Multitron\Tree\TaskLeafNode;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -51,6 +52,7 @@ final class TaskQueuePriorityIntegrationTest extends TestCase
         $queue    = new TaskQueue($taskList, $input, 1);
 
         $next = $queue->getNextTask();
+        $this->assertInstanceOf(TaskLeafNode::class, $next);
         $this->assertSame('taskA', $next->getId());
     }
 }

@@ -51,21 +51,34 @@ final class TaskTreeBuilder
         return $this->node(new ClosureTaskNode($id, $factory, $dependencies));
     }
 
+    /**
+     * @param string[]|TaskNode[] $dependencies
+     */
     public function service(string $class, array $dependencies = []): ClosureTaskNode
     {
         return $this->closure($this->getShortClassName($class), fn() => $this->container->get($class), $dependencies);
     }
 
+    /**
+     * @param string[]|TaskNode[] $dependencies
+     */
     public function partitioned(string $class, int $partitionCount, array $dependencies = []): PartitionedTaskGroupNode
     {
         return $this->partitionedClosure($this->getShortClassName($class), $partitionCount, fn() => $this->container->get($class), $dependencies);
     }
 
+    /**
+     * @param string[]|TaskNode[] $dependencies
+     */
     public function partitionedClosure(string $id, int $partitionCount, Closure $factory, array $dependencies = []): PartitionedTaskGroupNode
     {
         return $this->node(new PartitionedTaskGroupNode($id, $partitionCount, $factory, $dependencies));
     }
 
+    /**
+     * @param TaskNode[] $children
+     * @param string[]|TaskNode[] $dependencies
+     */
     public function group(string $id, array $children, array $dependencies = []): SimpleTaskGroupNode
     {
         return $this->node(new SimpleTaskGroupNode($id, $children, $dependencies));

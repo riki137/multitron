@@ -24,8 +24,8 @@ final readonly class MasterCacheClient
     /**
      * Reads data from the master cache based on the specified paths.
      *
-     * @param array $paths Structure defining keys to fetch. See MasterCacheReadRequest for details.
-     *                     Example: ["key1", "key2" => ["nested_key"]]
+     * @param array<int|string, string|array> $paths Structure defining keys to fetch. See MasterCacheReadRequest for details.
+     *                                             Example: ["key1", "key2" => ["nested_key"]]
      * @return MasterCacheReadKeysPromise A promise resolving with the fetched data.
      */
     public function readKeys(array $paths): MasterCacheReadKeysPromise
@@ -59,6 +59,9 @@ final readonly class MasterCacheClient
      * @param string|string[] $path The path segments. A single string is treated as a top-level key.
      * @param array $value The array value to merge.
      * @return ResponsePromise A promise that resolves when the operation is acknowledged by the server.
+     */
+    /**
+     * @param array<string, mixed> $value The array value to merge.
      */
     public function merge(string|array $path, array $value): ResponsePromise
     {

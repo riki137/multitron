@@ -9,6 +9,7 @@ use Multitron\Tree\SimpleTaskGroupNode;
 use Multitron\Tree\TaskNode;
 use Multitron\Tree\TaskTreeBuilder;
 use Multitron\Tree\TaskTreeBuilderFactory;
+use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -32,11 +33,15 @@ abstract class AbstractMultitronCommand extends Command
     {
         $builder = $this->builderFactory->create();
         $this->getNodes($builder);
-        return new SimpleTaskGroupNode($this->getName(), $builder->consume());
+        $name = $this->getName();
+        if (!is_string($name)) {
+            throw new RuntimeException('Command ' . static::class . ' has no name configured. Add #[AsCommand(name: "...")] to the class.');
+        }
+        return new SimpleTaskGroupNode((string)$this->getName(), $builder->consume());
     }
 
     final protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        return $this->orchestrator->run($this->getName(), $this->getRootNode(), $input, $output);
+        return $this->orchestrator->run((string)$this->getName(), $this->getRootNode(), $input, $output);
     }
 }

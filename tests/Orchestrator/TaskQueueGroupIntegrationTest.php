@@ -12,6 +12,7 @@ use Multitron\Tree\ClosureTaskNode;
 use Multitron\Tree\SimpleTaskGroupNode;
 use Multitron\Tree\TaskTreeBuilder;
 use Multitron\Tree\TaskTreeBuilderFactory;
+use Multitron\Tree\TaskLeafNode;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -52,14 +53,17 @@ final class TaskQueueGroupIntegrationTest extends TestCase
         $queue    = new TaskQueue($taskList, $input, 1);
 
         $next = $queue->getNextTask();
+        $this->assertInstanceOf(TaskLeafNode::class, $next);
         $this->assertSame('task1', $next->getId());
         $queue->completeTask('task1');
 
         $first = $queue->getNextTask();
+        $this->assertInstanceOf(TaskLeafNode::class, $first);
         $this->assertContains($first->getId(), ['task2', 'task3']);
         $queue->completeTask($first->getId());
 
         $second = $queue->getNextTask();
+        $this->assertInstanceOf(TaskLeafNode::class, $second);
         $expected = $first->getId() === 'task2' ? 'task3' : 'task2';
         $this->assertSame($expected, $second->getId());
         $queue->completeTask($expected);
