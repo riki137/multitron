@@ -8,6 +8,7 @@ use RuntimeException;
 
 class Process
 {
+    /** @var resource */
     private $process;
 
     private array $pipes = [];

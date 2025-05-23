@@ -64,4 +64,9 @@ final class ProcessExecutionFactory implements ExecutionFactory
         }
         $this->processes = [];
     }
+
+    public function __destruct()
+    {
+        $this->shutdown();
+    }
 }

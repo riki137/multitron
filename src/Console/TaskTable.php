@@ -60,7 +60,7 @@ final class TaskTable
             self::getProgressBar($progress, $percent),
             self::getCount($progress),
             $this->getTime($taskId),
-            self::getOccurenceStatus($progress),
+            self::getOccurrenceStatus($progress),
         ]));
     }
 
@@ -75,7 +75,7 @@ final class TaskTable
         ]));
     }
 
-    private static function getOccurenceStatus(TaskProgress $progress): string
+    private static function getOccurrenceStatus(TaskProgress $progress): string
     {
         $ret = [];
         foreach ($progress->occurrences as $key => $count) {

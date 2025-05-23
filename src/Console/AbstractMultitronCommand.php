@@ -16,7 +16,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 abstract class AbstractMultitronCommand extends Command
 {
-    public function __construct(private readonly ContainerInterface $container, private readonly TaskOrchestrator $orchestrator)
+    public function __construct(private readonly TaskTreeBuilder $builder, private readonly TaskOrchestrator $orchestrator)
     {
         parent::__construct();
     }
@@ -30,7 +30,7 @@ abstract class AbstractMultitronCommand extends Command
 
     final public function getRootNode(): TaskNode
     {
-        $builder = new TaskTreeBuilder($this->container);
+        $builder = clone $this->builder;
         $this->getNodes($builder);
         return new SimpleTaskGroupNode($this->getName(), $builder->consume());
     }

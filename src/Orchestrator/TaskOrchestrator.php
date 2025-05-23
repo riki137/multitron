@@ -39,15 +39,13 @@ final class TaskOrchestrator
 
         $registry = $this->handlerFactory->create();
         $taskList = new TaskList($this->container, $root, $input);
-        $result = $this->doRun(
+        return $this->doRun(
             $commandName,
             $input->getOptions(),
             new TaskQueue($taskList, $input, $concurrency),
             $this->outputFactory->create($taskList, $output, $registry),
             $registry
         );
-        $this->executionFactory->shutdown();
-        return $result;
     }
 
     /**

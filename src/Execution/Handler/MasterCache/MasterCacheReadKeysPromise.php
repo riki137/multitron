@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Multitron\Execution\Handler\MasterCache;
 
+use LogicException;
 use PhpStreamIpc\Envelope\ResponsePromise;
 
 final readonly class MasterCacheReadKeysPromise
@@ -15,7 +16,9 @@ final readonly class MasterCacheReadKeysPromise
     public function await(): array
     {
         $response = $this->promise->await();
-        assert($response instanceof MasterCacheReadResponse);
+        if (!$response instanceof MasterCacheReadResponse) {
+            throw new LogicException('Unexpected response type: ' . get_debug_type($response));
+        }
         return $response->data;
     }
 }
