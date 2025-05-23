@@ -76,7 +76,7 @@ final class TaskTable
     private static function getOccurenceStatus(TaskProgress $progress): string
     {
         $ret = [];
-        foreach ($progress->occurences as $key => $count) {
+        foreach ($progress->occurrences as $key => $count) {
             if ($count > 0) {
                 $ret[] = "<fg=gray>{$count}x{$key}</>";
             }

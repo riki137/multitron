@@ -64,13 +64,6 @@ final class TableOutput implements ProgressOutput
         $totalDone = 0;
         // Render each task
         foreach ($this->states as $state) {
-            $exitCode = match ($state->getStatus()) {
-                TaskStatus::RUNNING => null,
-                TaskStatus::SUCCESS => 0,
-                TaskStatus::SKIP => -1,
-                TaskStatus::ERROR => 1,
-            };
-
             $sectionBuffer[] = $this->table->getRow(
                 $state->getTaskId(),
                 $state->getProgress(),

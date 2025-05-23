@@ -13,7 +13,7 @@ final class TaskProgress implements Message
     public int $done = 0;
 
     /** @var array<string, int> */
-    public array $occurences = [];
+    public array $occurrences = [];
 
     /** @var array<string, int> */
     public array $warnings = [];
@@ -25,25 +25,25 @@ final class TaskProgress implements Message
 
     public function toFloat(): float
     {
-        return fdiv($this->done, $this->total);
+        return $this->total === 0 ? 0 : fdiv($this->done, $this->total);
     }
 
-    public function addOccurence(string $key, int $count = 1): void
+    public function addOccurrence(string $key, int $count = 1): void
     {
-        $key = $this->occurenceKey($key);
-        $this->occurences[$key] = ($this->occurences[$key] ?? 0) + $count;
+        $key = $this->occurrenceKey($key);
+        $this->occurrences[$key] = ($this->occurrences[$key] ?? 0) + $count;
     }
 
-    public function setOccurence(string $key, int $count): void
+    public function setOccurrence(string $key, int $count): void
     {
-        $key = $this->occurenceKey($key);
+        $key = $this->occurrenceKey($key);
 
         if ($count === 0) {
-            unset($this->occurences[$key]);
+            unset($this->occurrences[$key]);
             return;
         }
 
-        $this->occurences[$key] = $count;
+        $this->occurrences[$key] = $count;
     }
 
     public function addWarning(string $warning, int $count = 1): void
@@ -61,7 +61,7 @@ final class TaskProgress implements Message
         $this->warnings[$warning] = $count;
     }
 
-    private function occurenceKey(string $key): string
+    private function occurrenceKey(string $key): string
     {
         return strtoupper(substr($key, 0, 4));
     }
@@ -70,7 +70,7 @@ final class TaskProgress implements Message
     {
         $this->total = $progress->total;
         $this->done = $progress->done;
-        $this->occurences = $progress->occurences;
+        $this->occurrences = $progress->occurrences;
         $this->warnings = $progress->warnings;
     }
 }

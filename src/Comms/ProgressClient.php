@@ -49,15 +49,15 @@ final class ProgressClient
         $this->flush();
     }
 
-    public function addOccurence(string $key, int $count = 1): void
+    public function addOccurrence(string $key, int $count = 1): void
     {
-        $this->progress->addOccurence($key, $count);
+        $this->progress->addOccurrence($key, $count);
         $this->flush();
     }
 
-    public function setOccurence(string $key, int $count): void
+    public function setOccurrence(string $key, int $count): void
     {
-        $this->progress->setOccurence($key, $count);
+        $this->progress->setOccurrence($key, $count);
         $this->flush();
     }
 

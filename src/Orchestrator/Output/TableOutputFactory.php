@@ -18,7 +18,6 @@ final class TableOutputFactory implements ProgressOutputFactory
     {
         $table = new TableOutput($output, $taskList);
         $registry->onMessage(function (Message $message, TaskState $state) use ($table) {
-            Debugger::log($message, 'onMessage');
             if ($message instanceof LogMessage) {
                 $table->log($state, $message->message);
             }
