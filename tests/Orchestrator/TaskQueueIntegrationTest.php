@@ -10,7 +10,7 @@ use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskQueue;
 use Multitron\Tree\ClosureTaskNode;
 use Multitron\Tree\SimpleTaskGroupNode;
-use Multitron\Tree\TaskTreeBuilder;
+use Multitron\Tree\TaskTreeBuilderFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -35,7 +35,7 @@ final class TaskQueueIntegrationTest extends TestCase
     public function testQueueRespectsDependenciesAndConcurrency(): void
     {
         $container = $this->createContainer();
-        $builder   = new TaskTreeBuilder($container);
+        $factory   = new TaskTreeBuilderFactory($container);
 
         $task1 = new ClosureTaskNode('task1', fn() => $this->createDummyTask());
         $task2 = new ClosureTaskNode('task2', fn() => $this->createDummyTask(), ['task1']);
@@ -44,7 +44,7 @@ final class TaskQueueIntegrationTest extends TestCase
         $root = new SimpleTaskGroupNode('root', [$task1, $task2, $task3]);
         $input = new ArrayInput([]);
 
-        $taskList = new TaskList($container, $root, $input);
+        $taskList = new TaskList($factory, $root, $input);
         $queue    = new TaskQueue($taskList, $input, 1);
 
         $next = $queue->getNextTask();
@@ -66,7 +66,7 @@ final class TaskQueueIntegrationTest extends TestCase
     public function testFailTaskSkipsDependents(): void
     {
         $container = $this->createContainer();
-        $builder   = new TaskTreeBuilder($container);
+        $factory   = new TaskTreeBuilderFactory($container);
 
         $task1 = new ClosureTaskNode('task1', fn() => $this->createDummyTask());
         $task2 = new ClosureTaskNode('task2', fn() => $this->createDummyTask(), ['task1']);
@@ -75,7 +75,7 @@ final class TaskQueueIntegrationTest extends TestCase
         $root  = new SimpleTaskGroupNode('root', [$task1, $task2, $task3]);
         $input = new ArrayInput([]);
 
-        $taskList = new TaskList($container, $root, $input);
+        $taskList = new TaskList($factory, $root, $input);
         $queue    = new TaskQueue($taskList, $input, 2);
 
         $next = $queue->getNextTask();

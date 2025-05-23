@@ -44,15 +44,15 @@ You can register tasks in a command that extends `Multitron\Console\AbstractMult
 use Multitron\Console\AbstractMultitronCommand;
 use Multitron\Orchestrator\TaskOrchestrator;
 use Multitron\Tree\TaskTreeBuilder;
-use Psr\Container\ContainerInterface;
+use Multitron\Tree\TaskTreeBuilderFactory;
 use Symfony\Component\Console\Attribute\AsCommand;
 
 #[AsCommand(name: 'app:tasks')]
 final class MyCommand extends AbstractMultitronCommand
 {
-    public function __construct(ContainerInterface $container, TaskOrchestrator $orchestrator)
+    public function __construct(TaskTreeBuilderFactory $factory, TaskOrchestrator $orchestrator)
     {
-        parent::__construct($container, $orchestrator);
+        parent::__construct($factory, $orchestrator);
     }
 
     public function getNodes(TaskTreeBuilder $b): void

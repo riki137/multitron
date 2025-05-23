@@ -7,7 +7,7 @@ namespace Multitron\Orchestrator;
 use Multitron\Tree\TaskGroupNode;
 use Multitron\Tree\TaskNode;
 use Multitron\Tree\TaskTreeBuilder;
-use Psr\Container\ContainerInterface;
+use Multitron\Tree\TaskTreeBuilderFactory;
 use Symfony\Component\Console\Input\InputInterface;
 
 class TaskList
@@ -16,10 +16,12 @@ class TaskList
     private array $nodes = [];
 
     private TaskTreeBuilder $builder;
+    private TaskTreeBuilderFactory $factory;
 
-    public function __construct(ContainerInterface $container, TaskNode $root, InputInterface $options)
+    public function __construct(TaskTreeBuilderFactory $factory, TaskNode $root, InputInterface $options)
     {
-        $this->builder = new TaskTreeBuilder($container);
+        $this->factory = $factory;
+        $this->builder = $factory->create();
         $this->collect($root, $options);
     }
 

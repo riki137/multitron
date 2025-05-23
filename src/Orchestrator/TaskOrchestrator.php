@@ -11,8 +11,8 @@ use Multitron\Orchestrator\Output\ProgressOutput;
 use Multitron\Orchestrator\Output\ProgressOutputFactory;
 use Multitron\Tree\TaskLeafNode;
 use Multitron\Tree\TaskNode;
+use Multitron\Tree\TaskTreeBuilderFactory;
 use PhpStreamIpc\IpcPeer;
-use Psr\Container\ContainerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -22,7 +22,7 @@ final class TaskOrchestrator
 
     public function __construct(
         private readonly IpcPeer $ipcPeer,
-        private readonly ContainerInterface $container,
+        private readonly TaskTreeBuilderFactory $builderFactory,
         private readonly ExecutionFactory $executionFactory,
         private readonly ProgressOutputFactory $outputFactory,
         private readonly IpcHandlerRegistryFactory $handlerFactory,
@@ -38,7 +38,7 @@ final class TaskOrchestrator
         $concurrency = $input->getOption(self::OPTION_CONCURRENCY) ?? $this->detectCpuCount();
 
         $registry = $this->handlerFactory->create();
-        $taskList = new TaskList($this->container, $root, $input);
+        $taskList = new TaskList($this->builderFactory, $root, $input);
         return $this->doRun(
             $commandName,
             $input->getOptions(),

@@ -8,7 +8,7 @@ use Multitron\Orchestrator\TaskOrchestrator;
 use Multitron\Tree\SimpleTaskGroupNode;
 use Multitron\Tree\TaskNode;
 use Multitron\Tree\TaskTreeBuilder;
-use Psr\Container\ContainerInterface;
+use Multitron\Tree\TaskTreeBuilderFactory;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -16,7 +16,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 abstract class AbstractMultitronCommand extends Command
 {
-    public function __construct(private readonly TaskTreeBuilder $builder, private readonly TaskOrchestrator $orchestrator)
+    public function __construct(private readonly TaskTreeBuilderFactory $builderFactory, private readonly TaskOrchestrator $orchestrator)
     {
         parent::__construct();
     }
@@ -30,7 +30,7 @@ abstract class AbstractMultitronCommand extends Command
 
     final public function getRootNode(): TaskNode
     {
-        $builder = clone $this->builder;
+        $builder = $this->builderFactory->create();
         $this->getNodes($builder);
         return new SimpleTaskGroupNode($this->getName(), $builder->consume());
     }

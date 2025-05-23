@@ -9,10 +9,10 @@ use Multitron\Message\ContainerLoadedMessage;
 use Multitron\Message\StartTaskMessage;
 use Multitron\Orchestrator\TaskList;
 use Multitron\Tree\TaskLeafNode;
+use Multitron\Tree\TaskTreeBuilderFactory;
 use PhpStreamIpc\IpcPeer;
 use PhpStreamIpc\Message\LogMessage;
 use PhpStreamIpc\Message\Message;
-use Psr\Container\ContainerInterface;
 use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -24,7 +24,7 @@ final class MultitronWorkerCommand extends Command
 {
     public const NAME = 'multitron:worker';
 
-    public function __construct(private readonly ContainerInterface $container, private readonly IpcPeer $peer)
+    public function __construct(private readonly TaskTreeBuilderFactory $builderFactory, private readonly IpcPeer $peer)
     {
         parent::__construct(self::NAME);
     }
@@ -50,7 +50,7 @@ final class MultitronWorkerCommand extends Command
         if (!$command instanceof AbstractMultitronCommand) {
             throw new RuntimeException('Command not found');
         }
-        $list = new TaskList($this->container, $command->getRootNode(), $input);
+        $list = new TaskList($this->builderFactory, $command->getRootNode(), $input);
         foreach ($list->getNodes() as $node) {
             if ($node->getId() === $startTask->taskId && $node instanceof TaskLeafNode) {
                 $comm = new TaskCommunicator($session, $startTask->options);
