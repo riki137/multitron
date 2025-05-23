@@ -35,6 +35,7 @@
         "psr/log": "^3.0",
         "nette/di": "^3.2",
         "phpstan/phpstan": "^2.1",
-        "contributte/psr11-container-interface": "^0.6.0"
+        "contributte/psr11-container-interface": "^0.6.0",
+        "phpunit/phpunit": "^12.1"
     }
 }
