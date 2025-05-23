@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Multitron\Orchestrator;
 
+use Multitron\Tree\TaskFilterNode;
 use Multitron\Tree\TaskGroupNode;
 use Multitron\Tree\TaskNode;
 use Multitron\Tree\TaskTreeBuilder;
@@ -23,28 +24,49 @@ class TaskList
     public function __construct(TaskTreeBuilderFactory $factory, TaskNode $root, InputInterface $options)
     {
         $this->builder = $factory->create();
-        $this->collect($root, $options, []);
+        $this->collect($root, $options, [], []);
     }
 
     /**
-     * @param string[] $groups
+     * @param array<string, TaskGroupNode> $groups
+     * @param TaskFilterNode[] $filters
      */
-    private function collect(TaskNode $node, InputInterface $options, array $groups): void
+    private function collect(TaskNode $node, InputInterface $options, array $groups, array $filters): void
     {
         $id = $node->getId();
         if (isset($this->nodes[$id])) {
             return;
         }
-        $this->nodes[$id] = $node;
-        foreach ($groups as $groupId) {
-            $this->groupMembers[$groupId][] = $id;
+        if ($node instanceof TaskFilterNode) {
+            $filters[] = $node;
+        }
+        if ($this->passedFilter($node, $groups, $filters)) {
+            $this->nodes[$id] = $node;
+        }
+        foreach ($groups as $groupId => $groupNode) {
+            $this->groupMembers[$groupId][$id] = $id;
         }
         if ($node instanceof TaskGroupNode) {
+            $groups[$id] = $node;
             $node->getChildren($this->builder, $options);
             foreach ($this->builder->consume() as $child) {
-                $this->collect($child, $options, [...$groups, $id]);
+                $this->collect($child, $options, $groups, $filters);
             }
         }
+    }
+
+    /**
+     * @param array<string, TaskGroupNode> $groups
+     * @param TaskFilterNode[] $filters
+     */
+    private function passedFilter(TaskNode $node, array $groups, array $filters): bool
+    {
+        foreach ($filters as $filter) {
+            if (!$filter->filter($node, $groups)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -68,8 +90,8 @@ class TaskList
         return isset($this->groupMembers[$id]);
     }
 
-    public function isMemberOf(string $groupId, string $id): bool
+    public function isMemberOf(string $groupId, string $leafId): bool
     {
-        return in_array($id, $this->groupMembers[$groupId] ?? [], true);
+        return isset($this->groupMembers[$groupId][$leafId]);
     }
 }

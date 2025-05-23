@@ -77,10 +77,11 @@ final class TaskQueue
                 continue;
             }
 
-            // mark running and return the node
-            $this->running[$id] = true;
-            /** @var TaskLeafNode $node */
-            return $node;
+            if ($node instanceof TaskLeafNode) {
+                // mark running and return the node
+                $this->running[$id] = true;
+                return $node;
+            }
         }
 
         return count($this->running) > 0;
