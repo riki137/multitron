@@ -1,20 +1,22 @@
-# Multitron
+# Multitron: High-Performance PHP Task Orchestrator
 
-Multitron is a **high-performance PHP task orchestrator** for parallel processing and CLI automation. Use it to run asynchronous or multi-process jobs with minimal effort. The library manages task dependencies, executes them concurrently and streams progress back to the console.
+Multitron is a **high-performance PHP task orchestrator** designed for fast parallel processing and CLI automation. Use it to run asynchronous or multi-process jobs with minimal effort. The library manages task dependencies, executes them concurrently and streams progress back to the console, supercharging any PHP workflow that relies on concurrency.
 
 > **Note**: The project is still under active development and the API may change. It is however already used in production.
 
 ## Features
 
-- Declarative task trees with dependency management
-- Parallel execution with automatic CPU detection
-- Partitioned tasks for splitting large workloads
-- Real-time progress output and console logging
-- Shared cache for inter process communication
+- Declarative task trees with dependency management for predictable workflows
+- Parallel execution with automatic CPU detection and optimized concurrency
+- Partitioned tasks for dividing large workloads across multiple cores
+- Real-time progress output and console logging for full transparency
+- Shared cache for inter-process communication and data sharing
+- Seamless integration with Symfony Console applications
+- MIT-licensed and fully open source
 
 ## Installation
 
-Install the package via [Composer](https://getcomposer.org/):
+Install the package via [Composer](https://getcomposer.org/) to start orchestrating tasks right away:
 
 ```bash
 composer require riki137/multitron
@@ -184,6 +186,8 @@ Implement the factory to send progress anywhere you like.
 
 
 Issues and pull requests are welcome. Feel free to open a discussion on GitHub.
+
+Help us shape the future of PHP concurrency by contributing your ideas and improvements.
 
 ## License
 
