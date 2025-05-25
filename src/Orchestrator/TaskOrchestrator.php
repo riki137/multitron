@@ -116,22 +116,31 @@ final class TaskOrchestrator
      */
     private function detectCpuCount(): int
     {
-        if (stripos(PHP_OS, 'WIN') === 0) { // Windows
-            $output = shell_exec('wmic cpu get NumberOfLogicalProcessors /value');
-            if ($output) {
-                $matches = [];
-                if (preg_match('/NumberOfLogicalProcessors=(\d+)/', $output, $matches)) {
-                    return (int)$matches[1];
+        foreach (['pthreads_num_cpus', 'pcntl_cpu_count'] as $fn) {
+            if (function_exists($fn)) {
+                $count = @$fn();
+                if (is_numeric($count)) {
+                    return max(1, (int)$count);
                 }
-            }
-        } elseif (stripos(PHP_OS, 'Darwin') !== false || stripos(PHP_OS, 'Linux') !== false) { // macOS or Linux
-            $output = shell_exec('nproc');
-            if (is_string($output) && is_numeric(trim($output))) {
-                return max(1, (int)trim($output));
             }
         }
 
-        // Fallback
+        $env = getenv('NUMBER_OF_PROCESSORS');
+        if ($env !== false && is_numeric($env)) {
+            return max(1, (int)$env);
+        }
+
+        $cmds = stripos(PHP_OS, 'WIN') === 0
+            ? ['wmic cpu get NumberOfLogicalProcessors /value']
+            : ['nproc', 'getconf _NPROCESSORS_ONLN', 'sysctl -n hw.ncpu'];
+
+        foreach ($cmds as $cmd) {
+            $out = shell_exec($cmd);
+            if (preg_match('/(\d+)/', (string)$out, $m)) {
+                return max(1, (int)$m[1]);
+            }
+        }
+
         return 4;
     }
 }
