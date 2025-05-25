@@ -44,4 +44,20 @@ final class TaskGraphIntegrationTest extends TestCase
         $taskList  = new TaskList($factory, $root, $input);
         TaskGraph::buildFrom($taskList, $input);
     }
+
+    public function testCycleThrows(): void
+    {
+        $this->expectException(LogicException::class);
+        $container = $this->createContainer();
+        $factory   = new TaskTreeBuilderFactory($container);
+
+        $a = new ClosureTaskNode('a', fn() => $this->createDummyTask(), ['b']);
+        $b = new ClosureTaskNode('b', fn() => $this->createDummyTask(), ['a']);
+
+        $root     = new SimpleTaskGroupNode('root', [$a, $b]);
+        $input    = new ArrayInput([]);
+        $taskList = new TaskList($factory, $root, $input);
+
+        TaskGraph::buildFrom($taskList, $input);
+    }
 }

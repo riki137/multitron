@@ -67,7 +67,36 @@ class TaskGraph
                 $g->dependents[$dep][] = $id;
             }
         }
+
+        self::assertAcyclic($g);
         return $g;
+    }
+
+    private static function assertAcyclic(self $g): void
+    {
+        $inDegree = $g->inDegree;
+        $queue    = array_keys(array_filter($inDegree, fn ($deg) => $deg === 0));
+
+        $visited = 0;
+        while ($queue) {
+            $current = array_shift($queue);
+            $visited++;
+            foreach ($g->dependents[$current] as $dep) {
+                if (!array_key_exists($dep, $inDegree)) {
+                    continue;
+                }
+                if (--$inDegree[$dep] === 0) {
+                    $queue[] = $dep;
+                }
+            }
+            unset($inDegree[$current]);
+        }
+
+        if ($visited !== count($g->nodes)) {
+            $cycleNodes = array_keys(array_filter($inDegree, fn ($d) => $d > 0));
+            sort($cycleNodes);
+            throw new LogicException('Cyclic dependency detected among tasks: ' . implode(', ', $cycleNodes));
+        }
     }
 
     /**
