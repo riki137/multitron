@@ -59,13 +59,18 @@ final readonly class TaskCommunicator
         return $this->progress;
     }
 
-    public function log(string $message): void
+    public function log(string $message, string $level = 'info'): void
     {
-        $this->session->notify(new LogMessage($message));
+        $this->session->notify(new LogMessage($message, $level));
     }
 
     public function shutdown(): void
     {
         $this->progress->flush(true);
+    }
+
+    public function __destruct()
+    {
+        $this->shutdown();
     }
 }

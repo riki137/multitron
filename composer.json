@@ -27,8 +27,7 @@
         "symfony/console": "^7.2",
         "riki137/php-stream-ipc": "dev-main",
         "psr/container": "^2.0",
-        "psr/container-implementation": "*",
-        "symfony/options-resolver": "^7.2"
+        "psr/container-implementation": "*"
     },
     "require-dev": {
         "tracy/tracy": "^2.10",

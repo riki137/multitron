@@ -50,6 +50,12 @@ final class TableOutput implements ProgressOutput
             null,
             $this->table->getRow($state->getTaskId(), $state->getProgress(), $state->getStatus())
         );
+        foreach ($state->getWarnings()->fetchWarnings() as $warning) {
+            $this->logBuffer[] = $this->table->getLog(
+                $state->getTaskId(),
+                '<fg=yellow>⚠️ ' . $warning['count'] . 'x</>: ' . implode(';' . PHP_EOL, $warning['messages'])
+            );
+        }
         $this->table->markFinished($state->getTaskId());
     }
 

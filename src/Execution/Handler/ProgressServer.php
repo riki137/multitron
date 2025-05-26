@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Multitron\Execution\Handler;
 
 use Multitron\Message\TaskProgress;
+use Multitron\Message\TaskWarningMessage;
 use Multitron\Orchestrator\TaskState;
 use PhpStreamIpc\Message\Message;
 
@@ -14,6 +15,9 @@ final class ProgressServer
     {
         if ($progress instanceof TaskProgress) {
             $state->getProgress()->inherit($progress);
+        }
+        if ($progress instanceof TaskWarningMessage) {
+            $state->getWarnings()->process($progress);
         }
     }
 }

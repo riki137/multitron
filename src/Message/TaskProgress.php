@@ -15,9 +15,6 @@ final class TaskProgress implements Message
     /** @var array<string, int> */
     public array $occurrences = [];
 
-    /** @var array<string, int> */
-    public array $warnings = [];
-
     public function getPercentage(): float
     {
         return $this->total === 0 ? 0 : $this->toFloat() * 100;
@@ -46,21 +43,6 @@ final class TaskProgress implements Message
         $this->occurrences[$key] = $count;
     }
 
-    public function addWarning(string $warning, int $count = 1): void
-    {
-        $this->warnings[$warning] = ($this->warnings[$warning] ?? 0) + $count;
-    }
-
-    public function setWarning(string $warning, int $count = 1): void
-    {
-        if ($count === 0) {
-            unset($this->warnings[$warning]);
-            return;
-        }
-
-        $this->warnings[$warning] = $count;
-    }
-
     private function occurrenceKey(string $key): string
     {
         return strtoupper(substr($key, 0, 4));
@@ -71,6 +53,5 @@ final class TaskProgress implements Message
         $this->total = $progress->total;
         $this->done = $progress->done;
         $this->occurrences = $progress->occurrences;
-        $this->warnings = $progress->warnings;
     }
 }

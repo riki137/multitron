@@ -14,7 +14,8 @@ class TaskState
 
     private readonly DateTime $startedAt;
 
-    private TaskProgress $progress;
+    private readonly TaskProgress $progress;
+    private readonly TaskWarningState $warnings;
 
     public function __construct(
         private readonly string $taskId,
@@ -22,6 +23,7 @@ class TaskState
     ) {
         $this->startedAt = new DateTime();
         $this->progress = new TaskProgress();
+        $this->warnings = new TaskWarningState();
     }
 
     public function getTaskId(): string
@@ -52,5 +54,10 @@ class TaskState
     public function getProgress(): TaskProgress
     {
         return $this->progress;
+    }
+
+    public function getWarnings(): TaskWarningState
+    {
+        return $this->warnings;
     }
 }

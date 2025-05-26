@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Multitron\Comms;
 
 use Multitron\Message\TaskProgress;
+use Multitron\Message\TaskWarningMessage;
 use PhpStreamIpc\IpcSession;
 
 final class ProgressClient
@@ -63,13 +64,12 @@ final class ProgressClient
 
     public function addWarning(string $warning, int $count = 1): void
     {
-        $this->progress->addWarning($warning, $count);
-        $this->flush();
+        $this->session->notify(new TaskWarningMessage($warning, $count, true));
     }
 
     public function setWarning(string $warning, int $count = 1): void
     {
-        $this->progress->setWarning($warning, $count);
+        $this->session->notify(new TaskWarningMessage($warning, $count, false));
         $this->flush();
     }
 }
