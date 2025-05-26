@@ -66,11 +66,6 @@ final readonly class TaskCommunicator
 
     public function shutdown(): void
     {
-        $this->progress->flush(true);
-    }
-
-    public function __destruct()
-    {
-        $this->shutdown();
+        $this->progress->shutdown();
     }
 }

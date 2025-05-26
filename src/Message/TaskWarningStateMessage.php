@@ -6,12 +6,11 @@ namespace Multitron\Message;
 
 use PhpStreamIpc\Message\Message;
 
-final readonly class TaskWarningMessage implements Message
+final readonly class TaskWarningStateMessage implements Message
 {
     public function __construct(
-        public string $warning,
-        public int $count,
-        public bool $add
+        public array $warnings,
+        public array $warningCount
     ) {
     }
 }

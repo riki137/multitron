@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Multitron\Orchestrator;
 
 use Generator;
-use Multitron\Message\TaskWarningMessage;
+use Multitron\Message\TaskWarningStateMessage;
 
 class TaskWarningState
 {
+    const WARNING_LIMIT = 10;
     private array $warnings = [];
 
     private array $warningCount = [];
@@ -23,20 +24,42 @@ class TaskWarningState
         }
     }
 
-    public function process(TaskWarningMessage $message): void
-    {
-        $key = $this->warningKey($message->warning);
-        $this->warnings[$key][] = $message->warning;
-
-        if (isset($this->warningCount[$key])) {
-            $this->warningCount[$key] += $message->count;
-        } else {
-            $this->warningCount[$key] = $message->count;
-        }
-    }
-
     public function warningKey(string $warning): string
     {
         return preg_replace('/[^A-Za-z]/i', '', $warning);
+    }
+
+    public function addWarning(string $warning, int $count): void
+    {
+        $key = $this->processWarning($warning);
+        $this->warningCount[$key] ??= 0;
+        $this->warningCount[$key] += $count;
+    }
+
+    public function setWarning(string $warning, int $count): void
+    {
+        $this->warningCount[$this->processWarning($warning)] = $count;
+    }
+
+    private function processWarning(string $warning): string
+    {
+        $key = $this->warningKey($warning);
+        if (!isset($this->warnings[$key])) {
+            $this->warnings[$key] = [$warning];
+        } elseif (count($this->warnings[$key]) < self::WARNING_LIMIT && !in_array($warning, $this->warnings[$key])) {
+            $this->warnings[$key][] = $warning;
+        }
+        return $key;
+    }
+
+    public function fromMessage(TaskWarningStateMessage $message): void
+    {
+        $this->warnings = $message->warnings;
+        $this->warningCount = $message->warningCount;
+    }
+
+    public function toMessage(): TaskWarningStateMessage
+    {
+        return new TaskWarningStateMessage($this->warnings, $this->warningCount);
     }
 }

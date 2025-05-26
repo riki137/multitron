@@ -58,8 +58,11 @@ final class MultitronWorkerCommand extends Command
         foreach ($list->getNodes() as $node) {
             if ($node->getId() === $startTask->taskId && $node instanceof TaskLeafNode) {
                 $comm = new TaskCommunicator($session, $startTask->options);
-                ($node->getFactory($input))()->execute($comm);
-                $comm->shutdown();
+                try {
+                    ($node->getFactory($input))()->execute($comm);
+                } finally {
+                    $comm->shutdown();
+                }
                 return 0;
             }
         }
