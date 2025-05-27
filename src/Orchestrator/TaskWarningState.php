@@ -9,13 +9,13 @@ use Multitron\Message\TaskWarningStateMessage;
 
 class TaskWarningState
 {
-    const WARNING_LIMIT = 10;
+    public const WARNING_LIMIT = 10;
     private array $warnings = [];
 
     private array $warningCount = [];
 
     /**
-     * @return Generator<array{messages: string, count: int}>
+     * @return Generator<array{messages: list<string>, count: int}>
      */
     public function fetchWarnings(): Generator
     {
@@ -26,7 +26,7 @@ class TaskWarningState
 
     public function warningKey(string $warning): string
     {
-        return preg_replace('/[^A-Za-z]/i', '', $warning);
+        return preg_replace('/[^A-Za-z]/', '', $warning);
     }
 
     public function addWarning(string $warning, int $count): void
