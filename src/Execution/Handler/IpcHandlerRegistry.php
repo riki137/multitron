@@ -6,8 +6,8 @@ namespace Multitron\Execution\Handler;
 
 use Closure;
 use Multitron\Orchestrator\TaskState;
-use PhpStreamIpc\Message\Message;
-use PhpStreamIpc\IpcSession;
+use StreamIpc\Message\Message;
+use StreamIpc\IpcSession;
 
 final class IpcHandlerRegistry
 {

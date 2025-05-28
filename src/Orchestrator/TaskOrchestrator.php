@@ -12,7 +12,7 @@ use Multitron\Orchestrator\Output\ProgressOutputFactory;
 use Multitron\Tree\TaskLeafNode;
 use Multitron\Tree\TaskNode;
 use Multitron\Tree\TaskTreeBuilderFactory;
-use PhpStreamIpc\IpcPeer;
+use StreamIpc\IpcPeer;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Multitron\Message;
 
-use PhpStreamIpc\Message\Message;
+use StreamIpc\Message\Message;
 
 final class TaskProgress implements Message
 {

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Multitron\Execution;
 
-use PhpStreamIpc\IpcSession;
+use StreamIpc\IpcSession;
 
 interface Execution
 {

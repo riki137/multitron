@@ -7,7 +7,7 @@ namespace Multitron\Execution\Handler;
 use Multitron\Message\TaskProgress;
 use Multitron\Message\TaskWarningStateMessage;
 use Multitron\Orchestrator\TaskState;
-use PhpStreamIpc\Message\Message;
+use StreamIpc\Message\Message;
 
 final class ProgressServer
 {

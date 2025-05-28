@@ -9,8 +9,8 @@ use Multitron\Execution\Handler\MasterCache\MasterCacheReadRequest;
 use Multitron\Execution\Handler\MasterCache\MasterCacheWriteRequest;
 use Multitron\Execution\Handler\MasterCache\SmartMasterCacheReadRequest;
 use Multitron\Execution\Handler\MasterCache\SmartMasterCacheWriteRequest;
-use PhpStreamIpc\Envelope\ResponsePromise;
-use PhpStreamIpc\IpcSession;
+use StreamIpc\Envelope\ResponsePromise;
+use StreamIpc\IpcSession;
 
 /**
  * Client-side interface for interacting with the MasterCacheServer over IPC.

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Multitron\Execution\Handler\MasterCache;
 
 use LogicException;
-use PhpStreamIpc\Envelope\ResponsePromise;
+use StreamIpc\Envelope\ResponsePromise;
 
 final readonly class MasterCacheReadKeysPromise
 {

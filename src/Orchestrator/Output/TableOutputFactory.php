@@ -7,8 +7,8 @@ namespace Multitron\Orchestrator\Output;
 use Multitron\Execution\Handler\IpcHandlerRegistry;
 use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskState;
-use PhpStreamIpc\Message\LogMessage;
-use PhpStreamIpc\Message\Message;
+use StreamIpc\Message\LogMessage;
+use StreamIpc\Message\Message;
 use Symfony\Component\Console\Output\OutputInterface;
 
 final class TableOutputFactory implements ProgressOutputFactory

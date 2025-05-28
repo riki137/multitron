@@ -5,7 +5,7 @@ namespace Multitron\Comms;
 
 use Multitron\Message\TaskProgress;
 use Multitron\Orchestrator\TaskWarningState;
-use PhpStreamIpc\IpcSession;
+use StreamIpc\IpcSession;
 
 final class ProgressClient
 {

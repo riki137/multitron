@@ -25,7 +25,7 @@
         "ext-pcntl": "*",
         "ext-mbstring": "*",
         "symfony/console": "^7.2",
-        "riki137/php-stream-ipc": "dev-main",
+        "riki137/stream-ipc": "dev-main",
         "psr/container": "^2.0",
         "psr/container-implementation": "*"
     },

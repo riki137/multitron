@@ -7,11 +7,11 @@ namespace Multitron\Execution;
 use Closure;
 use Multitron\Message\ContainerLoadedMessage;
 use Multitron\Message\StartTaskMessage;
-use PhpStreamIpc\Envelope\ResponsePromise;
-use PhpStreamIpc\IpcPeer;
-use PhpStreamIpc\Message\LogMessage;
-use PhpStreamIpc\Message\Message;
-use PhpStreamIpc\Transport\TimeoutException;
+use StreamIpc\Envelope\ResponsePromise;
+use StreamIpc\IpcPeer;
+use StreamIpc\Message\LogMessage;
+use StreamIpc\Message\Message;
+use StreamIpc\Transport\TimeoutException;
 use RuntimeException;
 
 final class ProcessExecutionFactory implements ExecutionFactory

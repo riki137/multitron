@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Multitron\Comms;
 
-use PhpStreamIpc\Envelope\ResponsePromise;
-use PhpStreamIpc\IpcSession;
-use PhpStreamIpc\Message\LogMessage;
-use PhpStreamIpc\Message\Message;
+use StreamIpc\Envelope\ResponsePromise;
+use StreamIpc\IpcSession;
+use StreamIpc\Message\LogMessage;
+use StreamIpc\Message\Message;
 
 final readonly class TaskCommunicator
 {

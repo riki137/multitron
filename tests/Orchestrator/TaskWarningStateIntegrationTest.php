@@ -9,16 +9,17 @@ use Multitron\Execution\Handler\ProgressServer;
 use Multitron\Orchestrator\TaskState;
 use Multitron\Orchestrator\TaskWarningState;
 use Multitron\Message\TaskWarningStateMessage;
-use PhpStreamIpc\IpcPeer;
-use PhpStreamIpc\Message\Message;
+use StreamIpc\IpcPeer;
+use StreamIpc\Message\Message;
 use Multitron\Tests\Fixtures\FakeTransport;
 use PHPUnit\Framework\TestCase;
+use StreamIpc\NativeIpcPeer;
 
 final class TaskWarningStateIntegrationTest extends TestCase
 {
     public function testClientAggregatesWarnings(): void
     {
-        $peer = new IpcPeer();
+        $peer = new NativeIpcPeer();
         $transport = new FakeTransport();
         $session = $peer->createSession($transport);
         $comm = new TaskCommunicator($session, []);
