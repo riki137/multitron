@@ -13,15 +13,32 @@ use StreamIpc\IpcPeer;
 use StreamIpc\Message\Message;
 use Multitron\Tests\Fixtures\FakeTransport;
 use PHPUnit\Framework\TestCase;
-use StreamIpc\NativeIpcPeer;
+use StreamIpc\IpcSession;
+
+/**
+ * Simple peer used in tests to expose the protected {@see IpcPeer::createSession}
+ * method.
+ */
+class TestPeer extends IpcPeer
+{
+    public function createFakeSession(FakeTransport $transport): IpcSession
+    {
+        return $this->createSession($transport);
+    }
+
+    public function tick(?float $timeout = null): void
+    {
+        // no-op for tests
+    }
+}
 
 final class TaskWarningStateIntegrationTest extends TestCase
 {
     public function testClientAggregatesWarnings(): void
     {
-        $peer = new NativeIpcPeer();
+        $peer = new TestPeer();
         $transport = new FakeTransport();
-        $session = $peer->createSession($transport);
+        $session = $peer->createFakeSession($transport);
         $comm = new TaskCommunicator($session, []);
 
         $progress = $comm->progress();
@@ -49,9 +66,9 @@ final class TaskWarningStateIntegrationTest extends TestCase
 
     public function testWarningMessageUpdatesServerState(): void
     {
-        $peer = new IpcPeer();
+        $peer = new TestPeer();
         $transport = new FakeTransport();
-        $session = $peer->createSession($transport);
+        $session = $peer->createFakeSession($transport);
         $comm = new TaskCommunicator($session, []);
         $server = new ProgressServer();
         $state = new TaskState('t');
