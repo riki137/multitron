@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Multitron\Execution;
 
+use Closure;
 use Multitron\Message\ContainerLoadedMessage;
 use Multitron\Message\StartTaskMessage;
 use PhpStreamIpc\Envelope\ResponsePromise;
 use PhpStreamIpc\IpcPeer;
+use PhpStreamIpc\Message\LogMessage;
+use PhpStreamIpc\Message\Message;
+use PhpStreamIpc\Transport\TimeoutException;
 use RuntimeException;
 
 final class ProcessExecutionFactory implements ExecutionFactory
@@ -19,17 +23,29 @@ final class ProcessExecutionFactory implements ExecutionFactory
 
     private bool $initialized = false;
 
+    private array $errors = [];
+    private Closure $errorCatcher;
+
     public function __construct(
         private readonly IpcPeer $ipcPeer,
         private readonly int $processBufferSize = self::DEFAULT_PROCESS_BUFFER_SIZE,
     ) {
+        $this->errorCatcher = $this->errorCatcherFn(...);
     }
 
     private function buffer(): void
     {
         $process = new ProcessExecution($this->ipcPeer);
-        $response = $process->getSession()->request(new ContainerLoadedMessage());
+        $process->getSession()->onMessage($this->errorCatcher);
+        $response = $process->getSession()->request(new ContainerLoadedMessage(), 1.0);
         $this->processes[] = [$process, $response];
+    }
+
+    private function errorCatcherFn(Message $message): void
+    {
+        if ($message instanceof LogMessage) {
+            $this->errors[] = "[" . $message->level . "] " . $message->message;
+        }
     }
 
     private function obtain(): ProcessExecution
@@ -47,8 +63,19 @@ final class ProcessExecutionFactory implements ExecutionFactory
         if ($entry === null) {
             throw new RuntimeException('No buffered process available (should not happen)');
         }
+        /** @var ProcessExecution $process */
         [$process, $response] = $entry;
-        $response->await();
+        try {
+            $response->await();
+            $process->getSession()->offMessage($this->errorCatcher);
+        } catch (TimeoutException $e) {
+            $process->kill();
+            try {
+                throw new RuntimeException($e->getMessage() . PHP_EOL . implode(PHP_EOL, $this->errors));
+            } finally {
+                $this->errors = [];
+            }
+        }
         return $process;
     }
 
@@ -58,7 +85,6 @@ final class ProcessExecutionFactory implements ExecutionFactory
     public function launch(string $commandName, string $taskId, array $options): Execution
     {
         $execution = $this->obtain();
-
         // send the task id to the worker over IPC
         $execution->getSession()->request(new StartTaskMessage($commandName, $taskId, $options))->await();
 
