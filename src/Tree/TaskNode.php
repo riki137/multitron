@@ -4,14 +4,29 @@ declare(strict_types=1);
 
 namespace Multitron\Tree;
 
-use Symfony\Component\Console\Input\InputInterface;
+use Closure;
 
-interface TaskNode
+final readonly class TaskNode
 {
-    public function getId(): string;
+    private function __construct(
+        public string  $id,
+        public ?Closure $factory,      // null ⇒ group
+        public array   $dependencies,  // raw deps (leaf or group IDs)
+        public array   $children       // only for groups
+    ) {}
 
-    /**
-     * @return string[]
-     */
-    public function getDependencies(InputInterface $options): array;
+    public static function leaf(string $id, Closure $factory, array $deps = []): self
+    {
+        return new self($id, $factory, $deps, []);
+    }
+
+    public static function group(string $id, array $deps, array $children): self
+    {
+        return new self($id, null, $deps, $children);
+    }
+
+    public function isLeaf(): bool
+    {
+        return $this->factory !== null;
+    }
 }
