@@ -15,6 +15,7 @@ class TaskState
     private readonly DateTime $startedAt;
 
     private readonly TaskProgress $progress;
+
     private readonly TaskWarningState $warnings;
 
     public function __construct(

@@ -10,6 +10,7 @@ use Multitron\Message\TaskWarningStateMessage;
 class TaskWarningState
 {
     public const WARNING_LIMIT = 10;
+
     private array $warnings = [];
 
     private array $warningCount = [];

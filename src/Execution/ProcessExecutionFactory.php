@@ -7,12 +7,12 @@ namespace Multitron\Execution;
 use Closure;
 use Multitron\Message\ContainerLoadedMessage;
 use Multitron\Message\StartTaskMessage;
+use RuntimeException;
 use StreamIpc\Envelope\ResponsePromise;
 use StreamIpc\IpcPeer;
 use StreamIpc\Message\LogMessage;
 use StreamIpc\Message\Message;
 use StreamIpc\Transport\TimeoutException;
-use RuntimeException;
 
 final class ProcessExecutionFactory implements ExecutionFactory
 {
@@ -25,6 +25,7 @@ final class ProcessExecutionFactory implements ExecutionFactory
     private bool $initialized = false;
 
     private array $errors = [];
+
     private Closure $errorCatcher;
 
     public function __construct(
@@ -46,7 +47,7 @@ final class ProcessExecutionFactory implements ExecutionFactory
     private function errorCatcherFn(Message $message): void
     {
         if ($message instanceof LogMessage) {
-            $this->errors[] = "[" . $message->level . "] " . $message->message;
+            $this->errors[] = '[' . $message->level . '] ' . $message->message;
         }
     }
 

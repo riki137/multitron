@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Multitron\Execution;
 
 use Multitron\Console\MultitronWorkerCommand;
+use RuntimeException;
 use StreamIpc\IpcPeer;
 use StreamIpc\IpcSession;
-use RuntimeException;
 
 final readonly class ProcessExecution implements Execution
 {

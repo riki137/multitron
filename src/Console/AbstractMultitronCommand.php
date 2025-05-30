@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Multitron\Console;
 
+use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskOrchestrator;
 use Multitron\Tree\TaskNode;
 use Multitron\Tree\TaskTreeBuilder;
@@ -25,15 +26,18 @@ abstract class AbstractMultitronCommand extends Command
 
     protected function configure(): void
     {
-        $this->addArgument('pattern', InputArgument::OPTIONAL,
-            'fnmatch() pattern to filter tasks. You can optionally use % instead of * for wildcards. Works for groups too.');
+        $this->addArgument(
+            'pattern',
+            InputArgument::OPTIONAL,
+            'fnmatch() pattern to filter tasks. You can optionally use % instead of * for wildcards. Works for groups too.'
+        );
         $this->addOption(TaskOrchestrator::OPTION_CONCURRENCY, 'c', InputOption::VALUE_REQUIRED, 'Max concurrent tasks executed');
         $this->addOption(TaskOrchestrator::OPTION_UPDATE_INTERVAL, 'u', InputOption::VALUE_REQUIRED, 'Update interval in seconds', TaskOrchestrator::DEFAULT_UPDATE_INTERVAL);
     }
 
     abstract public function getNodes(TaskTreeBuilder $builder): void;
 
-    final public function getRootNode(?InputInterface $input = null): TaskNode
+    final public function getTaskList(?InputInterface $input = null): TaskList
     {
         $builder = $this->builderFactory->create();
         $this->getNodes($builder);
@@ -48,7 +52,7 @@ abstract class AbstractMultitronCommand extends Command
             // TODO
         }
 
-        return TaskNode::group($this->getName(), $builder->build());
+        return new TaskList(TaskNode::group($this->getName(), $builder->build()));
     }
 
     final protected function execute(InputInterface $input, OutputInterface $output): int
@@ -56,6 +60,6 @@ abstract class AbstractMultitronCommand extends Command
         if (!$this->getApplication()->has(MultitronWorkerCommand::NAME)) {
             throw new RuntimeException(MultitronWorkerCommand::class . ' command not found. Please add it to your ' . Application::class . ' in your Dependency Injection container.');
         }
-        return $this->orchestrator->run((string)$this->getName(), $this->getRootNode($input), $input, $output);
+        return $this->orchestrator->run((string)$this->getName(), $this->getTaskList($input), $input, $output);
     }
 }

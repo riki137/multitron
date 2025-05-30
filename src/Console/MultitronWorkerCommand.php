@@ -8,10 +8,10 @@ use Multitron\Comms\TaskCommunicator;
 use Multitron\Message\ContainerLoadedMessage;
 use Multitron\Message\StartTaskMessage;
 use Multitron\Tree\TaskTreeBuilderFactory;
+use RuntimeException;
 use StreamIpc\IpcPeer;
 use StreamIpc\Message\LogMessage;
 use StreamIpc\Message\Message;
-use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -54,7 +54,7 @@ final class MultitronWorkerCommand extends Command
         }
         $list = /* TODO */[];
         foreach ($list as $node) {
-            if ($node->getId() === $startTask->taskId && $node->isLeaf()) {
+            if ($node->id === $startTask->taskId && $node->isLeaf()) {
                 $comm = new TaskCommunicator($session, $startTask->options);
                 try {
                     ($node->getFactory($input))()->execute($comm);

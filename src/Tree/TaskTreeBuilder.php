@@ -67,8 +67,8 @@ final class TaskTreeBuilder
      */
     public function build(): array
     {
-        $leafDefs = [];  // id => ['factory'=>..., 'ownDeps'=>[],   'ancestors'=>[]]
-        $groupDefs = [];  // id => ['declaredDeps'=>[], 'children'=>[ids...]]
+        $leafDefs = []; // id => ['factory'=>..., 'ownDeps'=>[],   'ancestors'=>[]]
+        $groupDefs = []; // id => ['declaredDeps'=>[], 'children'=>[ids...]]
 
         // 1) traverse once to fill both maps
         $walk = function (TaskNode $node, array $ancestors) use (&$walk, &$leafDefs, &$groupDefs) {
@@ -96,7 +96,7 @@ final class TaskTreeBuilder
         }
 
         // 2) build full member‐list for each group (recursive DFS)
-        $members = [];  // groupId => leafId[]
+        $members = []; // groupId => leafId[]
         $collectMembers = function (string $gId) use (&$collectMembers, &$members, $groupDefs, $leafDefs) {
             if (isset($members[$gId])) {
                 return $members[$gId];

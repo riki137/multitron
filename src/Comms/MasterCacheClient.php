@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Multitron\Comms;
 
 use Multitron\Execution\Handler\MasterCache\MasterCacheReadKeysPromise;
-use Multitron\Execution\Handler\MasterCache\MasterCacheReadRequest;
-use Multitron\Execution\Handler\MasterCache\MasterCacheWriteRequest;
 use Multitron\Execution\Handler\MasterCache\MasterCacheReadKeysRequest;
+use Multitron\Execution\Handler\MasterCache\MasterCacheReadRequest;
 use Multitron\Execution\Handler\MasterCache\MasterCacheWriteKeysRequest;
+use Multitron\Execution\Handler\MasterCache\MasterCacheWriteRequest;
 use StreamIpc\Envelope\ResponsePromise;
 use StreamIpc\IpcSession;
 

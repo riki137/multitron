@@ -9,11 +9,12 @@ use Closure;
 final readonly class TaskNode
 {
     private function __construct(
-        public string  $id,
-        public ?Closure $factory,      // null ⇒ group
-        public array   $dependencies,  // raw deps (leaf or group IDs)
-        public array   $children       // only for groups
-    ) {}
+        public string $id,
+        public ?Closure $factory, // null ⇒ group
+        public array $dependencies, // raw deps (leaf or group IDs)
+        public array $children // only for groups
+    ) {
+    }
 
     public static function leaf(string $id, Closure $factory, array $deps = []): self
     {

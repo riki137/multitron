@@ -10,6 +10,7 @@ use StreamIpc\IpcSession;
 final class ProgressClient
 {
     private readonly TaskProgress $progress;
+
     private readonly TaskWarningState $warnings;
 
     private float $lastNotified = 0.0;

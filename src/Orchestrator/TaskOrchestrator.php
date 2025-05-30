@@ -10,7 +10,6 @@ use Multitron\Execution\Handler\IpcHandlerRegistryFactory;
 use Multitron\Orchestrator\Output\ProgressOutput;
 use Multitron\Orchestrator\Output\ProgressOutputFactory;
 use Multitron\Tree\TaskNode;
-use Multitron\Tree\TaskTreeBuilderFactory;
 use RuntimeException;
 use StreamIpc\IpcPeer;
 use StreamIpc\Transport\TimeoutException;
@@ -25,7 +24,6 @@ final class TaskOrchestrator
 
     public function __construct(
         private readonly IpcPeer $ipcPeer,
-        private readonly TaskTreeBuilderFactory $builderFactory,
         private readonly ExecutionFactory $executionFactory,
         private readonly ProgressOutputFactory $outputFactory,
         private readonly IpcHandlerRegistryFactory $handlerFactory,
@@ -36,17 +34,16 @@ final class TaskOrchestrator
      * Run all tasks in the root tree, up to the configured concurrency
      * (or number of CPUs if none set), and return 0 if all succeeded or 1 if any failed.
      */
-    public function run(string $commandName, TaskNode $root, InputInterface $input, OutputInterface $output): int
+    public function run(string $commandName, TaskList $taskList, InputInterface $input, OutputInterface $output): int
     {
         $option = $input->getOption(self::OPTION_CONCURRENCY);
         $concurrency = is_numeric($option) ? (int)$option : $this->detectCpuCount();
 
         $registry = $this->handlerFactory->create();
-        $taskList = []/* TODO */;
         return $this->doRun(
             $commandName,
             $input->getOptions(),
-            new TaskQueue($taskList, $input, $concurrency),
+            new TaskQueue($taskList->getNodes(), $input, $concurrency),
             $this->outputFactory->create($taskList, $output, $registry),
             $registry
         );
@@ -78,10 +75,10 @@ final class TaskOrchestrator
         while (true) {
             $task = $queue->getNextTask();
 
-            if ($task->isLeaf()) {
+            if ($task instanceof TaskNode && $task->isLeaf()) {
                 // launch a new task
-                $execution = $this->executionFactory->launch($commandName, $task->getId(), $options);
-                $states[$task->getId()] = $state = new TaskState($task->getId(), $execution);
+                $execution = $this->executionFactory->launch($commandName, $task->id, $options);
+                $states[$task->id] = $state = new TaskState($task->id, $execution);
                 $handlerRegistry->attach($state);
                 $output->onTaskStarted($state);
             } elseif ($task !== true) {

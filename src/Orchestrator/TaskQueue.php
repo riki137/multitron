@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Multitron\Orchestrator;
 
+use Multitron\Tree\TaskNode;
 use SplPriorityQueue;
 use Symfony\Component\Console\Input\InputInterface;
-use Multitron\Tree\TaskNode;
 
 /**
  * A queue that produces the next ready TaskNode, up to a concurrency limit.
@@ -14,11 +14,17 @@ use Multitron\Tree\TaskNode;
 final class TaskQueue
 {
     private array $nodes;
+
     private SplPriorityQueue $ready;
+
     private array $reverseDeps = [];
+
     private array $prereqCount = [];
+
     private array $pending = [];
+
     private array $running = [];
+
     private int $concurrency;
 
     /**
@@ -28,14 +34,14 @@ final class TaskQueue
      */
     public function __construct(array $nodes, InputInterface $input, int $concurrency)
     {
-        $this->nodes       = $nodes;
+        $this->nodes = $nodes;
         $this->concurrency = $concurrency;
 
         // Build prereq counts and reverse‐dependency map
         foreach ($nodes as $id => $node) {
             $deps = $node->dependencies;
             $this->prereqCount[$id] = count($deps);
-            $this->pending[$id]     = true;
+            $this->pending[$id] = true;
             foreach ($deps as $depId) {
                 $this->reverseDeps[$depId][] = $id;
             }
@@ -71,8 +77,8 @@ final class TaskQueue
 
         // If we can start another task, pop it and return the TaskNode
         if (count($this->running) < $this->concurrency && !$this->ready->isEmpty()) {
-            $id                    = $this->ready->extract();
-            $this->running[$id]    = true;
+            $id = $this->ready->extract();
+            $this->running[$id] = true;
             unset($this->pending[$id]);
             return $this->nodes[$id];
         }
@@ -113,7 +119,7 @@ final class TaskQueue
     {
         unset($this->running[$id]);
         $skipped = [];
-        $stack   = $this->reverseDeps[$id] ?? [];
+        $stack = $this->reverseDeps[$id] ?? [];
 
         // Depth-first: find all downstream tasks that are still pending
         while (!empty($stack)) {
