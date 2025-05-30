@@ -7,8 +7,6 @@ namespace Multitron\Console;
 use Multitron\Comms\TaskCommunicator;
 use Multitron\Message\ContainerLoadedMessage;
 use Multitron\Message\StartTaskMessage;
-use Multitron\Orchestrator\TaskList;
-use Multitron\Tree\TaskLeafNode;
 use Multitron\Tree\TaskTreeBuilderFactory;
 use StreamIpc\IpcPeer;
 use StreamIpc\Message\LogMessage;
@@ -54,9 +52,9 @@ final class MultitronWorkerCommand extends Command
         if (!$command instanceof AbstractMultitronCommand) {
             throw new RuntimeException('Command not found');
         }
-        $list = new TaskList($this->builderFactory, $command->getRootNode(), $input);
-        foreach ($list->getNodes() as $node) {
-            if ($node->getId() === $startTask->taskId && $node instanceof TaskLeafNode) {
+        $list = /* TODO */[];
+        foreach ($list as $node) {
+            if ($node->getId() === $startTask->taskId && $node->isLeaf()) {
                 $comm = new TaskCommunicator($session, $startTask->options);
                 try {
                     ($node->getFactory($input))()->execute($comm);

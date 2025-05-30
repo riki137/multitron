@@ -56,7 +56,7 @@ final class TaskTreeBuilder
         // build subtree
         $sub = new self($this->container);
         $cb($sub);
-        $this->nodes[$id] = TaskNode::group($id, $dependencies, $sub->nodes);
+        $this->nodes[$id] = TaskNode::group($id, $sub->nodes, $dependencies);
         return $this;
     }
 

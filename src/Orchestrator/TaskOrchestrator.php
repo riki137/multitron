@@ -9,7 +9,6 @@ use Multitron\Execution\Handler\IpcHandlerRegistry;
 use Multitron\Execution\Handler\IpcHandlerRegistryFactory;
 use Multitron\Orchestrator\Output\ProgressOutput;
 use Multitron\Orchestrator\Output\ProgressOutputFactory;
-use Multitron\Tree\TaskLeafNode;
 use Multitron\Tree\TaskNode;
 use Multitron\Tree\TaskTreeBuilderFactory;
 use RuntimeException;
@@ -43,7 +42,7 @@ final class TaskOrchestrator
         $concurrency = is_numeric($option) ? (int)$option : $this->detectCpuCount();
 
         $registry = $this->handlerFactory->create();
-        $taskList = new TaskList($this->builderFactory, $root, $input);
+        $taskList = []/* TODO */;
         return $this->doRun(
             $commandName,
             $input->getOptions(),
@@ -79,7 +78,7 @@ final class TaskOrchestrator
         while (true) {
             $task = $queue->getNextTask();
 
-            if ($task instanceof TaskLeafNode) {
+            if ($task->isLeaf()) {
                 // launch a new task
                 $execution = $this->executionFactory->launch($commandName, $task->getId(), $options);
                 $states[$task->getId()] = $state = new TaskState($task->getId(), $execution);

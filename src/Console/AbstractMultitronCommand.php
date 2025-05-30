@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Multitron\Console;
 
 use Multitron\Orchestrator\TaskOrchestrator;
-use Multitron\Tree\PatternTaskFilterNode;
-use Multitron\Tree\SimpleTaskGroupNode;
 use Multitron\Tree\TaskNode;
 use Multitron\Tree\TaskTreeBuilder;
 use Multitron\Tree\TaskTreeBuilderFactory;
@@ -47,10 +45,10 @@ abstract class AbstractMultitronCommand extends Command
         $pattern = $input?->getArgument('pattern');
         if (is_string($pattern) && trim($pattern) !== '') {
             $pattern = strtr($pattern, ['%' => '*']);
-            return new PatternTaskFilterNode((string)$this->getName(), $pattern, $builder->consume());
+            // TODO
         }
 
-        return new SimpleTaskGroupNode((string)$this->getName(), $builder->consume());
+        return TaskNode::group($this->getName(), $builder->build());
     }
 
     final protected function execute(InputInterface $input, OutputInterface $output): int

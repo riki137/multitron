@@ -20,7 +20,7 @@ final readonly class TaskNode
         return new self($id, $factory, $deps, []);
     }
 
-    public static function group(string $id, array $deps, array $children): self
+    public static function group(string $id, array $children, array $deps = []): self
     {
         return new self($id, null, $deps, $children);
     }

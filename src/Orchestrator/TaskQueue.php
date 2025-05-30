@@ -4,119 +4,130 @@ declare(strict_types=1);
 
 namespace Multitron\Orchestrator;
 
-use LogicException;
-use Multitron\Tree\TaskGroupNode;
-use Multitron\Tree\TaskLeafNode;
 use SplPriorityQueue;
 use Symfony\Component\Console\Input\InputInterface;
+use Multitron\Tree\TaskNode;
 
 /**
- * A queue that produces the next ready TaskLeafNode, up to a concurrency limit.
+ * A queue that produces the next ready TaskNode, up to a concurrency limit.
  */
 final class TaskQueue
 {
-    private TaskGraph $graph;
-
-    /** @var SplPriorityQueue<int, string> */
-    private SplPriorityQueue $readyQueue;
-
-    private int $maxConcurrent;
-
-    /** @var array<string, bool> */
+    private array $nodes;
+    private SplPriorityQueue $ready;
+    private array $reverseDeps = [];
+    private array $prereqCount = [];
+    private array $pending = [];
     private array $running = [];
+    private int $concurrency;
 
     /**
-     * @param int $maxConcurrent How many tasks to allow in flight.
-     * @throws LogicException if maxConcurrent < 1 or dependencies invalid.
+     * @param TaskNode[] $nodes        Flat map of leaf TaskNode objects, keyed by task ID.
+     * @param InputInterface $input    (unused for now—but available for future flags)
+     * @param int $concurrency         Max number of tasks to run at once.
      */
-    public function __construct(TaskList $taskList, InputInterface $input, int $maxConcurrent)
+    public function __construct(array $nodes, InputInterface $input, int $concurrency)
     {
-        if ($maxConcurrent < 1) {
-            throw new LogicException('Concurrency must be at least 1.');
-        }
-        $this->maxConcurrent = $maxConcurrent;
-        $this->graph = TaskGraph::buildFrom($taskList, $input);
+        $this->nodes       = $nodes;
+        $this->concurrency = $concurrency;
 
-        /** @var SplPriorityQueue<int, string> $queue */
-        $queue = new SplPriorityQueue();
-        $this->readyQueue = $queue;
-        foreach ($this->graph->initialReadyTasks() as $id) {
-            $priority = count($this->graph->getDependents($id));
-            $this->readyQueue->insert($id, $priority);
+        // Build prereq counts and reverse‐dependency map
+        foreach ($nodes as $id => $node) {
+            $deps = $node->dependencies;
+            $this->prereqCount[$id] = count($deps);
+            $this->pending[$id]     = true;
+            foreach ($deps as $depId) {
+                $this->reverseDeps[$depId][] = $id;
+            }
         }
 
-        $this->running = [];
+        // Prime the ready queue with all tasks having zero prerequisites
+        $this->ready = new SplPriorityQueue();
+        foreach ($this->prereqCount as $id => $count) {
+            if ($count === 0) {
+                // All priorities are equal for now; you can vary this if you want custom ordering
+                $this->ready->insert($id, 0);
+            }
+        }
     }
 
     /**
-     * Return the next TaskLeafNode that's ready, or true if there are more tasks to run.
+     * Get the next task to start.
+     *
+     * @return TaskNode    If a new task can be launched now.
+     * @return true        If no task is ready but some are still running (please wait).
+     * @return false       If no tasks are ready and none are running (we’re done).
      */
-    public function getNextTask(): TaskLeafNode|bool
+    public function getNextTask(): TaskNode|bool
     {
-        // respect concurrency limit
-        if (count($this->running) >= $this->maxConcurrent) {
+        // Clean out any stale IDs in the ready queue (skipped or already started).
+        while (!$this->ready->isEmpty()) {
+            $top = $this->ready->top();
+            if (isset($this->pending[$top])) {
+                break;
+            }
+            $this->ready->extract();
+        }
+
+        // If we can start another task, pop it and return the TaskNode
+        if (count($this->running) < $this->concurrency && !$this->ready->isEmpty()) {
+            $id                    = $this->ready->extract();
+            $this->running[$id]    = true;
+            unset($this->pending[$id]);
+            return $this->nodes[$id];
+        }
+
+        // If there are tasks still running, ask caller to wait
+        if (!empty($this->running)) {
             return true;
         }
 
-        // pull highest-priority ready task
-        while (!$this->readyQueue->isEmpty()) {
-            $id = $this->readyQueue->extract();
-            /** @var string $id */
-            if (isset($this->running[$id]) || $this->graph->isCompleted($id)) {
-                continue;
-            }
-
-            $node = $this->graph->getNode($id);
-
-            if ($node instanceof TaskGroupNode) {
-                $newIds = $this->graph->complete($id);
-                foreach ($newIds as $newId) {
-                    $prio = count($this->graph->getDependents($newId));
-                    $this->readyQueue->insert($newId, $prio);
-                }
-                continue;
-            }
-
-            if ($node instanceof TaskLeafNode) {
-                // mark running and return the node
-                $this->running[$id] = true;
-                return $node;
-            }
-        }
-
-        return count($this->running) > 0;
+        // Nothing running, nothing ready → we’re done
+        return false;
     }
 
     /**
-     * Mark a task as finished, free up a slot, and enqueue any newly-ready tasks.
-     *
-     * @param string $id The ID of the task that just completed.
-     * @throws LogicException if you try to complete a task that wasn’t running.
+     * Mark a task as completed successfully.
+     * Enqueue any dependents that are now unblocked.
      */
     public function completeTask(string $id): void
     {
-        if (!isset($this->running[$id])) {
-            throw new LogicException("Cannot complete task '$id' because it is not marked running.");
-        }
         unset($this->running[$id]);
-        $newReadyIds = $this->graph->complete($id);
-        foreach ($newReadyIds as $newId) {
-            $prio = count($this->graph->getDependents($newId));
-            $this->readyQueue->insert($newId, $prio);
+
+        foreach ($this->reverseDeps[$id] ?? [] as $childId) {
+            $this->prereqCount[$childId]--;
+            if ($this->prereqCount[$childId] === 0) {
+                $this->ready->insert($childId, 0);
+            }
         }
     }
 
     /**
-     * Mark a task as failed and skip all dependents.
+     * Mark a task as failed.
+     * Returns the list of all tasks that (transitively) depend on it,
+     * so they can be marked as skipped.
      *
-     * @return string[] IDs of tasks that were skipped due to this failure.
+     * @return string[]  IDs of tasks to skip
      */
     public function failTask(string $id): array
     {
-        if (!isset($this->running[$id])) {
-            throw new LogicException("Cannot fail task '$id' because it is not marked running.");
-        }
         unset($this->running[$id]);
-        return $this->graph->skipDependents($id);
+        $skipped = [];
+        $stack   = $this->reverseDeps[$id] ?? [];
+
+        // Depth-first: find all downstream tasks that are still pending
+        while (!empty($stack)) {
+            $current = array_pop($stack);
+            if (isset($this->pending[$current])) {
+                $skipped[] = $current;
+                unset($this->pending[$current]);
+                // enqueue its dependents for skipping too
+                foreach ($this->reverseDeps[$current] ?? [] as $child) {
+                    $stack[] = $child;
+                }
+            }
+        }
+
+        return $skipped;
     }
 }
