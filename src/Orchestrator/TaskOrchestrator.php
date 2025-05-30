@@ -113,10 +113,12 @@ final class TaskOrchestrator
                     unset($states[$id]);
                 }
             }
-            $output->render();
+
             if ($task === true) {
                 $this->ipcPeer->tickFor($updateInterval);
             }
+
+            $output->render();
         }
 
         return $hadError ? 1 : 0;
