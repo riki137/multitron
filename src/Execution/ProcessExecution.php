@@ -56,8 +56,6 @@ final readonly class ProcessExecution implements Execution
 
     public function __destruct()
     {
-        if ($this->process->isRunning()) {
-            $this->process->kill();
-        }
+        $this->process->kill();
     }
 }

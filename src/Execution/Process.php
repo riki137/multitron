@@ -17,9 +17,9 @@ class Process
     private ?int $exitCode = null;
 
     /**
-     * @param list<string>              $command Array of command + args
-     * @param string|null               $cwd     Working directory
-     * @param array<string, string>|null $env    Environment overrides
+     * @param list<string> $command Array of command + args
+     * @param string|null $cwd Working directory
+     * @param array<string, string>|null $env Environment overrides
      */
     public function __construct(array $command, ?string $cwd = null, ?array $env = null)
     {
@@ -102,7 +102,9 @@ class Process
      */
     public function kill(int $signal = SIGKILL): void
     {
-        proc_terminate($this->process, $signal);
+        if (is_resource($this->process) && !proc_terminate($this->process, $signal)) {
+            proc_close($this->process);
+        }
     }
 
     /**
@@ -120,8 +122,6 @@ class Process
 
     public function __destruct()
     {
-        if (is_resource($this->process)) {
-            $this->close();
-        }
+        $this->kill();
     }
 }

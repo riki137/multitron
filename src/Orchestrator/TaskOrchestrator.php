@@ -12,13 +12,17 @@ use Multitron\Orchestrator\Output\ProgressOutputFactory;
 use Multitron\Tree\TaskLeafNode;
 use Multitron\Tree\TaskNode;
 use Multitron\Tree\TaskTreeBuilderFactory;
+use RuntimeException;
 use StreamIpc\IpcPeer;
+use StreamIpc\Transport\TimeoutException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 final class TaskOrchestrator
 {
     public const OPTION_CONCURRENCY = 'concurrency';
+    public const OPTION_UPDATE_INTERVAL = 'update-interval';
+    public const DEFAULT_UPDATE_INTERVAL = '0.1';
 
     public function __construct(
         private readonly IpcPeer $ipcPeer,
@@ -65,6 +69,13 @@ final class TaskOrchestrator
     ): int {
         $hadError = false;
         $states = [];
+
+        $updateInterval = $options[self::OPTION_UPDATE_INTERVAL] ?? null;
+        if (!is_numeric($updateInterval)) {
+            throw new RuntimeException('Update interval must be a number');
+        }
+        $updateInterval = (float)$updateInterval;
+
         while (true) {
             $task = $queue->getNextTask();
 
@@ -84,6 +95,10 @@ final class TaskOrchestrator
                 $execution = $state->getExecution();
                 $exit = $execution?->getExitCode();
                 if ($exit !== null) {
+                    try {
+                        $this->ipcPeer->tick(0.01);
+                    } catch (TimeoutException) {
+                    }
                     if ($exit === 0) {
                         $queue->completeTask($id);
                         $state->setStatus(TaskStatus::SUCCESS);
@@ -104,7 +119,7 @@ final class TaskOrchestrator
             }
             $output->render();
             if ($task === true) {
-                $this->ipcPeer->tickFor(0.1);
+                $this->ipcPeer->tickFor($updateInterval);
             }
         }
 

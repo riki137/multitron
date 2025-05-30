@@ -7,8 +7,8 @@ namespace Multitron\Comms;
 use Multitron\Execution\Handler\MasterCache\MasterCacheReadKeysPromise;
 use Multitron\Execution\Handler\MasterCache\MasterCacheReadRequest;
 use Multitron\Execution\Handler\MasterCache\MasterCacheWriteRequest;
-use Multitron\Execution\Handler\MasterCache\SmartMasterCacheReadRequest;
-use Multitron\Execution\Handler\MasterCache\SmartMasterCacheWriteRequest;
+use Multitron\Execution\Handler\MasterCache\MasterCacheReadKeysRequest;
+use Multitron\Execution\Handler\MasterCache\MasterCacheWriteKeysRequest;
 use StreamIpc\Envelope\ResponsePromise;
 use StreamIpc\IpcSession;
 
@@ -30,7 +30,7 @@ final readonly class MasterCacheClient
      */
     public function readKeys(array $paths): MasterCacheReadKeysPromise
     {
-        return new MasterCacheReadKeysPromise($this->session->request(new SmartMasterCacheReadRequest($paths)));
+        return new MasterCacheReadKeysPromise($this->session->request(new MasterCacheReadKeysRequest($paths)));
     }
 
     public function read(MasterCacheReadRequest $request): ResponsePromise
@@ -41,40 +41,46 @@ final readonly class MasterCacheClient
     /**
      * Sets (overwrites) a value at the specified path in the master cache.
      *
-     * @param string|string[] $path The path segments. A single string is treated as a top-level key.
+     * @param string $dotPath Dot-notation path to the value to set.
      * @param mixed $value The value to set.
      * @return ResponsePromise A promise that resolves when the operation is acknowledged by the server.
      */
-    public function set(string|array $path, mixed $value): ResponsePromise
+    public function write(string $dotPath, mixed $value): ResponsePromise
     {
-        $segments = is_string($path) ? [$path] : $path;
-        $request = (new SmartMasterCacheWriteRequest())->write($segments, $value);
-        return $this->write($request);
+        return $this->request((new MasterCacheWriteKeysRequest())->write($dotPath, $value));
+    }
+
+    public function writeFast(int $level, array $path, mixed $value): ResponsePromise
+    {
+        return $this->request((new MasterCacheWriteKeysRequest())->writeFast($level, $path, $value));
     }
 
     /**
      * Merges an array value into the existing data at the specified path in the master cache.
      * If the existing value is not an array, it will be overwritten.
      *
-     * @param string|string[]     $path  The path segments. A single string is treated as a top-level key.
+     * @param string $dotPath Dot-notation path to the value to merge.
      * @param array<string, mixed> $value The array value to merge.
      * @return ResponsePromise A promise that resolves when the operation is acknowledged by the server.
      */
-    public function merge(string|array $path, array $value): ResponsePromise
+    public function merge(string $dotPath, array $value): ResponsePromise
     {
-        $segments = is_string($path) ? [$path] : $path;
-        $request = (new SmartMasterCacheWriteRequest())->merge($segments, $value);
-        return $this->write($request);
+        return $this->request((new MasterCacheWriteKeysRequest())->merge($dotPath, $value));
+    }
+
+    public function mergeFast(int $level, array $path, array $new): ResponsePromise
+    {
+        return $this->request((new MasterCacheWriteKeysRequest())->mergeFast($level, $path, $new));
     }
 
     /**
      * Sends a pre-constructed write request (potentially containing multiple operations)
      * to the master cache server.
      *
-     * @param SmartMasterCacheWriteRequest $request The write request object.
+     * @param MasterCacheWriteKeysRequest $request The write request object.
      * @return ResponsePromise A promise that resolves when the operation is acknowledged by the server.
      */
-    public function write(MasterCacheWriteRequest $request): ResponsePromise
+    public function request(MasterCacheWriteRequest $request): ResponsePromise
     {
         return $this->session->request($request);
     }

@@ -78,11 +78,27 @@ final class TableOutput implements ProgressOutput
             $totalDone += $state->getProgress()->toFloat();
         }
         $sectionBuffer[] = $this->table->getSummaryRow($totalDone);
+        $ob = '';
+        if (ob_get_level() > 0) {
+            $ob = ob_get_clean();
+        }
+        if (is_string($ob) && trim($ob) !== '') {
+            $this->logBuffer[] = trim($ob);
+        }
+
         if ($this->section instanceof ConsoleSectionOutput) {
             $this->section->clear();
         }
         $this->output->writeln($this->logBuffer);
         $this->section->writeln($sectionBuffer);
         $this->logBuffer = [];
+
+        ob_start();
+    }
+
+    public function __destruct()
+    {
+        $this->render();
+        echo ob_get_clean();
     }
 }

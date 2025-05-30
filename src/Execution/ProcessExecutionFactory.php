@@ -17,6 +17,7 @@ use RuntimeException;
 final class ProcessExecutionFactory implements ExecutionFactory
 {
     public const DEFAULT_PROCESS_BUFFER_SIZE = 2;
+    public const DEFAULT_TIMEOUT = 8.0;
 
     /** @var array<array{ProcessExecution, ResponsePromise}> */
     private array $processes = [];
@@ -29,6 +30,7 @@ final class ProcessExecutionFactory implements ExecutionFactory
     public function __construct(
         private readonly IpcPeer $ipcPeer,
         private readonly int $processBufferSize = self::DEFAULT_PROCESS_BUFFER_SIZE,
+        private readonly float $timeout = self::DEFAULT_TIMEOUT,
     ) {
         $this->errorCatcher = $this->errorCatcherFn(...);
     }
@@ -37,7 +39,7 @@ final class ProcessExecutionFactory implements ExecutionFactory
     {
         $process = new ProcessExecution($this->ipcPeer);
         $process->getSession()->onMessage($this->errorCatcher);
-        $response = $process->getSession()->request(new ContainerLoadedMessage(), 1.0);
+        $response = $process->getSession()->request(new ContainerLoadedMessage(), $this->timeout);
         $this->processes[] = [$process, $response];
     }
 

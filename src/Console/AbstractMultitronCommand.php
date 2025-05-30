@@ -30,6 +30,7 @@ abstract class AbstractMultitronCommand extends Command
         $this->addArgument('pattern', InputArgument::OPTIONAL,
             'fnmatch() pattern to filter tasks. You can optionally use % instead of * for wildcards. Works for groups too.');
         $this->addOption(TaskOrchestrator::OPTION_CONCURRENCY, 'c', InputOption::VALUE_REQUIRED, 'Max concurrent tasks executed');
+        $this->addOption(TaskOrchestrator::OPTION_UPDATE_INTERVAL, 'u', InputOption::VALUE_REQUIRED, 'Update interval in seconds', TaskOrchestrator::DEFAULT_UPDATE_INTERVAL);
     }
 
     abstract public function getNodes(TaskTreeBuilder $builder): void;

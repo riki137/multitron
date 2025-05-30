@@ -105,7 +105,7 @@ final class MyTask implements Task
         // advanced operations
         $cache = $comm->cache();
         $values = $cache->readKeys(['foo', 'stats' => ['hits']])->await();
-        $cache->set(['foo', 'bar'], 'baz');
+        $cache->write(['foo', 'bar'], 'baz');
         $cache->merge('stats', ['hits' => ($values['stats']['hits'] ?? 0) + 1]);
     }
 }

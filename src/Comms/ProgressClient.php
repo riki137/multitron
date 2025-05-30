@@ -20,9 +20,9 @@ final class ProgressClient
         $this->warnings = new TaskWarningState();
     }
 
-    public function flush(bool $force = false): void
+    public function flush(bool $force = true): void
     {
-        if ($force || (microtime(true) - $this->lastNotified) >= $this->interval) {
+        if ($force || ((microtime(true) - $this->lastNotified) >= $this->interval)) {
             $this->lastNotified = microtime(true);
             $this->session->notify($this->progress);
         }
@@ -31,37 +31,37 @@ final class ProgressClient
     public function setTotal(int $n): void
     {
         $this->progress->total = $n;
-        $this->flush(true);
+        $this->flush();
     }
 
     public function addTotal(int $n = 1): void
     {
         $this->progress->total += $n;
-        $this->flush(true);
+        $this->flush();
     }
 
     public function setDone(int $n): void
     {
         $this->progress->done = $n;
-        $this->flush();
+        $this->flush(false);
     }
 
     public function addDone(int $n = 1): void
     {
         $this->progress->done += $n;
-        $this->flush();
+        $this->flush(false);
     }
 
     public function addOccurrence(string $key, int $count = 1): void
     {
         $this->progress->addOccurrence($key, $count);
-        $this->flush();
+        $this->flush(false);
     }
 
     public function setOccurrence(string $key, int $count): void
     {
         $this->progress->setOccurrence($key, $count);
-        $this->flush();
+        $this->flush(false);
     }
 
     public function addWarning(string $warning, int $count = 1): void
