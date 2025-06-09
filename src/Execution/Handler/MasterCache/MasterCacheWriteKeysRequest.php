@@ -69,15 +69,11 @@ final class MasterCacheWriteKeysRequest implements MasterCacheWriteRequest
             return;
         }
 
-        $stack = [ [&$base, $new, $limit] ];
-        while ($stack) {
-            [ $target, $src, $lvl ] = array_pop($stack);
-            foreach ($src as $k => $v) {
-                if ($lvl > 1 && isset($target[$k]) && is_array($target[$k]) && is_array($v)) {
-                    $stack[] = [&$target[$k], $v, $lvl - 1];
-                } else {
-                    $target[$k] = $v;
-                }
+        foreach ($new as $k => $v) {
+            if ($limit > 1 && isset($base[$k]) && is_array($base[$k]) && is_array($v)) {
+                $this->mergeInPlace($base[$k], $v, $limit - 1);
+            } else {
+                $base[$k] = $v;
             }
         }
     }
