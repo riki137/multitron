@@ -1,9 +1,9 @@
 <?php
-
 declare(strict_types=1);
 
 namespace Multitron\Comms;
 
+use Multitron\Execution\Handler\MasterCache\MasterCacheReadKeyPromise;
 use Multitron\Execution\Handler\MasterCache\MasterCacheReadKeysPromise;
 use Multitron\Execution\Handler\MasterCache\MasterCacheReadKeysRequest;
 use Multitron\Execution\Handler\MasterCache\MasterCacheReadRequest;
@@ -13,7 +13,22 @@ use StreamIpc\Envelope\ResponsePromise;
 use StreamIpc\IpcSession;
 
 /**
- * Client-side interface for interacting with the MasterCacheServer over IPC.
+ * Thin, type-safe proxy to the Master-Cache server.
+ *
+ * All methods are fully asynchronous; they return a {@see ResponsePromise}
+ * that resolves once the server completes the operation.
+ *
+ * Typical usage:
+ * ```php
+ * $client = new MasterCacheClient($session);
+ *
+ * // Write a nested fragment (auto precedence)
+ * $client->write(['user' => ['profile' => ['name' => 'Alice']]])->await(); // await is optional
+ *
+ * // Read a slice of the cache
+ * $client->read(['user' => ['settings', 'profile' => ['name']]])->await()['user']['profile']['name']; // 'Alice'
+ *
+ * ```
  */
 final readonly class MasterCacheClient
 {
@@ -22,66 +37,68 @@ final readonly class MasterCacheClient
     }
 
     /**
-     * Reads data from the master cache based on the specified paths.
+     * Retrieve one or more keys from the master cache.
      *
-     * @param array<int|string, mixed> $paths Structure defining keys to fetch. See MasterCacheReadRequest for details.
-     *                                             Example: ["key1", "key2" => ["nested_key"]]
-     * @return MasterCacheReadKeysPromise A promise resolving with the fetched data.
+     * The **shape** of `$paths` mirrors the shape of the data you want back:
+     * scalar entries mark leaf keys; nested arrays drill down.
+     *
+     * ```php
+     * // Fetch "user.profile.name" and the entire "settings" subtree
+     * $paths = [
+     *     'user' => [
+     *         'profile'  => ['name'],
+     *         'settings',
+     *     ],
+     * ];
+     * ```
+     *
+     * @param array<int|string,mixed> $paths
+     *        Path specification; see {@see MasterCacheReadKeysRequest} for details.
+     * @return MasterCacheReadKeysPromise
+     *         Resolves to the requested subset of the cache.
      */
-    public function readKeys(array $paths): MasterCacheReadKeysPromise
+    public function read(array $paths): MasterCacheReadKeysPromise
     {
-        return new MasterCacheReadKeysPromise($this->session->request(new MasterCacheReadKeysRequest($paths)));
+        return new MasterCacheReadKeysPromise(
+            $this->session->request(new MasterCacheReadKeysRequest($paths))
+        );
     }
 
-    public function read(MasterCacheReadRequest $request): ResponsePromise
+    public function readKey(string $key): MasterCacheReadKeyPromise
     {
-        return $this->session->request($request);
+        return new MasterCacheReadKeyPromise(
+            $this->session->request(new MasterCacheReadKeysRequest([$key])),
+            $key
+        );
     }
 
     /**
-     * Sets (overwrites) a value at the specified path in the master cache.
+     * Enqueue a nested array to be merged into the cache.
      *
-     * @param string $dotPath Dot-notation path to the value to set.
-     * @param mixed $value The value to set.
-     * @return ResponsePromise A promise that resolves when the operation is acknowledged by the server.
+     * @param array<int|string,mixed> $data
+     *        Structure to merge. Scalars overwrite; sub-arrays merge recursively.
+     * @param int|null $depth
+     *        `null` lets the request auto-detect a suitable level (max depth of `$data`).
+     * @return ResponsePromise
      */
-    public function write(string $dotPath, mixed $value): ResponsePromise
+    public function write(array $data, ?int $depth = null): ResponsePromise
     {
-        return $this->request((new MasterCacheWriteKeysRequest())->write($dotPath, $value));
-    }
-
-    public function writeFast(int $level, array $path, mixed $value): ResponsePromise
-    {
-        return $this->request((new MasterCacheWriteKeysRequest())->writeFast($level, $path, $value));
+        return $this->request(
+            (new MasterCacheWriteKeysRequest())->write($data, $depth)
+        );
     }
 
     /**
-     * Merges an array value into the existing data at the specified path in the master cache.
-     * If the existing value is not an array, it will be overwritten.
+     * Send a pre-built request (read or write) to the server.
      *
-     * @param string $dotPath Dot-notation path to the value to merge.
-     * @param array<string, mixed> $value The array value to merge.
-     * @return ResponsePromise A promise that resolves when the operation is acknowledged by the server.
-     */
-    public function merge(string $dotPath, array $value): ResponsePromise
-    {
-        return $this->request((new MasterCacheWriteKeysRequest())->merge($dotPath, $value));
-    }
-
-    public function mergeFast(int $level, array $path, array $new): ResponsePromise
-    {
-        return $this->request((new MasterCacheWriteKeysRequest())->mergeFast($level, $path, $new));
-    }
-
-    /**
-     * Sends a pre-constructed write request (potentially containing multiple operations)
-     * to the master cache server.
+     * Handy when you batch several operations manually before dispatch.
      *
-     * @param MasterCacheWriteKeysRequest $request The write request object.
-     * @return ResponsePromise A promise that resolves when the operation is acknowledged by the server.
+     * @param MasterCacheWriteRequest|MasterCacheReadRequest $request
+     * @return ResponsePromise
      */
-    public function request(MasterCacheWriteRequest $request): ResponsePromise
-    {
+    public function request(
+        MasterCacheWriteRequest|MasterCacheReadRequest $request
+    ): ResponsePromise {
         return $this->session->request($request);
     }
 }

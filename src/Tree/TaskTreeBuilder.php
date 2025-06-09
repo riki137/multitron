@@ -6,174 +6,123 @@ namespace Multitron\Tree;
 use Closure;
 use LogicException;
 use Multitron\Execution\Task;
+use Multitron\Tree\Partition\PartitionedTaskInterface;
 use Psr\Container\ContainerInterface;
 
-final class TaskTreeBuilder
+/**
+ * Builder for constructing task trees.
+ */
+final readonly class TaskTreeBuilder
 {
-    /** @var TaskNode[] top‐level definitions (leaf or group) */
-    private array $nodes = [];
-
-    public function __construct(private readonly ContainerInterface $container)
+    public function __construct(private ContainerInterface $container)
     {
     }
 
     /**
-     * @param string $id
-     * @param Closure(): Task $factory
-     * @param array $dependencies
-     * @return $this
+     * Create a simple task node.
+     *
+     * @param string $id Unique identifier for the task node.
+     * @param Closure(): Task $factory Factory that returns the Task instance.
+     * @param string[] $dependencies List of task IDs this node depends on.
      */
-    public function task(string $id, Closure $factory, array $dependencies = []): self
+    public function task(string $id, Closure $factory, array $dependencies = []): TaskNode
     {
-        if (isset($this->nodes[$id])) {
-            throw new LogicException("ID '$id' is already used");
-        }
-        $this->nodes[$id] = TaskNode::leaf($id, $factory, $dependencies);
-        return $this;
+        return new TaskNode($id, $factory, [], $dependencies);
     }
 
     /**
-     * @param class-string $class
-     * @param array $dependencies
-     * @return $this
+     * Create a service-backed task node.
+     *
+     * @param class-string $class FQCN of the service to fetch from container.
+     * @param string[] $dependencies Dependencies for the service task.
      */
-    public function service(string $class, array $dependencies = []): self
+    public function service(string $class, array $dependencies = []): TaskNode
     {
-        return $this->task($class, fn() => $this->container->get($class), $dependencies);
+        $id = $this->shortClassName($class);
+        $factory = fn(): Task => $this->container->get($class);
+
+        return $this->task($id, $factory, $dependencies);
     }
 
     /**
-     * @param string $id
-     * @param Closure(TaskTreeBuilder): void $cb
-     * @param array $dependencies
-     * @return $this
+     * Create a grouping node to hold child tasks.
+     *
+     * @param string $id Group identifier.
+     * @param TaskNode[] $children Child task nodes.
+     * @param string[] $dependencies Dependencies for the group.
      */
-    public function group(string $id, Closure $cb, array $dependencies = []): self
+    public function group(string $id, array $children, array $dependencies = []): TaskNode
     {
-        if (isset($this->nodes[$id])) {
-            throw new LogicException("ID '$id' is already used");
-        }
-        // build subtree
-        $sub = new self($this->container);
-        $cb($sub);
-        $this->nodes[$id] = TaskNode::group($id, $sub->nodes, $dependencies);
-        return $this;
+        return new TaskNode($id, null, $children, $dependencies);
     }
 
     /**
-     * @return TaskNode[] flat map of *leaf* nodes, each with
-     *                   final deps only on leaf IDs
-     * @throws LogicException on unknown IDs or cycles
+     * Create partitioned tasks for a partitionable service.
+     *
+     * @param class-string $class FQCN implementing PartitionedTaskInterface.
+     * @param int $partitionCount Number of partitions.
+     * @param string[] $dependencies Dependencies for the partitioned tasks.
      */
-    public function build(): array
+    public function partitioned(string $class, int $partitionCount, array $dependencies = []): TaskNode
     {
-        $leafDefs = []; // id => ['factory'=>..., 'ownDeps'=>[],   'ancestors'=>[]]
-        $groupDefs = []; // id => ['declaredDeps'=>[], 'children'=>[ids...]]
+        return $this->partitionedClosure(
+            $class,
+            fn(): PartitionedTaskInterface => $this->container->get($class),
+            $partitionCount,
+            $dependencies
+        );
+    }
 
-        // 1) traverse once to fill both maps
-        $walk = function (TaskNode $node, array $ancestors) use (&$walk, &$leafDefs, &$groupDefs) {
-            $id = $node->id;
-            if ($node->isLeaf()) {
-                $leafDefs[$id] = [
-                    'factory' => $node->factory,
-                    'ownDeps' => $node->dependencies,
-                    'ancestors' => $ancestors,
-                ];
-            } else {
-                $groupDefs[$id] = [
-                    'declaredDeps' => $node->dependencies,
-                    'children' => array_map(fn($c) => $c->id, $node->children),
-                ];
-                // recurse, adding this group to the ancestor‐list
-                foreach ($node->children as $child) {
-                    $walk($child, array_merge($ancestors, [$id]));
+    /**
+     * Create partitioned tasks with a custom factory.
+     *
+     * @param string $id Base identifier for partitions.
+     * @param Closure(): PartitionedTaskInterface $factory Factory for creating each partition.
+     * @param int $partitionCount Number of partitions.
+     * @param string[] $dependencies Dependencies for partitioned tasks.
+     */
+    public function partitionedClosure(
+        string $id,
+        Closure $factory,
+        int $partitionCount,
+        array $dependencies = []
+    ): TaskNode {
+        $shortId = $this->shortClassName($id);
+        $children = [];
+
+        for ($i = 0; $i < $partitionCount; $i++) {
+            $label = sprintf('%s %d/%d', $shortId, $i + 1, $partitionCount);
+
+            $children[] = new TaskNode(
+                $label,
+                function () use ($factory, $i, $partitionCount): Task {
+                    $task = $factory();
+
+                    if (!$task instanceof PartitionedTaskInterface) {
+                        $type = get_debug_type($task);
+                        throw new LogicException("Expected PartitionedTaskInterface, got {$type}");
+                    }
+
+                    $task->setPartitioning($i, $partitionCount);
+                    return $task;
                 }
-            }
-        };
-
-        foreach ($this->nodes as $n) {
-            $walk($n, []);
-        }
-
-        // 2) build full member‐list for each group (recursive DFS)
-        $members = []; // groupId => leafId[]
-        $collectMembers = function (string $gId) use (&$collectMembers, &$members, $groupDefs, $leafDefs) {
-            if (isset($members[$gId])) {
-                return $members[$gId];
-            }
-            if (!isset($groupDefs[$gId])) {
-                throw new LogicException("Unknown group '$gId'");
-            }
-            $all = [];
-            foreach ($groupDefs[$gId]['children'] as $cid) {
-                if (isset($leafDefs[$cid])) {
-                    $all[] = $cid;
-                } else {
-                    // child is a group
-                    $all = array_merge($all, $collectMembers($cid));
-                }
-            }
-            // dedupe and store
-            return $members[$gId] = array_values(array_unique($all));
-        };
-
-        foreach (array_keys($groupDefs) as $g) {
-            $collectMembers($g);
-        }
-
-        // 3) build the *final* set of leaf nodes with expanded deps
-        $final = [];
-        foreach ($leafDefs as $leafId => $info) {
-            // inherit group‐declared deps
-            $raw = array_merge(
-                $info['ownDeps'],
-                ...array_map(fn($g) => $groupDefs[$g]['declaredDeps'], $info['ancestors'])
-            );
-            $expanded = [];
-            foreach ($raw as $dep) {
-                if (isset($leafDefs[$dep])) {
-                    $expanded[] = $dep;
-                } elseif (isset($members[$dep])) {
-                    $expanded = array_merge($expanded, $members[$dep]);
-                } else {
-                    throw new LogicException("Task '$leafId' depends on unknown '$dep'");
-                }
-            }
-            $finalDeps = array_values(array_unique($expanded));
-            $final[$leafId] = TaskNode::leaf(
-                $leafId,
-                $info['factory'],
-                $finalDeps
             );
         }
 
-        // 4) detect cycles on final leaf→leaf graph
-        $this->detectCycles($final);
-
-        return $final;
+        return new TaskNode($shortId, null, $children, $dependencies);
     }
 
-    private function detectCycles(array $nodes): void
+    public function patternFilter(string $id, string $pattern, array $children = []): TaskNode
     {
-        $visiting = [];
-        $visited = [];
-        $visit = function (string $id) use (&$visit, &$nodes, &$visiting, &$visited) {
-            if (isset($visiting[$id])) {
-                $cycle = implode(' → ', array_keys($visiting)) . " → $id";
-                throw new LogicException("Cyclic dependency: $cycle");
-            }
-            if (isset($visited[$id])) {
-                return;
-            }
-            $visiting[$id] = true;
-            foreach ($nodes[$id]->dependencies as $d) {
-                $visit($d);
-            }
-            unset($visiting[$id]);
-            $visited[$id] = true;
-        };
-        foreach (array_keys($nodes) as $id) {
-            $visit($id);
-        }
+        return PatternTaskNodeFactory::create($id, $pattern, $children);
+    }
+
+    /**
+     * Extract the short class name from a FQCN.
+     */
+    private function shortClassName(string $fqcn): string
+    {
+        $segments = explode('\\', $fqcn);
+        return (string)end($segments);
     }
 }

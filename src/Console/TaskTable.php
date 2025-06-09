@@ -22,10 +22,7 @@ final class TaskTable
     {
         $this->summary = new TaskProgress();
         $this->taskWidth = 16;
-        foreach ($taskList->getNodes() as $taskId => $task) {
-            if (!$task instanceof TaskLeafNode) {
-                continue;
-            }
+        foreach ($taskList as $taskId => $task) {
             $this->summary->total++;
             $this->taskWidth = max($this->taskWidth, strlen($taskId));
         }

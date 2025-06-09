@@ -5,29 +5,26 @@ declare(strict_types=1);
 namespace Multitron\Tree;
 
 use Closure;
+use Multitron\Execution\Task;
 
 final readonly class TaskNode
 {
-    private function __construct(
+    /**
+     * @param string $id
+     * @param ?Closure(): Task $factory
+     * @param TaskNode[] $children
+     * @param string[] $dependencies
+     * @param string[] $tags
+     * @param ?Closure(CompiledTaskNode[] $tasks): iterable<CompiledTaskNode> $postProcess This can be used for filtering, for example.
+     */
+    public function __construct(
         public string $id,
-        public ?Closure $factory, // null ⇒ group
-        public array $dependencies, // raw deps (leaf or group IDs)
-        public array $children // only for groups
-    ) {
-    }
-
-    public static function leaf(string $id, Closure $factory, array $deps = []): self
+        public ?Closure $factory = null,
+        public array $children = [],
+        public array $dependencies = [],
+        public array $tags = [],
+        public ?Closure $postProcess = null,
+    )
     {
-        return new self($id, $factory, $deps, []);
-    }
-
-    public static function group(string $id, array $children, array $deps = []): self
-    {
-        return new self($id, null, $deps, $children);
-    }
-
-    public function isLeaf(): bool
-    {
-        return $this->factory !== null;
     }
 }

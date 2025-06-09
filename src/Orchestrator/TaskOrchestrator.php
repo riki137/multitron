@@ -9,7 +9,9 @@ use Multitron\Execution\Handler\IpcHandlerRegistry;
 use Multitron\Execution\Handler\IpcHandlerRegistryFactory;
 use Multitron\Orchestrator\Output\ProgressOutput;
 use Multitron\Orchestrator\Output\ProgressOutputFactory;
+use Multitron\Tree\CompiledTaskNode;
 use Multitron\Tree\TaskNode;
+use Multitron\Tree\TaskTreeQueue;
 use RuntimeException;
 use StreamIpc\IpcPeer;
 use StreamIpc\Transport\TimeoutException;
@@ -43,7 +45,7 @@ final class TaskOrchestrator
         return $this->doRun(
             $commandName,
             $input->getOptions(),
-            new TaskQueue($taskList->getNodes(), $input, $concurrency),
+            new TaskTreeQueue($taskList, $concurrency),
             $this->outputFactory->create($taskList, $output, $registry),
             $registry
         );
@@ -59,7 +61,7 @@ final class TaskOrchestrator
     public function doRun(
         string $commandName,
         array $options,
-        TaskQueue $queue,
+        TaskTreeQueue $queue,
         ProgressOutput $output,
         IpcHandlerRegistry $handlerRegistry
     ): int {
@@ -75,15 +77,18 @@ final class TaskOrchestrator
         while (true) {
             $task = $queue->getNextTask();
 
-            if ($task instanceof TaskNode && $task->isLeaf()) {
+            if ($task instanceof CompiledTaskNode) {
                 // launch a new task
                 $execution = $this->executionFactory->launch($commandName, $task->id, $options);
                 $states[$task->id] = $state = new TaskState($task->id, $execution);
                 $handlerRegistry->attach($state);
                 $output->onTaskStarted($state);
-            } elseif ($task !== true) {
+            } elseif ($task === false) {
                 // $task is false -> no tasks left and none running
                 break;
+            } else {
+                // $task is true -> wait for running tasks to finish
+                $this->ipcPeer->tickFor($updateInterval);
             }
 
             // poll each running task for completion
@@ -96,11 +101,11 @@ final class TaskOrchestrator
                     } catch (TimeoutException) {
                     }
                     if ($exit === 0) {
-                        $queue->completeTask($id);
+                        $queue->markCompleted($state->getTaskId());
                         $state->setStatus(TaskStatus::SUCCESS);
                         $output->onTaskCompleted($state);
                     } else {
-                        $skipped = $queue->failTask($id);
+                        $skipped = $queue->markFailed($state->getTaskId());
                         $state->setStatus(TaskStatus::ERROR);
                         $output->onTaskCompleted($state);
                         foreach ($skipped as $sid) {
@@ -112,10 +117,6 @@ final class TaskOrchestrator
                     }
                     unset($states[$id]);
                 }
-            }
-
-            if ($task === true) {
-                $this->ipcPeer->tickFor($updateInterval);
             }
 
             $output->render();

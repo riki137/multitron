@@ -4,52 +4,49 @@ declare(strict_types=1);
 
 namespace Multitron\Orchestrator;
 
+use ArrayIterator;
+use IteratorAggregate;
+use Multitron\Tree\CompiledTaskNode;
 use Multitron\Tree\TaskNode;
+use Multitron\Tree\TaskTreeCompiler;
+use Traversable;
 
-final class TaskList
+final readonly class TaskList implements IteratorAggregate
 {
-    private TaskNode $root;
-
-    /** @var array<string, TaskNode> */
-    private array $nodes = [];
+    /** @var array<string, CompiledTaskNode> */
+    private array $nodes;
 
     public function __construct(TaskNode $root)
     {
-        $this->root = $root;
-        $this->nodes = $this->flatten($root);
+        $compiler = new TaskTreeCompiler();
+        $this->nodes = $compiler->compile($root);
     }
 
-    public function getRoot(): TaskNode
+    public function get(string $id): ?CompiledTaskNode
     {
-        return $this->root;
+        return $this->nodes[$id] ?? null;
+    }
+
+    public function has(string $id): bool
+    {
+        return isset($this->nodes[$id]);
     }
 
     /**
-     * @return array<string, TaskNode>
+     * Returns all task nodes as an array.
+     *
+     * @return array<string, CompiledTaskNode>
      */
-    public function getNodes(): array
+    public function toArray(): array
     {
         return $this->nodes;
     }
 
     /**
-     * @return array<string, TaskNode>
+     * @return Traversable<string, CompiledTaskNode>
      */
-    private function flatten(TaskNode $root): array
+    public function getIterator(): Traversable
     {
-        $nodes = [];
-        $stack = [$root];
-        while ($stack !== []) {
-            $node = array_pop($stack);
-            if ($node->isLeaf()) {
-                $nodes[$node->id] = $node;
-            } else {
-                foreach ($node->children as $child) {
-                    $stack[] = $child;
-                }
-            }
-        }
-
-        return $nodes;
+        return new ArrayIterator($this->nodes);
     }
 }

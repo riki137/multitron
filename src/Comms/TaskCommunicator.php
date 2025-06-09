@@ -11,9 +11,9 @@ use StreamIpc\Message\Message;
 
 final readonly class TaskCommunicator
 {
-    private MasterCacheClient $cache;
+    public MasterCacheClient $cache;
 
-    private ProgressClient $progress;
+    public ProgressClient $progress;
 
     public function __construct(
         private IpcSession $session,
@@ -47,16 +47,6 @@ final readonly class TaskCommunicator
     public function getOptions(): array
     {
         return $this->options;
-    }
-
-    public function cache(): MasterCacheClient
-    {
-        return $this->cache;
-    }
-
-    public function progress(): ProgressClient
-    {
-        return $this->progress;
     }
 
     public function log(string $message, string $level = 'info'): void

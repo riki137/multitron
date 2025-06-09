@@ -52,16 +52,15 @@ final class MultitronWorkerCommand extends Command
         if (!$command instanceof AbstractMultitronCommand) {
             throw new RuntimeException('Command not found');
         }
-        $list = /* TODO */[];
-        foreach ($list as $node) {
-            if ($node->id === $startTask->taskId && $node->isLeaf()) {
+        foreach ($command->getTaskList() as $node) {
+            if ($node->id === $startTask->taskId) {
                 $comm = new TaskCommunicator($session, $startTask->options);
                 try {
-                    ($node->getFactory($input))()->execute($comm);
+                    ($node->factory)($input)->execute($comm);
                 } finally {
                     $comm->shutdown();
                 }
-                return 0;
+                return Command::SUCCESS;
             }
         }
 

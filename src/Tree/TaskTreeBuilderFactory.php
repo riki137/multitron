@@ -6,9 +6,9 @@ namespace Multitron\Tree;
 
 use Psr\Container\ContainerInterface;
 
-final class TaskTreeBuilderFactory
+final readonly class TaskTreeBuilderFactory
 {
-    public function __construct(private readonly ContainerInterface $container)
+    public function __construct(private ContainerInterface $container)
     {
     }
 

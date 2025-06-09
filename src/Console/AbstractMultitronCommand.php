@@ -35,24 +35,24 @@ abstract class AbstractMultitronCommand extends Command
         $this->addOption(TaskOrchestrator::OPTION_UPDATE_INTERVAL, 'u', InputOption::VALUE_REQUIRED, 'Update interval in seconds', TaskOrchestrator::DEFAULT_UPDATE_INTERVAL);
     }
 
-    abstract public function getNodes(TaskTreeBuilder $builder): void;
+    abstract public function getNodes(TaskTreeBuilder $builder): array;
 
     final public function getTaskList(?InputInterface $input = null): TaskList
     {
-        $builder = $this->builderFactory->create();
-        $this->getNodes($builder);
         $name = $this->getName();
         if (!is_string($name)) {
             throw new RuntimeException('Command ' . static::class . ' has no name configured. Add #[AsCommand(name: "...")] to the class.');
         }
 
+        $builder = $this->builderFactory->create();
         $pattern = $input?->getArgument('pattern');
         if (is_string($pattern) && trim($pattern) !== '') {
-            $pattern = strtr($pattern, ['%' => '*']);
-            // TODO
+            $node = $builder->patternFilter('root', $pattern, $this->getNodes($builder));
+        } else {
+            $node = new TaskNode('root', null, $this->getNodes($builder));
         }
 
-        return new TaskList(TaskNode::group($this->getName(), $builder->build()));
+        return new TaskList($node);
     }
 
     final protected function execute(InputInterface $input, OutputInterface $output): int

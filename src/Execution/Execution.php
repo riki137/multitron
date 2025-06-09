@@ -12,5 +12,5 @@ interface Execution
 
     public function getExitCode(): ?int;
 
-    public function kill(): void;
+    public function kill(): array;
 }
