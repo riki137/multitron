@@ -7,7 +7,6 @@ namespace Multitron\Console;
 use Multitron\Message\TaskProgress;
 use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskStatus;
-use Multitron\Tree\TaskLeafNode;
 
 final class TaskTable
 {

@@ -24,7 +24,6 @@ final readonly class TaskNode
         public array $dependencies = [],
         public array $tags = [],
         public ?Closure $postProcess = null,
-    )
-    {
+    ) {
     }
 }

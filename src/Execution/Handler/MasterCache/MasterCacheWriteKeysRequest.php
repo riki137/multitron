@@ -85,7 +85,7 @@ final class MasterCacheWriteKeysRequest implements MasterCacheWriteRequest
     private function detectDepthIterative(array $data): int
     {
         $maxDepth = 1;
-        $stack    = [[1, $data]];
+        $stack = [[1, $data]];
 
         while ($stack) {
             [ $depth, $node ] = array_pop($stack);

@@ -6,7 +6,6 @@ namespace Multitron\Execution\Handler\MasterCache;
 
 use LogicException;
 use StreamIpc\Envelope\ResponsePromise;
-use StreamIpc\Message\Message;
 
 final readonly class MasterCacheReadKeysPromise
 {

@@ -31,7 +31,8 @@ class PatternTaskNodeFactory
                         }
                     }
                 }
-            });
+            }
+        );
     }
 
     private static function filterDependencies(CompiledTaskNode $task, array $patterns): CompiledTaskNode

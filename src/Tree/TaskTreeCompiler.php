@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Multitron\Tree;
 
-use Generator;
 use LogicException;
 
 /**

@@ -10,7 +10,6 @@ use Multitron\Execution\Handler\IpcHandlerRegistryFactory;
 use Multitron\Orchestrator\Output\ProgressOutput;
 use Multitron\Orchestrator\Output\ProgressOutputFactory;
 use Multitron\Tree\CompiledTaskNode;
-use Multitron\Tree\TaskNode;
 use Multitron\Tree\TaskTreeQueue;
 use RuntimeException;
 use StreamIpc\IpcPeer;

@@ -69,7 +69,7 @@ final class TaskTreeQueue
             if ([] === $this->runningTasks) {
                 // …and none pending
                 if ([] === $this->pendingTasks) {
-                    return false;  // done
+                    return false; // done
                 }
                 throw new LogicException('Deadlock detected: remaining tasks have unmet dependencies.');
             }
@@ -82,13 +82,13 @@ final class TaskTreeQueue
         }
 
         // pick the ready task with the most downstream work
-        $bestId    = null;
+        $bestId = null;
         $bestScore = -1;
         foreach ($this->availableTasks as $task) {
             $score = $this->calculatePriorityScore($task);
             if ($score > $bestScore) {
                 $bestScore = $score;
-                $bestId    = $task->id;
+                $bestId = $task->id;
             }
         }
 
@@ -113,8 +113,7 @@ final class TaskTreeQueue
 
         // any dependents whose *all* deps are now done become available
         foreach ($this->dependentsMap[$taskId] as $depId) {
-            if (
-                isset($this->pendingTasks[$depId]) &&
+            if (isset($this->pendingTasks[$depId]) &&
                 $this->areDependenciesMet($this->pendingTasks[$depId])
             ) {
                 $this->availableTasks[$depId] = $this->pendingTasks[$depId];
@@ -137,7 +136,7 @@ final class TaskTreeQueue
         $this->completedTasks[$taskId] = $taskId;
 
         $skipped = [];
-        $queue   = [$taskId];
+        $queue = [$taskId];
 
         // BFS through the reverse-dependency graph
         while ($queue) {
