@@ -12,7 +12,7 @@ class TaskState
 {
     private TaskStatus $status = TaskStatus::RUNNING;
 
-    private readonly DateTime $startedAt;
+    private readonly float $startedAt;
 
     private readonly TaskProgress $progress;
 
@@ -22,7 +22,7 @@ class TaskState
         private readonly string $taskId,
         private readonly ?Execution $execution = null,
     ) {
-        $this->startedAt = new DateTime();
+        $this->startedAt = microtime(true);
         $this->progress = new TaskProgress();
         $this->warnings = new TaskWarningState();
     }
@@ -47,7 +47,7 @@ class TaskState
         return $this->execution;
     }
 
-    public function getStartedAt(): DateTime
+    public function getStartedAt(): float
     {
         return $this->startedAt;
     }

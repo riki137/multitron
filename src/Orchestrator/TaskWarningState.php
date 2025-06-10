@@ -9,7 +9,7 @@ use Multitron\Message\TaskWarningStateMessage;
 
 class TaskWarningState
 {
-    public const WARNING_LIMIT = 10;
+    public const WARNING_LIMIT = 5;
 
     private array $warnings = [];
 
@@ -18,33 +18,38 @@ class TaskWarningState
     /**
      * @return Generator<array{messages: list<string>, count: int}>
      */
-    public function fetchWarnings(): Generator
+    public function fetchAll(): Generator
     {
         foreach ($this->warnings as $key => $warnings) {
             yield ['messages' => $warnings, 'count' => $this->warningCount[$key]];
         }
     }
 
-    public function warningKey(string $warning): string
+    public function count(): int
+    {
+        return array_sum($this->warningCount);
+    }
+
+    public function key(string $warning): string
     {
         return preg_replace('/[^A-Za-z]/', '', $warning);
     }
 
-    public function addWarning(string $warning, int $count): void
+    public function add(string $warning, int $count): void
     {
-        $key = $this->processWarning($warning);
+        $key = $this->process($warning);
         $this->warningCount[$key] ??= 0;
         $this->warningCount[$key] += $count;
     }
 
-    public function setWarning(string $warning, int $count): void
+    public function set(string $warning, int $count): void
     {
-        $this->warningCount[$this->processWarning($warning)] = $count;
+        $this->warningCount[$this->process($warning)] = $count;
     }
 
-    private function processWarning(string $warning): string
+    private function process(string $warning): string
     {
-        $key = $this->warningKey($warning);
+        $key = $this->key($warning);
         if (!isset($this->warnings[$key])) {
             $this->warnings[$key] = [$warning];
         } elseif (count($this->warnings[$key]) < self::WARNING_LIMIT && !in_array($warning, $this->warnings[$key])) {

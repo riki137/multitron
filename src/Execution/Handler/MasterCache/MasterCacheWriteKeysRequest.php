@@ -7,8 +7,7 @@ use LogicException;
 
 /**
  * Request that writes key-value chunks into the master-cache with
- * depth-limited precedence.  Uses a simple array instead of
- * {@see \SplPriorityQueue} so the object can be serialised.
+ * depth-limited precedence.
  */
 final class MasterCacheWriteKeysRequest implements MasterCacheWriteRequest
 {
@@ -36,11 +35,11 @@ final class MasterCacheWriteKeysRequest implements MasterCacheWriteRequest
         return $this;
     }
 
-    public function doWrite(array &$storage): MasterCacheWriteResponse
+    public function doWrite(array &$storage): void
     {
         if ($this->minDepth === PHP_INT_MAX) {
             // nothing queued
-            return new MasterCacheWriteResponse();
+            return;
         }
 
         /**
@@ -55,7 +54,7 @@ final class MasterCacheWriteKeysRequest implements MasterCacheWriteRequest
             }
         }
 
-        return new MasterCacheWriteResponse();
+        return;
     }
 
     /* ---------- internals (unchanged) ---------- */

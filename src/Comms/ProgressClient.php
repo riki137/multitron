@@ -67,12 +67,12 @@ final class ProgressClient
 
     public function addWarning(string $warning, int $count = 1): void
     {
-        $this->warnings->addWarning($warning, $count);
+        $this->warnings->add($warning, $count);
     }
 
     public function setWarning(string $warning, int $count = 1): void
     {
-        $this->warnings->setWarning($warning, $count);
+        $this->warnings->set($warning, $count);
     }
 
     public function shutdown(): void

@@ -27,30 +27,26 @@ final readonly class MasterCacheReadKeysRequest implements MasterCacheReadReques
     }
 
     /**
-     * Recursively retrieves entries from $source according to $keysSpec.
+     * Recursively retrieves entries from $storage according to $keysSpec.
      *
-     * @param array<string, mixed> $source
-     * @param array<int|string, mixed> $keysSpec
-     * @return array<string, mixed>
+     * This optimized version separates scalar key lookups from nested traversals
+     * to reduce recursion depth and leverage performant, built-in array functions.
+     *
+     * @param array<string, mixed> $storage The data source to read from.
+     * @param array<int|string, mixed> $keysSpec The specification of keys to fetch.
+     * @return array<string, mixed> The fetched data.
      */
-    private function fetchKeys(array &$source, array $keysSpec): array
+    private function fetchKeys(array &$storage, array $keysSpec): array
     {
         $result = [];
 
-        foreach ($keysSpec as $outerKey => $innerSpec) {
-            // simple top-level key
-            if (is_string($innerSpec)) {
-                if (isset($source[$innerSpec])) {
-                    $result[$innerSpec] = $source[$innerSpec];
+        foreach ($keysSpec as $key => $spec) {
+            if (is_array($spec)) {
+                if (isset($storage[$key]) && is_array($storage[$key])) {
+                    $result[$key] = $this->fetchKeys($storage[$key], $spec);
                 }
-                // nested structure
-            } elseif (is_array($innerSpec) && isset($source[$outerKey]) && is_array($source[$outerKey])) {
-                $nestedSource = $source[$outerKey];
-                /** @var array<string, mixed> $nestedSource */
-                $nested = $this->fetchKeys($nestedSource, $innerSpec);
-                if ($nested !== []) {
-                    $result[$outerKey] = $nested;
-                }
+            } else {
+                $result[$spec] = $storage[$spec] ?? null;
             }
         }
 

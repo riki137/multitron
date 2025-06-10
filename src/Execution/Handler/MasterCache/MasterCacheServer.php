@@ -18,7 +18,8 @@ final class MasterCacheServer
     public function handleRequest(Message $request): ?Message
     {
         if ($request instanceof MasterCacheWriteKeysRequest) {
-            return $request->doWrite($this->storage);
+            $request->doWrite($this->storage);
+            return new MasterCacheWriteResponse();
         }
         if ($request instanceof MasterCacheReadKeysRequest) {
             return $request->doRead($this->storage);

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Multitron\Orchestrator\Output;
 
-use Multitron\Console\TaskTable;
+use Multitron\Console\TableRenderer;
 use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskState;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
@@ -18,7 +18,7 @@ final class TableOutput implements ProgressOutput
     /** @var list<string> */
     private array $logBuffer = [];
 
-    private readonly TaskTable $table;
+    private readonly TableRenderer $renderer;
 
     /** @var array<string, TaskState> */
     private array $states = [];
@@ -30,12 +30,11 @@ final class TableOutput implements ProgressOutput
         } else {
             $this->section = $output;
         }
-        $this->table = new TaskTable($taskList);
+        $this->renderer = new TableRenderer($taskList);
     }
 
     public function onTaskStarted(TaskState $state): void
     {
-        $this->table->markStarted($state->getTaskId());
         $this->states[$state->getTaskId()] = $state;
     }
 
@@ -46,22 +45,19 @@ final class TableOutput implements ProgressOutput
     public function onTaskCompleted(TaskState $state): void
     {
         unset($this->states[$state->getTaskId()]);
-        $this->logBuffer[] = $this->table->getLog(
+        $this->logBuffer[] = $this->renderer->getLog(
             null,
-            $this->table->getRow($state->getTaskId(), $state->getProgress(), $state->getStatus())
+            $this->renderer->getRow($state)
         );
-        foreach ($state->getWarnings()->fetchWarnings() as $warning) {
-            $this->logBuffer[] = $this->table->getLog(
-                $state->getTaskId(),
-                '<fg=yellow>⚠️ ' . $warning['count'] . 'x</>: ' . implode(';' . PHP_EOL, $warning['messages'])
-            );
+        foreach ($state->getWarnings()->fetchAll() as $warning) {
+            $this->logBuffer[] = $this->renderer->renderWarning($state->getTaskId(), $warning);
         }
-        $this->table->markFinished($state->getTaskId());
+        $this->renderer->markFinished($state->getTaskId());
     }
 
     public function log(TaskState $state, string $message): void
     {
-        $this->logBuffer[] = $this->table->getLog($state->getTaskId(), $message);
+        $this->logBuffer[] = $this->renderer->getLog($state->getTaskId(), $message);
     }
 
     public function render(): void
@@ -70,14 +66,10 @@ final class TableOutput implements ProgressOutput
         $totalDone = 0;
         // Render each task
         foreach ($this->states as $state) {
-            $sectionBuffer[] = $this->table->getRow(
-                $state->getTaskId(),
-                $state->getProgress(),
-                $state->getStatus(),
-            );
+            $sectionBuffer[] = $this->renderer->getRow($state);
             $totalDone += $state->getProgress()->toFloat();
         }
-        $sectionBuffer[] = $this->table->getSummaryRow($totalDone);
+        $sectionBuffer[] = $this->renderer->getSummaryRow($totalDone);
         $ob = '';
         if (ob_get_level() > 0) {
             $ob = ob_get_clean();

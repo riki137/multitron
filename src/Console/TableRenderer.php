@@ -6,12 +6,12 @@ namespace Multitron\Console;
 
 use Multitron\Message\TaskProgress;
 use Multitron\Orchestrator\TaskList;
+use Multitron\Orchestrator\TaskState;
 use Multitron\Orchestrator\TaskStatus;
 
-final class TaskTable
+final class TableRenderer
 {
-    /** @var array<string, float> */
-    public array $startTimes = [];
+    private float $startTime;
 
     private TaskProgress $summary;
 
@@ -26,17 +26,11 @@ final class TaskTable
             $this->taskWidth = max($this->taskWidth, strlen($taskId));
         }
 
-        $this->startTimes['TOTAL'] = microtime(true);
-    }
-
-    public function markStarted(string $taskId): void
-    {
-        $this->startTimes[$taskId] = microtime(true);
+        $this->startTime = microtime(true);
     }
 
     public function markFinished(string $taskId): void
     {
-        unset($this->startTimes[$taskId]);
         $this->summary->done++;
     }
 
@@ -45,19 +39,20 @@ final class TaskTable
         return '<fg=gray>(' . date('H:i:s') . ')</>';
     }
 
-    public function getRow(string $taskId, TaskProgress $progress, TaskStatus $status): string
+    public function getRow(TaskState $state): string
     {
         $percent = null;
-        if ($status === TaskStatus::SUCCESS && $progress->total === 0 && $progress->done === 0) {
+        $progress = $state->getProgress();
+        if ($state->getStatus() === TaskStatus::SUCCESS && $progress->total === 0 && $progress->done === 0) {
             $percent = 100;
         }
 
         return implode(' ', array_filter([
-            $this->getRowLabel($taskId, $status),
+            $this->getRowLabel($state->getTaskId(), $state->getStatus()),
             self::getProgressBar($progress, $percent),
             self::getCount($progress),
-            $this->getTime($taskId),
-            self::getOccurrenceStatus($progress),
+            $this->getTime($state->getStartedAt()),
+            self::getOccurrenceStatus($state),
         ]));
     }
 
@@ -68,17 +63,22 @@ final class TaskTable
             $this->getRowLabel('TOTAL', TaskStatus::RUNNING),
             self::getProgressBar($this->summary, (fdiv($done, $this->summary->total)), 'blue'),
             self::getCount($this->summary),
-            $this->getTime('TOTAL', 'yellow;options=bold'),
+            $this->getTime($this->startTime, 'yellow;options=bold'),
         ]));
     }
 
-    private static function getOccurrenceStatus(TaskProgress $progress): string
+    private static function getOccurrenceStatus(TaskState $state): string
     {
+        $progress = $state->getProgress();
         $ret = [];
         foreach ($progress->occurrences as $key => $count) {
             if ($count > 0) {
                 $ret[] = "<fg=gray>{$count}x{$key}</>";
             }
+        }
+        $warnCount = $state->getWarnings()->count();
+        if ($warnCount > 0) {
+            $ret[] = "<fg=yellow>{$warnCount}x⚠️</>";
         }
         return implode(' ', $ret);
     }
@@ -106,9 +106,8 @@ final class TaskTable
         return "$done<fg=gray>/</><options=bold>$total</>";
     }
 
-    private function getTime(string $taskId, string $color = 'white'): string
+    private function getTime(?float $startTime, string $color = 'white'): string
     {
-        $startTime = $this->startTimes[$taskId] ?? null;
         if ($startTime === null) {
             return "<fg=$color>" . str_pad('-', 5) . '</>';
         }
@@ -147,5 +146,11 @@ final class TaskTable
         }
 
         return $message . ' ' . self::getPrintTime();
+    }
+
+    public function renderWarning(string $taskId, array $warning): string
+    {
+        $indent = str_repeat(' ', strlen((string)$warning['count']) + 6);
+        return $this->getLog($taskId, '<fg=yellow>⚠️ ' . $warning['count'] . 'x</>: ' . implode(PHP_EOL . $indent, $warning['messages']));
     }
 }
