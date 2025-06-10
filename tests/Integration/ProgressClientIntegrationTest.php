@@ -53,6 +53,7 @@ final class ProgressClientIntegrationTest extends TestCase
         $this->assertGreaterThanOrEqual(4, count($received));
         $this->assertInstanceOf(TaskProgress::class, $received[0]);
         $this->assertInstanceOf(TaskProgress::class, $received[count($received)-2]);
+        $this->assertNotNull($received[0]->memoryUsage);
 
         $last = $received[count($received)-1];
         $this->assertInstanceOf(TaskWarningStateMessage::class, $last);

@@ -15,6 +15,8 @@ final class TaskProgress implements Message
     /** @var array<string, int> */
     public array $occurrences = [];
 
+    public ?int $memoryUsage = null;
+
     public function getPercentage(): float
     {
         return $this->total === 0 ? 0 : $this->toFloat() * 100;
@@ -53,5 +55,18 @@ final class TaskProgress implements Message
         $this->total = $progress->total;
         $this->done = $progress->done;
         $this->occurrences = $progress->occurrences;
+        $this->memoryUsage = $progress->memoryUsage;
+    }
+
+    public static function formatMemoryUsage(int $bytes): string
+    {
+        $m = $bytes / 1048576;
+        if ($m >= 1024) {
+            return number_format($m / 1024, 1, '.', '') . 'GB';
+        }
+        if ($m >= 10) {
+            return number_format($m, 0, '.', '') . 'MB';
+        }
+        return number_format($m, 1, '.', '') . 'MB';
     }
 }

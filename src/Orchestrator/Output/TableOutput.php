@@ -64,12 +64,22 @@ final class TableOutput implements ProgressOutput
     {
         $sectionBuffer = [];
         $totalDone = 0;
+        $workersMem = 0;
         // Render each task
         foreach ($this->states as $state) {
             $sectionBuffer[] = $this->renderer->getRow($state);
             $totalDone += $state->getProgress()->toFloat();
+            $mem = $state->getProgress()->memoryUsage;
+            if ($mem !== null) {
+                $workersMem += $mem;
+            }
         }
-        $sectionBuffer[] = $this->renderer->getSummaryRow($totalDone);
+        $sectionBuffer[] = $this->renderer->getSummaryRow(
+            $totalDone,
+            self::memoryUsage(),
+            $workersMem,
+            self::freeMemory(),
+        );
         $ob = '';
         if (ob_get_level() > 0) {
             $ob = ob_get_clean();
@@ -86,6 +96,29 @@ final class TableOutput implements ProgressOutput
         $this->logBuffer = [];
 
         ob_start();
+    }
+
+    private static function memoryUsage(): int
+    {
+        $pid = getmypid();
+        $out = @shell_exec('ps -o rss= -p ' . $pid);
+        if (is_string($out) && trim($out) !== '') {
+            return (int)trim($out) * 1024;
+        }
+
+        return memory_get_usage(true);
+    }
+
+    private static function freeMemory(): ?int
+    {
+        if (is_readable('/proc/meminfo')) {
+            $data = file_get_contents('/proc/meminfo');
+            if (preg_match('/MemAvailable:\s+(\d+)/', (string)$data, $m)) {
+                return (int)$m[1] * 1024;
+            }
+        }
+
+        return null;
     }
 
     public function __destruct()

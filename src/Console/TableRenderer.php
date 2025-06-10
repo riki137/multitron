@@ -52,11 +52,12 @@ final class TableRenderer
             self::getProgressBar($progress, $percent),
             self::getCount($progress),
             $this->getTime($state->getStartedAt()),
+            self::getMemory($progress->memoryUsage),
             self::getOccurrenceStatus($state),
         ]));
     }
 
-    public function getSummaryRow(float $done): string
+    public function getSummaryRow(float $done, int $masterMem, int $workerMem, ?int $freeMem): string
     {
         $this->summary->done = (int)$done;
         return implode(' ', array_filter([
@@ -64,6 +65,9 @@ final class TableRenderer
             self::getProgressBar($this->summary, (fdiv($done, $this->summary->total)), 'blue'),
             self::getCount($this->summary),
             $this->getTime($this->startTime, 'yellow;options=bold'),
+            '<fg=blue>' . TaskProgress::formatMemoryUsage($workerMem) . '</>+' .
+            '<fg=magenta>' . TaskProgress::formatMemoryUsage($masterMem) . '</>',
+            $freeMem !== null ? '<fg=green>AVL:' . TaskProgress::formatMemoryUsage($freeMem) . '</>' : null,
         ]));
     }
 
@@ -93,6 +97,15 @@ final class TableRenderer
         }
 
         return ProgressBar::render($percent, 16, $barColor, $textColor);
+    }
+
+    private static function getMemory(?int $bytes): ?string
+    {
+        if ($bytes === null) {
+            return null;
+        }
+
+        return '<fg=blue>' . TaskProgress::formatMemoryUsage($bytes) . '</>';
     }
 
     private static function getCount(TaskProgress $progress): string

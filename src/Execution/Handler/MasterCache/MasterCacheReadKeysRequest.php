@@ -46,7 +46,9 @@ final readonly class MasterCacheReadKeysRequest implements MasterCacheReadReques
                     $result[$key] = $this->fetchKeys($storage[$key], $spec);
                 }
             } else {
-                $result[$spec] = $storage[$spec] ?? null;
+                if (array_key_exists($spec, $storage)) {
+                    $result[$spec] = $storage[$spec];
+                }
             }
         }
 
