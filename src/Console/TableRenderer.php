@@ -29,7 +29,7 @@ final class TableRenderer
         $this->startTime = microtime(true);
     }
 
-    public function markFinished(string $taskId): void
+    public function markFinished(): void
     {
         $this->summary->done++;
     }
@@ -57,12 +57,11 @@ final class TableRenderer
         ]));
     }
 
-    public function getSummaryRow(float $done, int $masterMem, int $workerMem): string
+    public function getSummaryRow(float $partiallyDone, int $masterMem, int $workerMem): string
     {
-        $this->summary->done = (int)$done;
         return implode(' ', array_filter([
             $this->getRowLabel('TOTAL', TaskStatus::RUNNING),
-            self::getProgressBar($this->summary, (fdiv($done, $this->summary->total)), 'blue'),
+            self::getProgressBar($this->summary, (fdiv($this->summary->done + $partiallyDone, $this->summary->total)) * 100, 'blue'),
             self::getCount($this->summary),
             $this->getTime($this->startTime, 'yellow;options=bold'),
             '<fg=blue>' . TaskProgress::formatMemoryUsage($workerMem) . '</>+' .

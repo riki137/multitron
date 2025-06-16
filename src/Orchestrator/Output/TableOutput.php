@@ -15,7 +15,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 final class TableOutput implements ProgressOutput
 {
-    private const GB = 1048576;
+    private const GB = 1073741824;
     private readonly OutputInterface $section;
 
     /** @var list<string> */
@@ -55,7 +55,7 @@ final class TableOutput implements ProgressOutput
         foreach ($state->getWarnings()->fetchAll() as $warning) {
             $this->logBuffer[] = $this->renderer->renderWarning($state->getTaskId(), $warning);
         }
-        $this->renderer->markFinished($state->getTaskId());
+        $this->renderer->markFinished();
     }
 
     public function log(TaskState $state, string $message): void
@@ -66,12 +66,12 @@ final class TableOutput implements ProgressOutput
     public function render(): void
     {
         $sectionBuffer = [];
-        $totalDone = 0;
         $workersMem = 0;
+        $partiallyDone = 0;
         // Render each task
         foreach ($this->states as $state) {
             $sectionBuffer[] = $this->renderer->getRow($state);
-            $totalDone += $state->getProgress()->toFloat();
+            $partiallyDone += $state->getProgress()->toFloat();
             $mem = $state->getProgress()->memoryUsage;
             if ($mem !== null) {
                 $workersMem += $mem;
@@ -81,10 +81,10 @@ final class TableOutput implements ProgressOutput
         if ($freeMem !== null && $freeMem < self::GB) {
             $sectionBuffer[] =
                 $this->renderer->getRowLabel('LOW MEMORY', TaskStatus::SKIP) .
-                " Only " . TaskProgress::formatMemoryUsage($freeMem) . " RAM available, processes might crash." . ($freeMem / self::GB);
+                " Only " . TaskProgress::formatMemoryUsage($freeMem) . " RAM available, processes might crash.";
         }
         $sectionBuffer[] = $this->renderer->getSummaryRow(
-            $totalDone,
+            $partiallyDone,
             self::memoryUsage(),
             $workersMem,
         );
