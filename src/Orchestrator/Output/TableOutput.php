@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace Multitron\Orchestrator\Output;
 
 use Multitron\Console\TableRenderer;
+use Multitron\Message\TaskProgress;
 use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskState;
+use Multitron\Orchestrator\TaskStatus;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\ConsoleSectionOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 final class TableOutput implements ProgressOutput
 {
+    private const GB = 1048576;
     private readonly OutputInterface $section;
 
     /** @var list<string> */
@@ -74,11 +77,16 @@ final class TableOutput implements ProgressOutput
                 $workersMem += $mem;
             }
         }
+        $freeMem = self::freeMemory();
+        if ($freeMem !== null && $freeMem < self::GB) {
+            $sectionBuffer[] =
+                $this->renderer->getRowLabel('LOW MEMORY', TaskStatus::SKIP) .
+                " Only " . TaskProgress::formatMemoryUsage($freeMem) . " RAM available, processes might crash." . ($freeMem / self::GB);
+        }
         $sectionBuffer[] = $this->renderer->getSummaryRow(
             $totalDone,
             self::memoryUsage(),
             $workersMem,
-            self::freeMemory(),
         );
         $ob = '';
         if (ob_get_level() > 0) {

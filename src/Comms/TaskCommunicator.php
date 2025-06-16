@@ -11,19 +11,22 @@ use StreamIpc\Message\Message;
 
 final readonly class TaskCommunicator
 {
+    private const DEFAULT_TIMEOUT = 10.0;
+
     public MasterCacheClient $cache;
 
     public ProgressClient $progress;
+    private float $requestTimeout;
 
     public function __construct(
         private IpcSession $session,
         /** @var array<string, mixed> $options */
         private array $options,
-        ?MasterCacheClient $cache = null,
-        ?ProgressClient $progress = null
+        ?float $requestTimeout = null,
     ) {
-        $this->cache = $cache ?? new MasterCacheClient($session);
-        $this->progress = $progress ?? new ProgressClient($session);
+        $this->cache = new MasterCacheClient($session);
+        $this->progress = new ProgressClient($session);
+        $this->requestTimeout = $requestTimeout ?? self::DEFAULT_TIMEOUT;
     }
 
     public function notify(Message $message): void
@@ -33,7 +36,7 @@ final readonly class TaskCommunicator
 
     public function request(Message $message): ResponsePromise
     {
-        return $this->session->request($message);
+        return $this->session->request($message, $this->requestTimeout);
     }
 
     public function getOption(string $name): mixed

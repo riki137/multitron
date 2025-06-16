@@ -174,6 +174,11 @@ final class TaskTreeQueue
         return $score;
     }
 
+    public function pendingCount(): int
+    {
+        return count($this->pendingTasks);
+    }
+
     public function hasUnfinishedTasks(): bool
     {
         return [] !== $this->pendingTasks || [] !== $this->runningTasks;

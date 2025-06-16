@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Multitron\Orchestrator;
 
+use Multitron\Execution\CpuDetector;
 use Multitron\Execution\ExecutionFactory;
 use Multitron\Execution\Handler\IpcHandlerRegistry;
 use Multitron\Execution\Handler\IpcHandlerRegistryFactory;
@@ -38,7 +39,7 @@ final class TaskOrchestrator
     public function run(string $commandName, TaskList $taskList, InputInterface $input, OutputInterface $output): int
     {
         $option = $input->getOption(self::OPTION_CONCURRENCY);
-        $concurrency = is_numeric($option) ? (int)$option : $this->detectCpuCount();
+        $concurrency = is_numeric($option) ? (int)$option : CpuDetector::getCpuCount();
 
         $registry = $this->handlerFactory->create();
         return $this->doRun(
@@ -78,7 +79,7 @@ final class TaskOrchestrator
 
             if ($task instanceof CompiledTaskNode) {
                 // launch a new task
-                $execution = $this->executionFactory->launch($commandName, $task->id, $options);
+                $execution = $this->executionFactory->launch($commandName, $task->id, $options, $queue->pendingCount());
                 $states[$task->id] = $state = new TaskState($task->id, $execution);
                 $handlerRegistry->attach($state);
                 $output->onTaskStarted($state);
@@ -122,38 +123,5 @@ final class TaskOrchestrator
         }
 
         return $hadError ? 1 : 0;
-    }
-
-    /**
-     * Attempt to discover the number of logical CPUs on this host.
-     */
-    private function detectCpuCount(): int
-    {
-        foreach (['pthreads_num_cpus', 'pcntl_cpu_count'] as $fn) {
-            if (function_exists($fn)) {
-                $count = @$fn();
-                if (is_numeric($count)) {
-                    return max(1, (int)$count);
-                }
-            }
-        }
-
-        $env = getenv('NUMBER_OF_PROCESSORS');
-        if ($env !== false && is_numeric($env)) {
-            return max(1, (int)$env);
-        }
-
-        $cmds = stripos(PHP_OS, 'WIN') === 0
-            ? ['wmic cpu get NumberOfLogicalProcessors /value']
-            : ['nproc', 'getconf _NPROCESSORS_ONLN', 'sysctl -n hw.ncpu'];
-
-        foreach ($cmds as $cmd) {
-            $out = shell_exec($cmd);
-            if (preg_match('/(\d+)/', (string)$out, $m)) {
-                return max(1, (int)$m[1]);
-            }
-        }
-
-        return 4;
     }
 }

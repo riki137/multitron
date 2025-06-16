@@ -57,7 +57,7 @@ final class TableRenderer
         ]));
     }
 
-    public function getSummaryRow(float $done, int $masterMem, int $workerMem, ?int $freeMem): string
+    public function getSummaryRow(float $done, int $masterMem, int $workerMem): string
     {
         $this->summary->done = (int)$done;
         return implode(' ', array_filter([
@@ -67,7 +67,6 @@ final class TableRenderer
             $this->getTime($this->startTime, 'yellow;options=bold'),
             '<fg=blue>' . TaskProgress::formatMemoryUsage($workerMem) . '</>+' .
             '<fg=magenta>' . TaskProgress::formatMemoryUsage($masterMem) . '</>',
-            $freeMem !== null ? '<fg=green>AVL:' . TaskProgress::formatMemoryUsage($freeMem) . '</>' : null,
         ]));
     }
 

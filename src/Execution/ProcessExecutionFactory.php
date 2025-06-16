@@ -16,7 +16,6 @@ use StreamIpc\Transport\TimeoutException;
 
 final class ProcessExecutionFactory implements ExecutionFactory
 {
-    public const DEFAULT_PROCESS_BUFFER_SIZE = 2;
     public const DEFAULT_TIMEOUT = 8.0;
 
     /** @var array<array{ProcessExecution, ResponsePromise}> */
@@ -28,11 +27,15 @@ final class ProcessExecutionFactory implements ExecutionFactory
 
     private Closure $errorCatcher;
 
-    public function __construct(
-        private readonly IpcPeer $ipcPeer,
-        private readonly int $processBufferSize = self::DEFAULT_PROCESS_BUFFER_SIZE,
-        private readonly float $timeout = self::DEFAULT_TIMEOUT,
-    ) {
+    private readonly IpcPeer $ipcPeer;
+    private readonly int $processBufferSize;
+    private readonly float $timeout;
+
+    public function __construct(IpcPeer $ipcPeer, ?int $processBufferSize = null, float $timeout = self::DEFAULT_TIMEOUT)
+    {
+        $this->ipcPeer = $ipcPeer;
+        $this->processBufferSize = (int)max( 1, $processBufferSize ?? (CpuDetector::getCpuCount() / 1.6));
+        $this->timeout = $timeout;
         $this->errorCatcher = $this->errorCatcherFn(...);
     }
 
@@ -51,17 +54,16 @@ final class ProcessExecutionFactory implements ExecutionFactory
         }
     }
 
-    private function obtain(): ProcessExecution
+    private function obtain(int $remainingTasks): ProcessExecution
     {
         if (!$this->initialized) {
             $this->initialized = true;
-
-            for ($i = 0; $i < $this->processBufferSize; $i++) {
-                $this->buffer();
-            }
         }
 
-        $this->buffer();
+        $required = min($this->processBufferSize, max(0, $remainingTasks)) + 1;
+        while (count($this->processes) < $required) {
+            $this->buffer();
+        }
         $entry = array_shift($this->processes);
         if ($entry === null) {
             throw new RuntimeException('No buffered process available (should not happen)');
@@ -84,10 +86,11 @@ final class ProcessExecutionFactory implements ExecutionFactory
 
     /**
      * @param array<string, mixed> $options
+     * @param int $remainingTasks Number of tasks still to start not including this one
      */
-    public function launch(string $commandName, string $taskId, array $options): Execution
+    public function launch(string $commandName, string $taskId, array $options, int $remainingTasks): Execution
     {
-        $execution = $this->obtain();
+        $execution = $this->obtain($remainingTasks);
         // send the task id to the worker over IPC
         $execution->getSession()->request(new StartTaskMessage($commandName, $taskId, $options))->await();
 

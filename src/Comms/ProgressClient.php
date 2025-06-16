@@ -84,12 +84,6 @@ final class ProgressClient
 
     private static function memoryUsage(): int
     {
-        $pid = getmypid();
-        $out = @shell_exec('ps -o rss= -p ' . $pid);
-        if (is_string($out) && trim($out) !== '') {
-            return (int)trim($out) * 1024;
-        }
-
         return memory_get_usage(true);
     }
 }
