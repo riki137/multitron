@@ -74,9 +74,15 @@ final class ProcessExecutionFactory implements ExecutionFactory
             $response->await();
             $process->getSession()->offMessage($this->errorCatcher);
         } catch (TimeoutException $e) {
-            $process->kill();
+            $result = $process->kill();
             try {
-                throw new RuntimeException($e->getMessage() . PHP_EOL . implode(PHP_EOL, $this->errors));
+                throw new RuntimeException(
+                    $e->getMessage() . PHP_EOL .
+                    implode(PHP_EOL, $this->errors) . PHP_EOL .
+                    'Worker exited with code ' . var_export($result['exitCode'], true) . PHP_EOL .
+                    'STDOUT: ' . trim($result['stdout']) . PHP_EOL .
+                    'STDERR: ' . trim($result['stderr'])
+                );
             } finally {
                 $this->errors = [];
             }
@@ -92,7 +98,17 @@ final class ProcessExecutionFactory implements ExecutionFactory
     {
         $execution = $this->obtain($remainingTasks);
         // send the task id to the worker over IPC
-        $execution->getSession()->request(new StartTaskMessage($commandName, $taskId, $options))->await();
+        try {
+            $execution->getSession()->request(new StartTaskMessage($commandName, $taskId, $options))->await();
+        } catch (TimeoutException $e) {
+            $result = $execution->kill();
+            throw new RuntimeException(
+                'Task startup timed out: ' . $e->getMessage() . PHP_EOL .
+                'Worker exited with code ' . var_export($result['exitCode'], true) . PHP_EOL .
+                'STDOUT: ' . trim($result['stdout']) . PHP_EOL .
+                'STDERR: ' . trim($result['stderr'])
+            );
+        }
 
         return $execution;
     }
