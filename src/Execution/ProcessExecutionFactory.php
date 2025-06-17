@@ -54,6 +54,22 @@ final class ProcessExecutionFactory implements ExecutionFactory
         }
     }
 
+    private function killAndComposeMessage(ProcessExecution $process): string
+    {
+        $result = $process->kill();
+        $details = [];
+        if ($this->errors !== []) {
+            $details[] = implode(PHP_EOL, $this->errors);
+        }
+        $this->errors = [];
+
+        $details[] = 'Worker exited with code ' . var_export($result['exitCode'], true);
+        $details[] = 'STDOUT: ' . trim($result['stdout']);
+        $details[] = 'STDERR: ' . trim($result['stderr']);
+
+        return implode(PHP_EOL, $details);
+    }
+
     private function obtain(int $remainingTasks): ProcessExecution
     {
         if (!$this->initialized) {
@@ -74,18 +90,8 @@ final class ProcessExecutionFactory implements ExecutionFactory
             $response->await();
             $process->getSession()->offMessage($this->errorCatcher);
         } catch (TimeoutException $e) {
-            $result = $process->kill();
-            try {
-                throw new RuntimeException(
-                    $e->getMessage() . PHP_EOL .
-                    implode(PHP_EOL, $this->errors) . PHP_EOL .
-                    'Worker exited with code ' . var_export($result['exitCode'], true) . PHP_EOL .
-                    'STDOUT: ' . trim($result['stdout']) . PHP_EOL .
-                    'STDERR: ' . trim($result['stderr'])
-                );
-            } finally {
-                $this->errors = [];
-            }
+            $message = $e->getMessage() . PHP_EOL . $this->killAndComposeMessage($process);
+            throw new RuntimeException($message);
         }
         return $process;
     }
@@ -101,13 +107,9 @@ final class ProcessExecutionFactory implements ExecutionFactory
         try {
             $execution->getSession()->request(new StartTaskMessage($commandName, $taskId, $options))->await();
         } catch (TimeoutException $e) {
-            $result = $execution->kill();
-            throw new RuntimeException(
-                'Task startup timed out: ' . $e->getMessage() . PHP_EOL .
-                'Worker exited with code ' . var_export($result['exitCode'], true) . PHP_EOL .
-                'STDOUT: ' . trim($result['stdout']) . PHP_EOL .
-                'STDERR: ' . trim($result['stderr'])
-            );
+            $message = 'Task startup timed out: ' . $e->getMessage() . PHP_EOL .
+                $this->killAndComposeMessage($execution);
+            throw new RuntimeException($message);
         }
 
         return $execution;

@@ -20,6 +20,12 @@ Multitron is a **high-performance PHP task orchestrator** designed for fast para
 - Seamless integration with Symfony Console applications
 - MIT-licensed and fully open source
 
+## Robust error reporting
+
+Multitron now captures a worker's exit code and any output produced when a
+startup or task launch times out. This information is included in thrown
+exceptions to make diagnosing hanging or silently failing tasks much easier.
+
 ## Installation
 
 Install the package via [Composer](https://getcomposer.org/) to start orchestrating tasks right away:

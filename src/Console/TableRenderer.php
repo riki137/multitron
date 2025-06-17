@@ -8,6 +8,7 @@ use Multitron\Message\TaskProgress;
 use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskState;
 use Multitron\Orchestrator\TaskStatus;
+use Multitron\Orchestrator\TaskWarningState;
 
 final class TableRenderer
 {
@@ -161,7 +162,7 @@ final class TableRenderer
 
     public function renderWarning(string $taskId, array $warning): string
     {
-        $indent = str_repeat(' ', strlen((string)$warning['count']) + 6);
-        return $this->getLog($taskId, '<fg=yellow>⚠️ ' . $warning['count'] . 'x</>: ' . implode(PHP_EOL . $indent, $warning['messages']));
+        $ellipsis = $warning['count'] > TaskWarningState::WARNING_LIMIT ? '<fg=yellow>...</>' : '';
+        return $this->getLog($taskId, '<fg=yellow>⚠️ ' . $warning['count'] . 'x</>: ' . implode('; ', $warning['messages']) . $ellipsis);
     }
 }
