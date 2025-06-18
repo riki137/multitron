@@ -33,6 +33,10 @@ final class IpcHandlerRegistry
         $this->messageHandlers[] = $handler;
     }
 
+    /**
+     * Attach all registered callbacks to the IPC session associated with the
+     * provided task state. No-op if the task has not started yet.
+     */
     public function attach(TaskState $state): void
     {
         $execution = $state->getExecution();

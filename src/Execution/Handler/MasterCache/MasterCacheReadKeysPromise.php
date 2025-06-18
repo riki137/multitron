@@ -14,6 +14,9 @@ final readonly class MasterCacheReadKeysPromise
     }
 
     /**
+     * Block until the read request completes and return the full set of
+     * retrieved values keyed by cache identifier.
+     *
      * @return array<string, mixed>
      */
     public function await(): array
@@ -25,6 +28,10 @@ final readonly class MasterCacheReadKeysPromise
         return $response->data;
     }
 
+    /**
+     * Convenience wrapper around {@see await()} returning only one entry from
+     * the resulting dataset.
+     */
     public function get(string $key): mixed
     {
         return $this->await()[$key] ?? null;

@@ -11,6 +11,10 @@ use StreamIpc\Message\Message;
 
 final class ProgressServer
 {
+    /**
+     * Merge progress updates and warnings received over IPC into the provided
+     * task state instance.
+     */
     public function handleProgress(Message $progress, TaskState $state): void
     {
         if ($progress instanceof TaskProgress) {

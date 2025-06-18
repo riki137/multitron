@@ -15,6 +15,11 @@ final readonly class ProcessExecution implements Execution
 
     private IpcSession $session;
 
+    /**
+     * Spawn a worker process and establish an IPC session used for
+     * communication with it. The same script file is executed again in worker
+     * mode to bootstrap the environment.
+     */
     public function __construct(NativeIpcPeer $ipcPeer)
     {
         /** @var string|null $script */

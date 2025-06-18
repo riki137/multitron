@@ -41,6 +41,7 @@ final readonly class TaskTreeBuilder
         return $this->task($id ?? $this->shortClassName($class), fn() => $this->getTask($class), $dependencies);
     }
 
+    /** Fetch a task service from the container and ensure it implements Task. */
     private function getTask(string $class): Task
     {
         $task = $this->container->get($class);
@@ -51,6 +52,9 @@ final readonly class TaskTreeBuilder
         return $task;
     }
 
+    /**
+     * Like {@see getTask()} but ensures the result implements PartitionedTaskInterface.
+     */
     private function getPartitionedTask(string $class): PartitionedTaskInterface
     {
         $task = $this->getTask($class);
@@ -138,7 +142,8 @@ final readonly class TaskTreeBuilder
     }
 
     /**
-     * Extract the short class name from a FQCN.
+     * Return the class name without namespace segments. Used when generating
+     * default identifiers for tasks based on their service class name.
      */
     private function shortClassName(string $fqcn): string
     {

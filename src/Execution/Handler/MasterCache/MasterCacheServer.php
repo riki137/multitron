@@ -15,6 +15,11 @@ final class MasterCacheServer
     {
     }
 
+    /**
+     * Dispatch the incoming cache message to the appropriate request handler.
+     * Write requests modify the internal storage while read requests return a
+     * message containing the selected values.
+     */
     public function handleRequest(Message $request): ?Message
     {
         if ($request instanceof MasterCacheWriteRequest) {
@@ -28,7 +33,8 @@ final class MasterCacheServer
     }
 
     /**
-     * Clears entire cache.
+     * Remove all entries from the cache. Mainly useful in unit tests where
+     * persistent state would cause interference between runs.
      */
     public function clear(): void
     {

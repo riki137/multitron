@@ -17,6 +17,12 @@ class TaskState
 
     private readonly TaskWarningState $warnings;
 
+    /**
+     * Create a new state container for a task.
+     *
+     * @param string         $taskId    identifier of the task
+     * @param Execution|null $execution running process for the task
+     */
     public function __construct(
         private readonly string $taskId,
         private readonly ?Execution $execution = null,

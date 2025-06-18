@@ -20,11 +20,19 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 abstract class AbstractMultitronCommand extends Command
 {
+    /**
+     * @internal Commands are usually wired through the DI container.
+     */
     public function __construct(private readonly TaskTreeBuilderFactory $builderFactory, private readonly TaskOrchestrator $orchestrator)
     {
         parent::__construct();
     }
 
+    /**
+     * Configure CLI arguments and options common to all multitron commands.
+     * The pattern argument allows filtering by task id while several options
+     * control concurrency and output behaviour.
+     */
     protected function configure(): void
     {
         $this->addArgument(
@@ -43,6 +51,10 @@ abstract class AbstractMultitronCommand extends Command
      */
     abstract public function getNodes(TaskTreeBuilder $builder): array;
 
+    /**
+     * Build the tree of tasks to run for this command. CLI arguments are used
+     * to filter the task nodes before wrapping them in a {@see TaskList}.
+     */
     final public function getTaskList(?InputInterface $input = null): TaskList
     {
         $name = $this->getName();
@@ -61,6 +73,7 @@ abstract class AbstractMultitronCommand extends Command
         return new TaskList($node);
     }
 
+    /** {@inheritDoc} */
     final protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $application = $this->getApplication();

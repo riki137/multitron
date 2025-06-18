@@ -12,11 +12,19 @@ use StreamIpc\Envelope\ResponsePromise;
  */
 final readonly class MasterCacheReadKeyPromise
 {
+    /**
+     * @param ResponsePromise $promise underlying response promise
+     * @param string          $key     key to retrieve from the response
+     */
     public function __construct(private ResponsePromise $promise, private string $key)
     {
     }
 
     /**
+     * Wait for the remote read to finish and extract the value for the
+     * requested key. Returns `null` when the key was not present in the
+     * remote cache.
+     *
      * @return T|null
      */
     public function await(): mixed

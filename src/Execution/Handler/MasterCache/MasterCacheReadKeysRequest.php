@@ -16,13 +16,10 @@ final readonly class MasterCacheReadKeysRequest implements MasterCacheReadReques
     }
 
     /**
-     * Handles a request to read data from the cache.
+     * Perform the actual read against the provided cache storage. Only values
+     * matching the key specification are returned in the response message.
      *
-     * @param array<string, mixed> $storage
-     */
-
-    /**
-     * @param array<int|string, mixed> $storage
+     * @param array<int|string, mixed> $storage master cache contents
      */
     public function doRead(array &$storage): MasterCacheReadResponse
     {
@@ -31,20 +28,11 @@ final readonly class MasterCacheReadKeysRequest implements MasterCacheReadReques
     }
 
     /**
-     * Recursively retrieves entries from $storage according to $keysSpec.
+     * Recursively retrieve entries from the storage according to the key specification.
      *
-     * This optimized version separates scalar key lookups from nested traversals
-     * to reduce recursion depth and leverage performant, built-in array functions.
-     *
-     * @param array<string, mixed> $storage The data source to read from.
-     * @param array<int|string, mixed> $keysSpec The specification of keys to fetch.
-     * @return array<string, mixed> The fetched data.
-     */
-
-    /**
-     * @param array<int|string, mixed> $storage
-     * @param array<int|string, mixed> $keysSpec
-     * @return array<string, mixed>
+     * @param array<int|string, mixed> $storage   data source to read from
+     * @param array<int|string, mixed> $keysSpec  description of keys to fetch
+     * @return array<string, mixed>               fetched data
      */
     private function fetchKeys(array &$storage, array $keysSpec): array
     {

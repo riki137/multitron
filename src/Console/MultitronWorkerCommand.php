@@ -21,11 +21,15 @@ final class MultitronWorkerCommand extends Command
 {
     public const NAME = 'multitron:worker';
 
+    /**
+     * @internal This command is executed in worker processes only.
+     */
     public function __construct(private readonly NativeIpcPeer $peer)
     {
         parent::__construct(self::NAME);
     }
 
+    /** {@inheritDoc} */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $session = $this->peer->createStdioSession();

@@ -34,6 +34,10 @@ final class ProcessExecutionFactory implements ExecutionFactory
 
     private readonly float $timeout;
 
+    /**
+     * @param int|null $processBufferSize number of workers to keep buffered
+     * @param float    $timeout           seconds before IPC requests fail
+     */
     public function __construct(NativeIpcPeer $ipcPeer, ?int $processBufferSize = null, float $timeout = self::DEFAULT_TIMEOUT)
     {
         $this->ipcPeer = $ipcPeer;
@@ -57,6 +61,10 @@ final class ProcessExecutionFactory implements ExecutionFactory
         }
     }
 
+    /**
+     * Terminate the specified worker process and gather diagnostic
+     * information such as exit code and captured output for error reporting.
+     */
     private function killAndComposeMessage(ProcessExecution $process): string
     {
         $result = $process->kill();
@@ -73,6 +81,11 @@ final class ProcessExecutionFactory implements ExecutionFactory
         return implode(PHP_EOL, $details);
     }
 
+    /**
+     * Retrieve a worker process from the internal buffer, waiting for it to
+     * finish initialisation if necessary. Additional processes are spawned to
+     * keep the buffer filled based on the number of remaining tasks.
+     */
     private function obtain(int $remainingTasks): ProcessExecution
     {
         if (!$this->initialized) {

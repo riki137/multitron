@@ -10,6 +10,10 @@ trait PartitionedTaskTrait
 
     protected int $partitionCount = 1;
 
+    /**
+     * Provide the index of this partition and the total number of partitions
+     * that exist. Implementations usually call this before execution begins.
+     */
     public function setPartitioning(int $index, int $count): void
     {
         $this->partitionIndex = $index;
