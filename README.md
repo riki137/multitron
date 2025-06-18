@@ -12,6 +12,10 @@
 
 ---
 
+<img src="demo/kapture.gif" alt="Multitron in Action" width="100%" />
+
+---
+
 ## Why Choose Multitron?
 
 * 🔄 **Efficient Task Dependency Management**: Clearly define task dependencies with intuitive declarative syntax.
