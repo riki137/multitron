@@ -39,6 +39,7 @@
         "contributte/psr11-container-interface": "^0.6.0",
         "phpunit/phpunit": "^11.5",
         "squizlabs/php_codesniffer": "^3.13",
-        "symfony/dependency-injection": "^7.3"
+        "symfony/dependency-injection": "^7.3",
+        "illuminate/support": "^11.0"
     }
 }
