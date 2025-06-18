@@ -58,9 +58,4 @@ final readonly class ProcessExecution implements Execution
             'stderr' => stream_get_contents($this->process->getStderr()),
         ];
     }
-
-    public function __destruct()
-    {
-        $this->process->kill();
-    }
 }

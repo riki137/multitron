@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace StreamIpc\Tests\Integration;
+namespace Multitron\Tests\Integration;
 
 use PHPUnit\Framework\TestCase;
 use StreamIpc\NativeIpcPeer;

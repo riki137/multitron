@@ -36,9 +36,9 @@ final readonly class TaskTreeBuilder
      * @param class-string $class FQCN of the service to fetch from container.
      * @param array<TaskNode|string> $dependencies Dependencies for the service task.
      */
-    public function service(string $class, array $dependencies = []): TaskNode
+    public function service(string $class, array $dependencies = [], ?string $id = null): TaskNode
     {
-        $id = $this->shortClassName($class);
+        $id ??= $this->shortClassName($class);
         $factory = fn(): Task => $this->container->get($class);
 
         return $this->task($id, $factory, $dependencies);

@@ -1,5 +1,5 @@
 <?php
-namespace StreamIpc\Tests\Unit;
+namespace Multitron\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 use StreamIpc\Serialization\NativeMessageSerializer;

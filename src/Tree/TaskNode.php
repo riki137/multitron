@@ -10,6 +10,7 @@ use Multitron\Execution\Task;
 final readonly class TaskNode
 {
     /**
+     * @internal
      * @param string $id
      * @param ?Closure(): Task $factory
      * @param TaskNode[] $children

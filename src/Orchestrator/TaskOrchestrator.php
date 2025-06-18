@@ -22,7 +22,7 @@ final class TaskOrchestrator
 {
     public const OPTION_CONCURRENCY = 'concurrency';
     public const OPTION_UPDATE_INTERVAL = 'update-interval';
-    public const DEFAULT_UPDATE_INTERVAL = '0.1';
+    public const DEFAULT_UPDATE_INTERVAL = 0.1;
 
     public function __construct(
         private readonly IpcPeer $ipcPeer,
