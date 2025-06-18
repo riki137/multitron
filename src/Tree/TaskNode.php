@@ -13,8 +13,8 @@ final readonly class TaskNode
      * @param string $id
      * @param ?Closure(): Task $factory
      * @param TaskNode[] $children
-     * @param string[] $dependencies
-     * @param string[] $tags
+     * @param array<TaskNode|string> $dependencies array of TaskNode IDs or TaskNode objects that this node depends on
+     * @param string[] $tags Tags can be used for post-processing, for example, to run only tasks with a specific tag.
      * @param ?Closure(CompiledTaskNode[] $tasks): iterable<CompiledTaskNode> $postProcess This can be used for filtering, for example.
      */
     public function __construct(

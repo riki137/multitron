@@ -98,7 +98,7 @@ final class TaskTreeCompiler
             /** @var iterable<CompiledTaskNode> $gen */
             $gen = ($node->postProcess)($subtreeTasks);
             $result = [];
-            foreach ($gen as $id => $task) {
+            foreach ($gen as $task) {
                 if (!$task instanceof CompiledTaskNode) {
                     throw new LogicException(
                         'Post-processing closure must return an iterable of CompiledTaskNode objects, got: '

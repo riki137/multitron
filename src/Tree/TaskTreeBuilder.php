@@ -23,7 +23,7 @@ final readonly class TaskTreeBuilder
      *
      * @param string $id Unique identifier for the task node.
      * @param Closure(): Task $factory Factory that returns the Task instance.
-     * @param string[] $dependencies List of task IDs this node depends on.
+     * @param array<TaskNode|string> $dependencies List of task IDs this node depends on.
      */
     public function task(string $id, Closure $factory, array $dependencies = []): TaskNode
     {
@@ -34,7 +34,7 @@ final readonly class TaskTreeBuilder
      * Create a service-backed task node.
      *
      * @param class-string $class FQCN of the service to fetch from container.
-     * @param string[] $dependencies Dependencies for the service task.
+     * @param array<TaskNode|string> $dependencies Dependencies for the service task.
      */
     public function service(string $class, array $dependencies = []): TaskNode
     {
@@ -49,7 +49,7 @@ final readonly class TaskTreeBuilder
      *
      * @param string $id Group identifier.
      * @param TaskNode[] $children Child task nodes.
-     * @param string[] $dependencies Dependencies for the group.
+     * @param array<TaskNode|string> $dependencies Dependencies for the group.
      */
     public function group(string $id, array $children, array $dependencies = []): TaskNode
     {
@@ -61,7 +61,7 @@ final readonly class TaskTreeBuilder
      *
      * @param class-string $class FQCN implementing PartitionedTaskInterface.
      * @param int $partitionCount Number of partitions.
-     * @param string[] $dependencies Dependencies for the partitioned tasks.
+     * @param array<TaskNode|string> $dependencies Dependencies for the partitioned tasks.
      */
     public function partitioned(string $class, int $partitionCount, array $dependencies = []): TaskNode
     {
@@ -79,7 +79,7 @@ final readonly class TaskTreeBuilder
      * @param string $id Base identifier for partitions.
      * @param Closure(): PartitionedTaskInterface $factory Factory for creating each partition.
      * @param int $partitionCount Number of partitions.
-     * @param string[] $dependencies Dependencies for partitioned tasks.
+     * @param array<TaskNode|string> $dependencies Dependencies for partitioned tasks.
      */
     public function partitionedClosure(
         string $id,

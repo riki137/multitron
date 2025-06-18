@@ -7,6 +7,9 @@ namespace Multitron\Execution\Handler\MasterCache;
 use LogicException;
 use StreamIpc\Envelope\ResponsePromise;
 
+/**
+ * @template T
+ */
 final readonly class MasterCacheReadKeyPromise
 {
     public function __construct(private ResponsePromise $promise, private string $key)
@@ -14,7 +17,7 @@ final readonly class MasterCacheReadKeyPromise
     }
 
     /**
-     * @return array<string, mixed>
+     * @return T|null
      */
     public function await(): mixed
     {

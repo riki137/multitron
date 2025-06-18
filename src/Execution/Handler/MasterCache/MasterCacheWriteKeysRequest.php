@@ -57,8 +57,6 @@ final class MasterCacheWriteKeysRequest implements MasterCacheWriteRequest
         return;
     }
 
-    /* ---------- internals (unchanged) ---------- */
-
     private function mergeInPlace(array &$base, array $new, int $limit): void
     {
         if ($limit <= 1) {
@@ -69,7 +67,7 @@ final class MasterCacheWriteKeysRequest implements MasterCacheWriteRequest
         }
 
         foreach ($new as $k => $v) {
-            if ($limit > 1 && isset($base[$k]) && is_array($base[$k]) && is_array($v)) {
+            if (isset($base[$k]) && is_array($base[$k]) && is_array($v)) {
                 $this->mergeInPlace($base[$k], $v, $limit - 1);
             } else {
                 $base[$k] = $v;
