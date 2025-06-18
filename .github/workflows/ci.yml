@@ -19,7 +19,7 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
       - run: composer update --no-progress --no-interaction
-      - run: composer outdated -D --strict --ignore=phpunit/phpunit
+      - run: composer outdated -D --strict --ignore=phpunit/phpunit --ignore=illuminate/support
 
   phpunit:
     runs-on: ubuntu-latest

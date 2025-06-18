@@ -24,13 +24,10 @@
 
 ## Installation
 
-Install the package via [Composer](https://getcomposer.org/) to start orchestrating tasks right away:
-
-```bash
-composer require riki137/multitron
-```
-
----
+* [Symfony Integration](src/Bridge/Symfony/README.md)
+* [Laravel Integration](src/Bridge/Laravel/README.md)
+* [Native PHP Integration](src/Bridge/Native/README.md)
+* [Nette Integration](src/Bridge/Nette/README.md)
 
 ## Usage
 
