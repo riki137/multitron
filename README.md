@@ -81,13 +81,25 @@ final class MyCommand extends AbstractMultitronCommand
 
 Register the command in your Symfony Console application and run it. Multitron will execute the tasks respecting dependencies and concurrency.
 
-You can control how many tasks run at once via the `-c` option:
+You can control how many tasks run at once via the `-c`/`--concurrency` option:
 
 ```bash
 php bin/console app:tasks -c 8
 ```
 
 The library will spawn up to eight worker processes and keep them busy until all tasks finish.
+
+To limit which tasks run, pass a pattern as the first argument. Wildcards work the same as in `fnmatch()` and you may use `%` in place of `*` for convenience:
+
+```bash
+php bin/console app:tasks cache-* # run only tasks whose ID or tag matches "cache-*"
+```
+
+You can also tune how often progress updates are rendered using the `-u`/`--update-interval` option (in seconds):
+
+```bash
+php bin/console app:tasks -u 0.5
+```
 
 ### Central Cache
 
