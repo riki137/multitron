@@ -25,10 +25,12 @@
         "ext-pcntl": "*",
         "ext-mbstring": "*",
         "symfony/console": "^7.2",
-        "riki137/stream-ipc": "dev-main",
+        "riki137/stream-ipc": "^1.0",
         "psr/container": "^2.0",
         "psr/container-implementation": "*"
     },
+    "minimum-stability": "beta",
+    "prefer-stable": true,
     "require-dev": {
         "tracy/tracy": "^2.10",
         "psr/log": "^3.0",

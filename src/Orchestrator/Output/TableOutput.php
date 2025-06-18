@@ -152,7 +152,7 @@ final class TableOutput implements ProgressOutput
     {
         if ($this->interactive) {
             $this->render();
-            echo ob_get_clean();
+            $this->output->write(ob_get_clean() ?: '');
         } else {
             $section = $this->buildSectionBuffer();
             $this->output->writeln(array_merge($this->logBuffer, $section));
