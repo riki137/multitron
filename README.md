@@ -3,7 +3,7 @@
 [![Latest Version](https://img.shields.io/packagist/v/riki137/multitron.svg?style=flat-square)](https://packagist.org/packages/riki137/multitron)
 [![Total Downloads](https://img.shields.io/packagist/dt/riki137/multitron.svg?style=flat-square)](https://packagist.org/packages/riki137/multitron)
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/riki137/multitron/ci.yml?branch=main&style=flat-square)](https://github.com/riki137/multitron/actions?query=workflow%3Aci+branch%3Amain)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/riki137/multitron/ci.yml?branch=master&style=flat-square)](https://github.com/riki137/multitron/actions?query=workflow%3Aci+branch%3Amaster)
 [![PHPStan Level 9](https://img.shields.io/badge/PHPStan-level%209-brightgreen.svg?style=flat-square)](https://github.com/phpstan/phpstan)
 
 **Multitron** is a powerful, high-performance **PHP task orchestrator** designed to simplify parallel processing, concurrency, and automation in PHP applications. Quickly execute complex tasks asynchronously, maximizing the efficiency and scalability of your workflows.
