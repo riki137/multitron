@@ -37,6 +37,8 @@ final class TaskTreeCompiler
 
     /**
      * Recursively walk the tree to populate $this->tagIndex.
+     *
+     * @param string[] $parents
      */
     private function buildTagIndex(TaskNode $node, array $parents = []): void
     {
@@ -95,7 +97,7 @@ final class TaskTreeCompiler
 
         // 6. Apply post-processing if present
         if ($node->postProcess !== null) {
-            /** @var iterable<CompiledTaskNode> $gen */
+            /** @var iterable<CompiledTaskNode|mixed> $gen */
             $gen = ($node->postProcess)($subtreeTasks);
             $result = [];
             foreach ($gen as $task) {
@@ -125,6 +127,7 @@ final class TaskTreeCompiler
         $seen = [];
 
         while (!empty($queue)) {
+            /** @var mixed $dep */
             $dep = array_shift($queue);
 
             if ($dep instanceof TaskNode) {

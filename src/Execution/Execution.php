@@ -12,5 +12,8 @@ interface Execution
 
     public function getExitCode(): ?int;
 
+    /**
+     * @return array{exitCode: int|null, stdout: string, stderr: string}
+     */
     public function kill(): array;
 }

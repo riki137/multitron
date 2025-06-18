@@ -20,6 +20,9 @@ final class MasterCacheWriteKeysRequest implements MasterCacheWriteRequest
     /** Fast path – the shallowest depth we have seen (∞ if none) */
     private int $minDepth = PHP_INT_MAX;
 
+    /**
+     * @param array<int|string, mixed> $data
+     */
     public function write(array $data, ?int $depth = null): self
     {
         $depth ??= $this->detectDepthIterative($data);
@@ -35,6 +38,9 @@ final class MasterCacheWriteKeysRequest implements MasterCacheWriteRequest
         return $this;
     }
 
+    /**
+     * @param array<int|string, mixed> $storage
+     */
     public function doWrite(array &$storage): void
     {
         if ($this->minDepth === PHP_INT_MAX) {
@@ -57,6 +63,10 @@ final class MasterCacheWriteKeysRequest implements MasterCacheWriteRequest
         return;
     }
 
+    /**
+     * @param array<int|string, mixed> $base
+     * @param array<int|string, mixed> $new
+     */
     private function mergeInPlace(array &$base, array $new, int $limit): void
     {
         if ($limit <= 1) {
@@ -75,6 +85,9 @@ final class MasterCacheWriteKeysRequest implements MasterCacheWriteRequest
         }
     }
 
+    /**
+     * @param array<int|string, mixed> $data
+     */
     private function detectDepthIterative(array $data): int
     {
         $maxDepth = 1;

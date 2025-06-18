@@ -6,8 +6,8 @@ namespace Multitron\Execution;
 
 use Multitron\Console\MultitronWorkerCommand;
 use RuntimeException;
-use StreamIpc\IpcPeer;
 use StreamIpc\IpcSession;
+use StreamIpc\NativeIpcPeer;
 
 final readonly class ProcessExecution implements Execution
 {
@@ -15,7 +15,7 @@ final readonly class ProcessExecution implements Execution
 
     private IpcSession $session;
 
-    public function __construct(IpcPeer $ipcPeer)
+    public function __construct(NativeIpcPeer $ipcPeer)
     {
         /** @var string|null $script */
         $script = $_ENV['MULTITRON_SCRIPTNAME'] ?? $_SERVER['SCRIPT_FILENAME'] ?? null;
@@ -49,13 +49,16 @@ final readonly class ProcessExecution implements Execution
         return $this->process->getExitCode();
     }
 
+    /**
+     * @return array{exitCode: int|null, stdout: string, stderr: string}
+     */
     public function kill(): array
     {
         $this->process->kill();
         return [
             'exitCode' => $this->process->getExitCode(),
-            'stdout' => stream_get_contents($this->process->getStdout()),
-            'stderr' => stream_get_contents($this->process->getStderr()),
+            'stdout' => (string)stream_get_contents($this->process->getStdout()),
+            'stderr' => (string)stream_get_contents($this->process->getStderr()),
         ];
     }
 }

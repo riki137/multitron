@@ -7,11 +7,10 @@ namespace Multitron\Console;
 use Multitron\Comms\TaskCommunicator;
 use Multitron\Message\ContainerLoadedMessage;
 use Multitron\Message\StartTaskMessage;
-use Multitron\Tree\TaskTreeBuilderFactory;
 use RuntimeException;
-use StreamIpc\IpcPeer;
 use StreamIpc\Message\LogMessage;
 use StreamIpc\Message\Message;
+use StreamIpc\NativeIpcPeer;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -22,7 +21,7 @@ final class MultitronWorkerCommand extends Command
 {
     public const NAME = 'multitron:worker';
 
-    public function __construct(private readonly TaskTreeBuilderFactory $builderFactory, private readonly IpcPeer $peer)
+    public function __construct(private readonly NativeIpcPeer $peer)
     {
         parent::__construct(self::NAME);
     }

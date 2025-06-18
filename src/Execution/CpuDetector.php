@@ -27,6 +27,7 @@ class CpuDetector
     private static function detectCpuCount(): int
     {
         foreach (['pthreads_num_cpus', 'pcntl_cpu_count'] as $fn) {
+            // @phpstan-ignore-next-line CI does not have this extension
             if (function_exists($fn)) {
                 $count = @call_user_func($fn);
                 if (is_numeric($count)) {

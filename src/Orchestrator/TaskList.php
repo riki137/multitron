@@ -11,6 +11,9 @@ use Multitron\Tree\TaskNode;
 use Multitron\Tree\TaskTreeCompiler;
 use Traversable;
 
+/**
+ * @implements IteratorAggregate<string, CompiledTaskNode>
+ */
 final readonly class TaskList implements IteratorAggregate
 {
     /** @var array<string, CompiledTaskNode> */

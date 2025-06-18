@@ -20,6 +20,10 @@ final readonly class MasterCacheReadKeysRequest implements MasterCacheReadReques
      *
      * @param array<string, mixed> $storage
      */
+
+    /**
+     * @param array<int|string, mixed> $storage
+     */
     public function doRead(array &$storage): MasterCacheReadResponse
     {
         $data = $this->fetchKeys($storage, $this->keys);
@@ -36,6 +40,12 @@ final readonly class MasterCacheReadKeysRequest implements MasterCacheReadReques
      * @param array<int|string, mixed> $keysSpec The specification of keys to fetch.
      * @return array<string, mixed> The fetched data.
      */
+
+    /**
+     * @param array<int|string, mixed> $storage
+     * @param array<int|string, mixed> $keysSpec
+     * @return array<string, mixed>
+     */
     private function fetchKeys(array &$storage, array $keysSpec): array
     {
         $result = [];
@@ -46,8 +56,10 @@ final readonly class MasterCacheReadKeysRequest implements MasterCacheReadReques
                     $result[$key] = $this->fetchKeys($storage[$key], $spec);
                 }
             } else {
-                if (array_key_exists($spec, $storage)) {
-                    $result[$spec] = $storage[$spec];
+                if (is_string($spec) || is_int($spec)) {
+                    if (array_key_exists($spec, $storage)) {
+                        $result[$spec] = $storage[$spec];
+                    }
                 }
             }
         }

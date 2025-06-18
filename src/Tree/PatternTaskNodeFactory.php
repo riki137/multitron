@@ -6,6 +6,9 @@ namespace Multitron\Tree;
 
 class PatternTaskNodeFactory
 {
+    /**
+     * @param TaskNode[] $children
+     */
     public static function create(
         string $id,
         string $pattern,
@@ -35,6 +38,9 @@ class PatternTaskNodeFactory
         );
     }
 
+    /**
+     * @param string[] $patterns
+     */
     private static function filterDependencies(CompiledTaskNode $task, array $patterns): CompiledTaskNode
     {
         if ($task->dependencies === []) {

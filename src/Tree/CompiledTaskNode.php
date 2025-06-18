@@ -16,7 +16,9 @@ final readonly class CompiledTaskNode
     public function __construct(
         public string $id,
         public Closure $factory,
+        /** @var string[] */
         public array $dependencies = [],
+        /** @var string[] */
         public array $tags = [],
     ) {
     }

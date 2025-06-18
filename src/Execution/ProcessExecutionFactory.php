@@ -9,9 +9,9 @@ use Multitron\Message\ContainerLoadedMessage;
 use Multitron\Message\StartTaskMessage;
 use RuntimeException;
 use StreamIpc\Envelope\ResponsePromise;
-use StreamIpc\IpcPeer;
 use StreamIpc\Message\LogMessage;
 use StreamIpc\Message\Message;
+use StreamIpc\NativeIpcPeer;
 use StreamIpc\Transport\TimeoutException;
 
 final class ProcessExecutionFactory implements ExecutionFactory
@@ -23,17 +23,18 @@ final class ProcessExecutionFactory implements ExecutionFactory
 
     private bool $initialized = false;
 
+    /** @var list<string> */
     private array $errors = [];
 
     private Closure $errorCatcher;
 
-    private readonly IpcPeer $ipcPeer;
+    private readonly NativeIpcPeer $ipcPeer;
 
     private readonly int $processBufferSize;
 
     private readonly float $timeout;
 
-    public function __construct(IpcPeer $ipcPeer, ?int $processBufferSize = null, float $timeout = self::DEFAULT_TIMEOUT)
+    public function __construct(NativeIpcPeer $ipcPeer, ?int $processBufferSize = null, float $timeout = self::DEFAULT_TIMEOUT)
     {
         $this->ipcPeer = $ipcPeer;
         $this->processBufferSize = (int)max(1, $processBufferSize ?? (CpuDetector::getCpuCount() / 1.6));

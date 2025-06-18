@@ -38,6 +38,9 @@ abstract class AbstractMultitronCommand extends Command
         $this->addOption(TableOutputFactory::OPTION_INTERACTIVE, null, InputOption::VALUE_REQUIRED, 'Interactive output (yes, no, detect)', 'detect');
     }
 
+    /**
+     * @return TaskNode[]
+     */
     abstract public function getNodes(TaskTreeBuilder $builder): array;
 
     final public function getTaskList(?InputInterface $input = null): TaskList
@@ -60,7 +63,8 @@ abstract class AbstractMultitronCommand extends Command
 
     final protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        if (!$this->getApplication()->has(MultitronWorkerCommand::NAME)) {
+        $application = $this->getApplication();
+        if ($application === null || !$application->has(MultitronWorkerCommand::NAME)) {
             throw new RuntimeException(MultitronWorkerCommand::class . ' command not found. Please add it to your ' . Application::class . ' in your Dependency Injection container.');
         }
         return $this->orchestrator->run((string)$this->getName(), $this->getTaskList($input), $input, $output);

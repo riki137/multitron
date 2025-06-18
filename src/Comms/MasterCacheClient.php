@@ -64,6 +64,9 @@ final readonly class MasterCacheClient
         );
     }
 
+    /**
+     * @return MasterCacheReadKeyPromise<mixed>
+     */
     public function readKey(string $key): MasterCacheReadKeyPromise
     {
         return new MasterCacheReadKeyPromise(

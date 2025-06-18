@@ -38,10 +38,27 @@ final readonly class TaskTreeBuilder
      */
     public function service(string $class, array $dependencies = [], ?string $id = null): TaskNode
     {
-        $id ??= $this->shortClassName($class);
-        $factory = fn(): Task => $this->container->get($class);
+        return $this->task($id ?? $this->shortClassName($class), fn() => $this->getTask($class), $dependencies);
+    }
 
-        return $this->task($id, $factory, $dependencies);
+    private function getTask(string $class): Task
+    {
+        $task = $this->container->get($class);
+        if (!$task instanceof Task) {
+            $type = get_debug_type($task);
+            throw new LogicException("Service \"{$class}\" must implement Task interface, \"{$type}\" given");
+        }
+        return $task;
+    }
+
+    private function getPartitionedTask(string $class): PartitionedTaskInterface
+    {
+        $task = $this->getTask($class);
+        if (!$task instanceof PartitionedTaskInterface) {
+            $type = get_debug_type($task);
+            throw new LogicException("Service \"{$class}\" must implement PartitionedTaskInterface, \"{$type}\" given");
+        }
+        return $task;
     }
 
     /**
@@ -67,7 +84,7 @@ final readonly class TaskTreeBuilder
     {
         return $this->partitionedClosure(
             $class,
-            fn(): PartitionedTaskInterface => $this->container->get($class),
+            fn(): PartitionedTaskInterface => $this->getPartitionedTask($class),
             $partitionCount,
             $dependencies
         );
@@ -77,7 +94,7 @@ final readonly class TaskTreeBuilder
      * Create partitioned tasks with a custom factory.
      *
      * @param string $id Base identifier for partitions.
-     * @param Closure(): PartitionedTaskInterface $factory Factory for creating each partition.
+     * @param Closure(): (PartitionedTaskInterface|Task) $factory Factory for creating each partition.
      * @param int $partitionCount Number of partitions.
      * @param array<TaskNode|string> $dependencies Dependencies for partitioned tasks.
      */
@@ -112,6 +129,9 @@ final readonly class TaskTreeBuilder
         return new TaskNode($shortId, null, $children, $dependencies);
     }
 
+    /**
+     * @param TaskNode[] $children
+     */
     public function patternFilter(string $id, string $pattern, array $children = []): TaskNode
     {
         return PatternTaskNodeFactory::create($id, $pattern, $children);

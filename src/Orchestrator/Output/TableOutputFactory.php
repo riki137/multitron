@@ -22,13 +22,13 @@ final class TableOutputFactory implements ProgressOutputFactory
      */
     public function create(TaskList $taskList, OutputInterface $output, IpcHandlerRegistry $registry, array $options): TableOutput
     {
-        $colors = $options[self::OPTION_COLORS] ?? true;
+        $colors = $options[self::OPTION_COLORS] ?? null;
         if ($colors !== null) {
             $output->setDecorated((bool)$colors);
         }
 
         $interactiveOpt = $options[self::OPTION_INTERACTIVE] ?? 'detect';
-        if ($interactiveOpt === 'detect' || $interactiveOpt === null) {
+        if ($interactiveOpt === 'detect') {
             $interactive = self::isInteractive();
         } else {
             $interactive = filter_var($interactiveOpt, FILTER_VALIDATE_BOOLEAN);

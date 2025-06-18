@@ -46,7 +46,7 @@ final class TaskOrchestrator
             $commandName,
             $input->getOptions(),
             new TaskTreeQueue($taskList, $concurrency),
-            $this->outputFactory->create($taskList, $output, $registry, $options),
+            $this->outputFactory->create($taskList, $output, $registry, $input->getOptions()),
             $registry
         );
     }

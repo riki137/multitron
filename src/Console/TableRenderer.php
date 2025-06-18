@@ -160,6 +160,9 @@ final class TableRenderer
         return $message . ' ' . self::getPrintTime();
     }
 
+    /**
+     * @param array{messages: list<string>, count: int} $warning
+     */
     public function renderWarning(string $taskId, array $warning): string
     {
         $ellipsis = $warning['count'] > TaskWarningState::WARNING_LIMIT ? '<fg=yellow>...</>' : '';

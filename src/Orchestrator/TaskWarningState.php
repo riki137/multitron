@@ -11,8 +11,10 @@ class TaskWarningState
 {
     public const WARNING_LIMIT = 5;
 
+    /** @var array<string, list<string>> */
     private array $warnings = [];
 
+    /** @var array<string, int> */
     private array $warningCount = [];
 
     /**
@@ -32,7 +34,7 @@ class TaskWarningState
 
     public function key(string $warning): string
     {
-        return preg_replace('/[^A-Za-z]/', '', $warning);
+        return (string)preg_replace('/[^A-Za-z]/', '', $warning) ?: $warning;
     }
 
     public function add(string $warning, int $count): void
