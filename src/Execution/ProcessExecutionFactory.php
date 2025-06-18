@@ -28,13 +28,15 @@ final class ProcessExecutionFactory implements ExecutionFactory
     private Closure $errorCatcher;
 
     private readonly IpcPeer $ipcPeer;
+
     private readonly int $processBufferSize;
+
     private readonly float $timeout;
 
     public function __construct(IpcPeer $ipcPeer, ?int $processBufferSize = null, float $timeout = self::DEFAULT_TIMEOUT)
     {
         $this->ipcPeer = $ipcPeer;
-        $this->processBufferSize = (int)max( 1, $processBufferSize ?? (CpuDetector::getCpuCount() / 1.6));
+        $this->processBufferSize = (int)max(1, $processBufferSize ?? (CpuDetector::getCpuCount() / 1.6));
         $this->timeout = $timeout;
         $this->errorCatcher = $this->errorCatcherFn(...);
     }

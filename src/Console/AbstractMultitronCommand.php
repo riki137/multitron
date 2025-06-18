@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Multitron\Console;
 
+use Multitron\Orchestrator\Output\TableOutputFactory;
 use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskOrchestrator;
 use Multitron\Tree\TaskNode;
@@ -33,6 +34,8 @@ abstract class AbstractMultitronCommand extends Command
         );
         $this->addOption(TaskOrchestrator::OPTION_CONCURRENCY, 'c', InputOption::VALUE_REQUIRED, 'Max concurrent tasks executed');
         $this->addOption(TaskOrchestrator::OPTION_UPDATE_INTERVAL, 'u', InputOption::VALUE_REQUIRED, 'Update interval in seconds', TaskOrchestrator::DEFAULT_UPDATE_INTERVAL);
+        $this->addOption(TableOutputFactory::OPTION_COLORS, null, InputOption::VALUE_NEGATABLE, 'Use ANSI colors in output', true);
+        $this->addOption(TableOutputFactory::OPTION_INTERACTIVE, null, InputOption::VALUE_REQUIRED, 'Interactive output (yes, no, detect)', 'detect');
     }
 
     abstract public function getNodes(TaskTreeBuilder $builder): array;

@@ -16,6 +16,7 @@ final readonly class TaskCommunicator
     public MasterCacheClient $cache;
 
     public ProgressClient $progress;
+
     private float $requestTimeout;
 
     public function __construct(

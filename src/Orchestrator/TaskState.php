@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Multitron\Orchestrator;
 
-use DateTime;
 use Multitron\Execution\Execution;
 use Multitron\Message\TaskProgress;
 

@@ -101,6 +101,8 @@ You can also tune how often progress updates are rendered using the `-u`/`--upda
 php bin/console app:tasks -u 0.5
 ```
 
+You can disable colors with `--no-colors` and switch off interactive table rendering using `--interactive=no`. The default `--interactive=detect` automatically falls back to plain output when run in CI.
+
 ### Central Cache
 
 Within a task you receive a `TaskCommunicator` instance that provides simple methods to read and write data shared between tasks:
@@ -112,13 +114,9 @@ final class MyTask implements Task
 {
     public function execute(TaskCommunicator $comm): void
     {
-        $data = $comm->read('key');
-        $comm->merge('key', ['result' => 'done']);
-        // advanced operations
-        $cache = $comm->cache();
-        $values = $cache->readKeys(['foo', 'stats' => ['hits']])->await();
-        $cache->write(['foo', 'bar'], 'baz');
-        $cache->merge('stats', ['hits' => ($values['stats']['hits'] ?? 0) + 1]);
+        $comm->cache->write(['foo' => ['bar' => 'baz']], 2);
+        $baz = $comm->cache->read(['foo' => ['bar']])->await()['foo']['bar']; // baz
+        $comm->cache->write(['stats' => ['hits' => ($values['stats']['hits'] ?? 0) + 1]], 2);
     }
 }
 ```
@@ -133,11 +131,10 @@ final class DownloadTask implements Task
 {
     public function execute(TaskCommunicator $comm): void
     {
-        $progress = $comm->progress();
-        $progress->setTotal(100);
+        $comm->progress->setTotal(100);
         for ($i = 0; $i < 100; $i++) {
             // ... work
-            $progress->addDone();
+            $comm->progress->addDone();
         }
     }
 }

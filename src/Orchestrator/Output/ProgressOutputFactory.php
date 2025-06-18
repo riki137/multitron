@@ -10,5 +10,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 interface ProgressOutputFactory
 {
-    public function create(TaskList $taskList, OutputInterface $output, IpcHandlerRegistry $registry): ProgressOutput;
+    /**
+     * @param array<string, mixed> $options
+     */
+    public function create(TaskList $taskList, OutputInterface $output, IpcHandlerRegistry $registry, array $options): ProgressOutput;
 }

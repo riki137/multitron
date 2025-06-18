@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Multitron\Execution;
 
+use function call_user_func;
+use function shell_exec;
+
 class CpuDetector
 {
     private const DEFAULT_PROCESS_BUFFER_SIZE = 4;
@@ -25,7 +28,7 @@ class CpuDetector
     {
         foreach (['pthreads_num_cpus', 'pcntl_cpu_count'] as $fn) {
             if (function_exists($fn)) {
-                $count = @\call_user_func($fn);
+                $count = @call_user_func($fn);
                 if (is_numeric($count)) {
                     return max(1, (int)$count);
                 }
@@ -43,7 +46,7 @@ class CpuDetector
             : ['nproc', 'getconf _NPROCESSORS_ONLN', 'sysctl -n hw.ncpu'];
 
         foreach ($cmds as $cmd) {
-            $out = @\shell_exec($cmd);
+            $out = @shell_exec($cmd);
             if (preg_match('/(\d+)/', (string)$out, $m)) {
                 return max(1, (int)$m[1]);
             }

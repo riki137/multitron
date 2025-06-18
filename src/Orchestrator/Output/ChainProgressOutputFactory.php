@@ -20,11 +20,14 @@ final class ChainProgressOutputFactory implements ProgressOutputFactory
         $this->factories = $factories;
     }
 
-    public function create(TaskList $taskList, OutputInterface $output, IpcHandlerRegistry $registry): ProgressOutput
+    /**
+     * @param array<string, mixed> $options
+     */
+    public function create(TaskList $taskList, OutputInterface $output, IpcHandlerRegistry $registry, array $options): ProgressOutput
     {
         $outputs = [];
         foreach ($this->factories as $factory) {
-            $outputs[] = $factory->create($taskList, $output, $registry);
+            $outputs[] = $factory->create($taskList, $output, $registry, $options);
         }
         return new ChainProgressOutput(...$outputs);
     }

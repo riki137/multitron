@@ -16,6 +16,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 final class TableOutput implements ProgressOutput
 {
     private const GB = 1073741824;
+
     private readonly OutputInterface $section;
 
     /** @var list<string> */
@@ -26,9 +27,12 @@ final class TableOutput implements ProgressOutput
     /** @var array<string, TaskState> */
     private array $states = [];
 
-    public function __construct(private readonly OutputInterface $output, TaskList $taskList)
-    {
-        if ($output instanceof ConsoleOutputInterface) {
+    public function __construct(
+        private readonly OutputInterface $output,
+        TaskList $taskList,
+        private readonly bool $interactive = true
+    ) {
+        if ($interactive && $output instanceof ConsoleOutputInterface) {
             $this->section = $output->section();
         } else {
             $this->section = $output;
@@ -63,12 +67,14 @@ final class TableOutput implements ProgressOutput
         $this->logBuffer[] = $this->renderer->getLog($state->getTaskId(), $message);
     }
 
-    public function render(): void
+    /**
+     * @return list<string>
+     */
+    private function buildSectionBuffer(): array
     {
         $sectionBuffer = [];
         $workersMem = 0;
         $partiallyDone = 0;
-        // Render each task
         foreach ($this->states as $state) {
             $sectionBuffer[] = $this->renderer->getRow($state);
             $partiallyDone += $state->getProgress()->toFloat();
@@ -81,29 +87,42 @@ final class TableOutput implements ProgressOutput
         if ($freeMem !== null && $freeMem < self::GB) {
             $sectionBuffer[] =
                 $this->renderer->getRowLabel('LOW MEMORY', TaskStatus::SKIP) .
-                " Only " . TaskProgress::formatMemoryUsage($freeMem) . " RAM available, processes might crash.";
+                ' Only ' . TaskProgress::formatMemoryUsage($freeMem) . ' RAM available, processes might crash.';
         }
         $sectionBuffer[] = $this->renderer->getSummaryRow(
             $partiallyDone,
             self::memoryUsage(),
             $workersMem,
         );
-        $ob = '';
-        if (ob_get_level() > 0) {
-            $ob = ob_get_clean();
-        }
-        if (is_string($ob) && trim($ob) !== '') {
-            $this->logBuffer[] = trim($ob);
-        }
 
-        if ($this->section instanceof ConsoleSectionOutput) {
-            $this->section->clear();
-        }
-        $this->output->writeln($this->logBuffer);
-        $this->section->writeln($sectionBuffer);
-        $this->logBuffer = [];
+        return $sectionBuffer;
+    }
 
-        ob_start();
+    public function render(): void
+    {
+        if ($this->interactive) {
+            $sectionBuffer = $this->buildSectionBuffer();
+            $ob = '';
+            if (ob_get_level() > 0) {
+                $ob = ob_get_clean();
+            }
+            if (is_string($ob) && trim($ob) !== '') {
+                $this->logBuffer[] = trim($ob);
+            }
+            if ($this->section instanceof ConsoleSectionOutput) {
+                $this->section->clear();
+            }
+            $this->output->writeln($this->logBuffer);
+            $this->section->writeln($sectionBuffer);
+            $this->logBuffer = [];
+
+            ob_start();
+        } else {
+            if ($this->logBuffer !== []) {
+                $this->output->writeln($this->logBuffer);
+                $this->logBuffer = [];
+            }
+        }
     }
 
     private static function memoryUsage(): int
@@ -131,7 +150,12 @@ final class TableOutput implements ProgressOutput
 
     public function __destruct()
     {
-        $this->render();
-        echo ob_get_clean();
+        if ($this->interactive) {
+            $this->render();
+            echo ob_get_clean();
+        } else {
+            $section = $this->buildSectionBuffer();
+            $this->output->writeln(array_merge($this->logBuffer, $section));
+        }
     }
 }

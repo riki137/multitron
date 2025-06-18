@@ -46,7 +46,7 @@ final class TaskOrchestrator
             $commandName,
             $input->getOptions(),
             new TaskTreeQueue($taskList, $concurrency),
-            $this->outputFactory->create($taskList, $output, $registry),
+            $this->outputFactory->create($taskList, $output, $registry, $options),
             $registry
         );
     }
@@ -55,6 +55,7 @@ final class TaskOrchestrator
      * Runs all tasks respecting dependencies and concurrency.
      * Returns 0 if all tasks succeeded, or 1 if any failed.
      */
+
     /**
      * @param array<string, mixed> $options
      */
