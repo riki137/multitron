@@ -1,188 +1,221 @@
-# Multitron
+# Multitron: High-Performance PHP Task Orchestrator
 
-Multitron is a PHP-based task orchestration and execution library designed to efficiently run and manage complex task trees. 
-It's designed to handle parallel task execution, inter-process communication, and resource management.
+[![Latest Version](https://img.shields.io/packagist/v/riki137/multitron.svg?style=flat-square)](https://packagist.org/packages/riki137/multitron)
+[![Total Downloads](https://img.shields.io/packagist/dt/riki137/multitron.svg?style=flat-square)](https://packagist.org/packages/riki137/multitron)
+[![License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/riki137/multitron/ci.yml?branch=main&style=flat-square)](https://github.com/riki137/multitron/actions?query=workflow%3Aci+branch%3Amain)
+[![PHPStan Level 9](https://img.shields.io/badge/PHPStan-level%209-brightgreen.svg?style=flat-square)](https://github.com/phpstan/phpstan)
 
-> ⚠️ This library is still in early development and may have breaking changes in the future.
-> However, it is already being used in production and actively developed.
+**Multitron** is a powerful, high-performance **PHP task orchestrator** designed to simplify parallel processing, concurrency, and automation in PHP applications. Quickly execute complex tasks asynchronously, maximizing the efficiency and scalability of your workflows.
 
-## Features
+**Ideal for Symfony Console apps, CI/CD pipelines, batch processing, and heavy PHP workloads.**
 
-- Task orchestration and dependency management
-- Concurrent execution with configurable task concurrency
-- Real-time progress updates and logging
-- Support for task partitioning and advanced routing
-- Shared memory and inter-process communication via channels and semaphores
-- Error handling and logging using PSR-3 and Tracy
+---
+
+## Why Choose Multitron?
+
+* 🔄 **Efficient Task Dependency Management**: Clearly define task dependencies with intuitive declarative syntax.
+* ⚡ **Optimized Parallel Execution**: Automatic CPU core detection for peak performance and resource utilization.
+* 🧩 **Partitioned Workloads**: Easily split large tasks across multiple worker processes.
+* 📊 **Real-Time Progress & Transparency**: Continuous console logging and progress tracking.
+* 🗄️ **Centralized Cache for Tasks**: Inter-process data sharing and communication made simple.
+* 🔌 **Symfony Console Ready**: Effortlessly integrate Multitron into your existing Symfony-based applications.
+* 📄 **Open Source & MIT Licensed**: Completely free to use, adapt, and distribute.
 
 ## Installation
 
-Multitron can be installed using [Composer](https://getcomposer.org/):
+Install the package via [Composer](https://getcomposer.org/) to start orchestrating tasks right away:
 
-```sh
+```bash
 composer require riki137/multitron
 ```
 
+---
+
 ## Usage
 
-### Basic Task Tree
-
-Define your custom tasks by implementing the `Task` interface or extending the `SimpleTask` abstract class. Inject these tasks into a task tree using a dependency injection container.
+Tasks implement the `Multitron\Execution\Task` interface. Here's a minimal example task:
 
 ```php
-use Multitron\Container\TaskRootTree;
-use Psr\Container\ContainerInterface;
+use Multitron\Comms\TaskCommunicator;
+use Multitron\Execution\Task;
 
-class MyTaskTree extends TaskRootTree
+final class HelloTask implements Task
 {
-    public function getNodes(): iterable
+    public function execute(TaskCommunicator $comm): void
     {
-        yield $cacheClear = $this->group('cache-clear', [
-            $this->task(ClearCacheTask::class),
-            $this->task(ClearLogsTask::class),
-        ]);
-        yield $this->task(OtherCacheClearTask::class)->belongsTo($cacheClear);
-        
-        yield $this->task(MyFirstTask::class);
-        yield $secondTask = $this->task(MySecondTask::class);
-        yield $thirdTask = $this->task(MyThirdTask::class)->dependsOn($secondTask);
-        yield $this->partitioned(MyPartitionedTask::class, 4)->dependsOn($thirdTask, $cacheClear);
-        
+        $comm->log('Hello from a worker');
     }
 }
 ```
 
-### Running the Task Tree
 
-To run the task tree, ...
+You can register tasks in a command that extends `Multitron\Console\AbstractMultitronCommand`:
 
 ```php
-use Multitron\Multitron;
-use Multitron\Console\MultitronConfig;
-use Multitron\Error\TracyErrorHandler;
-use Symfony\Component\Console\Application;
+use Multitron\Console\AbstractMultitronCommand;
+use Multitron\Orchestrator\TaskOrchestrator;
+use Multitron\Tree\TaskTreeBuilder;
+use Multitron\Tree\TaskTreeBuilderFactory;
+use Symfony\Component\Console\Attribute\AsCommand;
 
-/** @var \Multitron\Container\TaskRootTree $taskTree */
-$taskTree = new MyTaskTree($container);
-$config = new MultitronConfig(
-    bootstrapPath: '/path/to/bootstrap.php', // Path to the bootstrap file that returns an instance of a PSR container or Nette Container
-    concurrentTasks: 4, // Number of concurrent tasks
-    errorHandler: new TracyErrorHandler(), // see below for PSR logger
+#[AsCommand(name: 'app:tasks')]
+final class MyCommand extends AbstractMultitronCommand
+{
+    public function __construct(TaskTreeBuilderFactory $factory, TaskOrchestrator $orchestrator)
+    {
+        parent::__construct($factory, $orchestrator);
+    }
+
+    public function getNodes(TaskTreeBuilder $b): void
+    {
+        $cache = $b->group('cache-clear', [
+            $b->service(ClearCacheTask::class),
+            $b->service(ClearLogsTask::class),
+        ]);
+
+        $b->service(OtherCacheClearTask::class, [$cache]);
+        $b->service(MyFirstTask::class);
+        $second = $b->service(MySecondTask::class);
+        $third = $b->service(MyThirdTask::class, [$second]);
+        $b->partitioned(MyPartitionedTask::class, 4, [$third, $cache]);
+    }
+}
+```
+
+Register the command in your Symfony Console application and run it. Multitron will execute the tasks respecting dependencies and concurrency.
+
+You can control how many tasks run at once via the `-c`/`--concurrency` option:
+
+```bash
+php bin/console app:tasks -c 8
+```
+
+The library will spawn up to eight worker processes and keep them busy until all tasks finish.
+
+To limit which tasks run, pass a pattern as the first argument. Wildcards work the same as in `fnmatch()` and you may use `%` in place of `*` for convenience:
+
+```bash
+php bin/console app:tasks cache-* # run only tasks whose ID or tag matches "cache-*"
+```
+
+You can also tune how often progress updates are rendered using the `-u`/`--update-interval` option (in seconds):
+
+```bash
+php bin/console app:tasks -u 0.5
+```
+
+You can disable colors with `--no-colors` and switch off interactive table rendering using `--interactive=no`. The default `--interactive=detect` automatically falls back to plain output when run in CI.
+
+### Central Cache
+
+Within a task you receive a `TaskCommunicator` instance that provides simple methods to read and write data shared between tasks:
+
+```php
+use Multitron\Comms\TaskCommunicator;
+
+final class MyTask implements Task
+{
+    public function execute(TaskCommunicator $comm): void
+    {
+        $comm->cache->write(['foo' => ['bar' => 'baz']], 2);
+        $baz = $comm->cache->read(['foo' => ['bar']])->await()['foo']['bar']; // baz
+        $comm->cache->write(['stats' => ['hits' => ($values['stats']['hits'] ?? 0) + 1]], 2);
+    }
+}
+```
+
+### Reporting Progress
+
+Tasks can update progress counters that Multitron displays while running. Use
+the `ProgressClient` provided by the communicator:
+
+```php
+final class DownloadTask implements Task
+{
+    public function execute(TaskCommunicator $comm): void
+    {
+        $comm->progress->setTotal(100);
+        for ($i = 0; $i < 100; $i++) {
+            // ... work
+            $comm->progress->addDone();
+        }
+    }
+}
+```
+
+You may also call `addOccurrence()` or `addWarning()` to report additional
+metrics or warnings.
+
+### Partitioned Tasks
+
+When a workload can be split into chunks, partitioned tasks run those chunks in parallel. Define a task extending `PartitionedTask` and specify the number of partitions in the tree:
+
+```php
+use Multitron\Tree\Partition\PartitionedTask;
+
+final class BuildReportTask extends PartitionedTask
+{
+    public function execute(TaskCommunicator $comm): void
+    {
+        $comm->log("processing part {$this->partitionIndex} of {$this->partitionCount}");
+    }
+}
+
+$builder->partitioned(BuildReportTask::class, 4);
+```
+
+### Accessing CLI Options
+
+Options passed on the command line are forwarded to each task. Retrieve them via
+`TaskCommunicator`:
+
+```php
+final class ProcessUsersTask implements Task
+{
+    public function execute(TaskCommunicator $comm): void
+    {
+        $limit = (int)($comm->getOption('limit') ?? 0);
+        // ... process with the given $limit
+    }
+}
+```
+
+Call `getOptions()` to receive the entire array of options if needed.
+
+
+### Custom Progress Output
+
+Multitron renders progress using a `ProgressOutputFactory`. Replace the default table display or combine outputs with `ChainProgressOutputFactory`:
+
+```php
+use Multitron\Orchestrator\Output\ChainProgressOutputFactory;
+use Multitron\Orchestrator\Output\TableOutputFactory;
+
+$factory = new ChainProgressOutputFactory(
+    new TableOutputFactory(),
+    new JsonOutputFactory(), // your custom factory
 );
-
-$application = new Application();
-$application->add($taskTree->buildCommand());
-$application->run();
+$orchestrator = new TaskOrchestrator($ipc, $container, $execFactory, $factory, $handlerFactory);
 ```
 
-### Error Logging
+Implement the factory to send progress anywhere you like.
 
-Configure error handling by using either a PSR-3 logger or Tracy for detailed error reports.
+---
 
-#### PSR-3 Logger
+## Contribute to Multitron!
 
-```php
-use Monolog\Logger;
-use Monolog\Handler\StreamHandler;
-use Multitron\Error\PsrLogErrorHandler;
+Your feedback, issues, and contributions are highly encouraged. Open a GitHub issue or start a pull request to help improve PHP concurrency and task management:
 
-$logger = new Logger('multitron');
-$logger->pushHandler(new StreamHandler('path/to/logfile.log', Logger::ERROR));
+* [Create an Issue](https://github.com/riki137/multitron/issues)
+* [Submit a Pull Request](https://github.com/riki137/multitron/pulls)
 
-$errorHandler = new PsrLogErrorHandler($logger);
-```
-
-#### Tracy
-
-```php
-$errorHandler = new Multitron\Error\TracyErrorHandler();
-```
-
-### Progress Reporting and Logging
-
-Multitron provides real-time logging and progress updates that can be configured using the provided classes.
-
-```php
-use Multitron\Output\TableOutput;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
-
-$tableOutput = new TableOutput();
-$tableOutput->configure($inputConfiguration);
-```
-
-### Task Partitioning
-
-Partition tasks to run chunks of tasks in parallel, each of which operates on a subset of data.
-
-```php
-use Multitron\Container\Node\PartitionedTaskNodeGroup;
-
-$partitionedNode = new PartitionedTaskNodeGroup("MyPartitionedTask", function() use ($container) {
-    return $container->get(MyPartitionedTask::class);
-}, 4); // Partition into 4 chunks
-```
-
-### Central Cache with TaskCommunicator
-
-The Central Cache in Multitron offers a global shared memory space for tasks to read and write data efficiently across different task instances. 
-This functionality is facilitated through the `TaskCommunicator`, which serves as an intermediary for these operations within the `execute` method of a task.
-
-#### Operations Provided by TaskCommunicator
-
-Within the context of a task's execution, the `TaskCommunicator` provides four key methods that interact with the Central Cache:
-
-1. **`$comm->read(string $key): ?array`**
-
-   This method allows a task to read data from the Central Cache associated with the specified key. If the key exists, it retrieves the corresponding data and returns it as an array. If the key does not exist, it returns `null`.
-
-   ```php
-   $data = $comm->read('task_result');
-   if ($data !== null) {
-       // Process the retrieved data
-   } else {
-       // Handle the absence of data
-   }
-   ```
-
-2. **`$comm->readSubset(string $key, array $subkeys): ?array`**
-
-   This method reads a subset of the data stored under a specified key. 
-   It takes a key and an array of subkeys. 
-   It retrieves data for each of the provided subkeys if they exist, returning an associative array containing the subkeys and their corresponding values. 
-   If any subkey is not found, it will simply omit them from the result.
-
-   ```php
-   $subData = $comm->readSubset('user_emails', [123,126]); // Retrieve emails for user IDs 123 and 126
-   // Note: Similarly to array_intersect_key(), only the existing keys are returned
-   $email = $subData[123] ?? null;
-   ```
-
-3. **`$comm->write(string $key, array &$data): Future`**
-
-   This method allows tasks to write or update data in the Central Cache associated with a specified key. It takes the key and a reference to the data array to be stored. The method asynchronously writes the data and returns a `Future`, allowing the task to continue execution without blocking.
-
-   ```php
-   $dataToStore = [123 => 'richard@popelis.sk', 124 => 'fero@example.org'];
-   $comm->write('user_emails', $dataToStore)->await();
-   ```
-
-4. **`$comm->merge(string $key, array $data, int $level = 1): Future`**
-
-   The `merge` method is used to merge new data into the existing data structure under a specified key in the Central Cache. It takes a key, the data to merge, and an optional merge level indicating how deep the array structure should be merged. This is particularly useful for hierarchical or nested data structures.
-
-   ```php
-   $newResults = ['subtask1' => ['status' => 'done'], 'subtask2' => ['status' => 'pending']];
-   $comm->merge('project_results', $newResults, 1)->await();
-   // The project_results key will have its data updated without overwriting existing entries
-   ```
-
-## Contributing
-
-Contributions, issues, and feature requests are welcome!
-
-Feel free to check [issues page](https://github.com/riki137/multitron/issues) if you want to contribute.
+---
 
 ## License
 
-Multitron is licensed under the MIT License. See the LICENSE file for more details.
+Multitron is MIT licensed. See the [LICENSE](LICENSE) file for full details.
+
+---
+
+**SEO Keywords:** PHP Task Orchestrator, Parallel Processing PHP, Symfony CLI Automation, Asynchronous PHP Tasks, Multitron PHP, PHP Concurrency, PHP Task Manager, Open-source PHP Library

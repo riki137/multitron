@@ -8,6 +8,12 @@
             "Multitron\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Multitron\\Tests\\": "tests/"
+        }
+    },
+    "repositories": [],
     "authors": [
         {
             "name": "Richard Riki Popeliš",
@@ -15,17 +21,22 @@
         }
     ],
     "require": {
-        "php": "^8.1",
+        "php": "^8.2",
         "ext-pcntl": "*",
         "ext-mbstring": "*",
-        "symfony/console": "^5.4|^6.0|^7.0",
-        "amphp/parallel": "^2.2",
-        "amphp/sync": "^2.2"
+        "symfony/console": "^7.2",
+        "riki137/stream-ipc": "^1.0",
+        "psr/container": "^2.0",
+        "psr/container-implementation": "*"
     },
+    "minimum-stability": "beta",
+    "prefer-stable": true,
     "require-dev": {
         "tracy/tracy": "^2.10",
         "psr/log": "^3.0",
         "nette/di": "^3.2",
-        "phpstan/phpstan": "^2.1"
+        "phpstan/phpstan": "^2.1",
+        "contributte/psr11-container-interface": "^0.6.0",
+        "phpunit/phpunit": "^12.1"
     }
 }
