@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 
 final class ProgressBarTest extends TestCase
 {
-    public function testRenderProgressVariousPercentages(): void
+    public function testRenderStandardWidth(): void
     {
         $zero = ProgressBar::render(0, 10);
         $this->assertSame('<fg=green;bg=gray>          </><fg=white>    0%</>', $zero);
@@ -20,7 +20,7 @@ final class ProgressBarTest extends TestCase
         $this->assertSame('<fg=green;bg=gray>██████████</><fg=white>  125%</>', $over);
     }
 
-    public function testRenderProgressWithFractionalBlock(): void
+    public function testRenderOverHundredPercent(): void
     {
         $part = ProgressBar::render(6.25, 8);
         $this->assertSame('<fg=green;bg=gray>▌       </><fg=white>    6%</>', $part);
