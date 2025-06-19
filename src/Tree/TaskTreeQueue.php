@@ -10,6 +10,9 @@ use LogicException;
 use Multitron\Orchestrator\TaskList;
 use Traversable;
 
+/**
+ * @implements IteratorAggregate<CompiledTaskNode|null>
+ */
 final class TaskTreeQueue implements IteratorAggregate
 {
     /** @var CompiledTaskNode[] Tasks not yet dispatched */

@@ -7,11 +7,11 @@ namespace Multitron\Console;
 use Multitron\Comms\TaskCommunicator;
 use Multitron\Message\ContainerLoadedMessage;
 use Multitron\Message\StartTaskMessage;
+use Multitron\Orchestrator\TaskOrchestrator;
 use RuntimeException;
 use StreamIpc\Message\LogMessage;
 use StreamIpc\Message\Message;
 use StreamIpc\NativeIpcPeer;
-use Multitron\Orchestrator\TaskOrchestrator;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -48,7 +48,8 @@ final class MultitronWorkerCommand extends Command
             $this->peer->tick();
         }
 
-        ini_set('memory_limit', (string)($startTask->options[TaskOrchestrator::OPTION_MEMORY_LIMIT] ?? TaskOrchestrator::DEFAULT_MEMORY_LIMIT));
+        $memoryLimit = $startTask->options[TaskOrchestrator::OPTION_MEMORY_LIMIT];
+        ini_set('memory_limit', is_string($memoryLimit) ? $memoryLimit : TaskOrchestrator::DEFAULT_MEMORY_LIMIT);
 
         $application = $this->getApplication();
         if ($application === null) {
