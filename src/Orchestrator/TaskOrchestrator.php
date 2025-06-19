@@ -23,6 +23,8 @@ final class TaskOrchestrator
     public const OPTION_CONCURRENCY = 'concurrency';
     public const OPTION_UPDATE_INTERVAL = 'update-interval';
     public const DEFAULT_UPDATE_INTERVAL = 0.1;
+    public const OPTION_MEMORY_LIMIT = 'memory-limit';
+    public const DEFAULT_MEMORY_LIMIT = '-1';
 
     public function __construct(
         private readonly IpcPeer $ipcPeer,
@@ -38,6 +40,10 @@ final class TaskOrchestrator
      */
     public function run(string $commandName, TaskList $taskList, InputInterface $input, OutputInterface $output): int
     {
+        $limit = $input->getOption(self::OPTION_MEMORY_LIMIT);
+        if (is_string($limit) && $limit !== '') {
+            ini_set('memory_limit', $limit);
+        }
         $option = $input->getOption(self::OPTION_CONCURRENCY);
         $concurrency = is_numeric($option) ? (int)$option : CpuDetector::getCpuCount();
 

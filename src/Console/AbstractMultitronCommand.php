@@ -42,6 +42,7 @@ abstract class AbstractMultitronCommand extends Command
         );
         $this->addOption(TaskOrchestrator::OPTION_CONCURRENCY, 'c', InputOption::VALUE_REQUIRED, 'Max concurrent tasks executed');
         $this->addOption(TaskOrchestrator::OPTION_UPDATE_INTERVAL, 'u', InputOption::VALUE_REQUIRED, 'Update interval in seconds', TaskOrchestrator::DEFAULT_UPDATE_INTERVAL);
+        $this->addOption(TaskOrchestrator::OPTION_MEMORY_LIMIT, 'm', InputOption::VALUE_REQUIRED, 'PHP memory_limit for all processes', TaskOrchestrator::DEFAULT_MEMORY_LIMIT);
         $this->addOption(TableOutputFactory::OPTION_COLORS, null, InputOption::VALUE_NEGATABLE, 'Use ANSI colors in output', true);
         $this->addOption(TableOutputFactory::OPTION_INTERACTIVE, null, InputOption::VALUE_REQUIRED, 'Interactive output (yes, no, detect)', 'detect');
     }

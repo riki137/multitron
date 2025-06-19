@@ -107,6 +107,12 @@ You can also tune how often progress updates are rendered using the `-u`/`--upda
 php bin/console app:tasks -u 0.5
 ```
 
+You may also constrain memory usage with the `-m`/`--memory-limit` option:
+
+```bash
+php bin/console app:tasks -m 512M
+```
+
 You can disable colors with `--no-colors` and switch off interactive table rendering using `--interactive=no`. The default `--interactive=detect` automatically falls back to plain output when run in CI.
 
 ### Central Cache

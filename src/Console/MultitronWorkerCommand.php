@@ -11,6 +11,7 @@ use RuntimeException;
 use StreamIpc\Message\LogMessage;
 use StreamIpc\Message\Message;
 use StreamIpc\NativeIpcPeer;
+use Multitron\Orchestrator\TaskOrchestrator;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -46,6 +47,8 @@ final class MultitronWorkerCommand extends Command
         while ($startTask === null) {
             $this->peer->tick();
         }
+
+        ini_set('memory_limit', (string)($startTask->options[TaskOrchestrator::OPTION_MEMORY_LIMIT] ?? TaskOrchestrator::DEFAULT_MEMORY_LIMIT));
 
         $application = $this->getApplication();
         if ($application === null) {
