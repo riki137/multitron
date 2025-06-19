@@ -32,10 +32,15 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          coverage: none
+          coverage: xdebug
       - run: composer update --no-progress --no-interaction
-      - run: vendor/bin/phpunit
-
+      - run: vendor/bin/phpunit --coverage-clover=coverage.xml
+        env:
+          XDEBUG_MODE: coverage
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
   phpstan:
     runs-on: ubuntu-latest
     strategy:
