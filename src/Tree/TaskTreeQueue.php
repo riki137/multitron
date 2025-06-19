@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Multitron\Tree;
 
+use Generator;
+use IteratorAggregate;
 use LogicException;
 use Multitron\Orchestrator\TaskList;
+use Traversable;
 
-final class TaskTreeQueue
+final class TaskTreeQueue implements IteratorAggregate
 {
     /** @var CompiledTaskNode[] Tasks not yet dispatched */
     private array $pendingTasks;
@@ -27,6 +30,8 @@ final class TaskTreeQueue
 
     /** @var CompiledTaskNode[] Tasks whose dependencies are already met */
     private array $availableTasks = [];
+
+    private Generator $generator;
 
     public function __construct(TaskList $tasks, private readonly int $concurrencyLimit = 1)
     {
@@ -53,53 +58,72 @@ final class TaskTreeQueue
                 $this->availableTasks[$id] = $task;
             }
         }
+
+        $this->generator = $this->iterate();
+    }
+
+    public function getIterator(): Traversable
+    {
+        return $this->generator;
     }
 
     /**
-     * @return CompiledTaskNode  next task to run
-     *         true               wait (none ready yet, but some running)
-     *         false              all done
-     * @throws LogicException     on deadlock
+     * Iterate through tasks until all are completed.
+     *
+     * Yields:
+     *  - CompiledTaskNode  when a task is ready to run
+     *  - null              when there are tasks still pending but you must wait (no ready slots)
+     *
+     * Iteration ends when there are no more tasks pending or running.
+     *
+     * @return Generator<CompiledTaskNode|null>
      */
-    public function getNextTask(): CompiledTaskNode|bool
+    private function iterate(): Generator
     {
-        // no ready tasks right now…
-        if ([] === $this->availableTasks) {
-            // …and none running
-            if ([] === $this->runningTasks) {
-                // …and none pending
-                if ([] === $this->pendingTasks) {
-                    return false; // done
+        while (true) {
+            // no ready tasks right now…
+            if (empty($this->availableTasks)) {
+                // …and none running
+                if (empty($this->runningTasks)) {
+                    // …and none pending → done
+                    if (empty($this->pendingTasks)) {
+                        return;
+                    }
+                    throw new LogicException('Deadlock detected: remaining tasks have unmet dependencies.');
                 }
-                throw new LogicException('Deadlock detected: remaining tasks have unmet dependencies.');
+                // some running, but none ready → wait
+                yield null;
+                continue;
             }
-            return true; // wait for in-flight work
-        }
 
-        // respect concurrency limit
-        if (count($this->runningTasks) >= $this->concurrencyLimit) {
-            return true;
-        }
-
-        // pick the ready task with the most downstream work
-        $bestId = null;
-        $bestScore = -1;
-        foreach ($this->availableTasks as $task) {
-            $score = $this->calculatePriorityScore($task);
-            if ($score > $bestScore) {
-                $bestScore = $score;
-                $bestId = $task->id;
+            // respect concurrency limit
+            if (count($this->runningTasks) >= $this->concurrencyLimit) {
+                yield null;
+                continue;
             }
+
+            // pick next task (highest downstream score)
+            $bestId = null;
+            $bestScore = -1;
+            foreach ($this->availableTasks as $task) {
+                $score = $this->calculatePriorityScore($task);
+                if ($score > $bestScore) {
+                    $bestScore = $score;
+                    $bestId = $task->id;
+                }
+            }
+
+            // dispatch it
+            /** @var CompiledTaskNode $task */
+            $task = $this->availableTasks[$bestId];
+            unset(
+                $this->availableTasks[$bestId],
+                $this->pendingTasks[$bestId]
+            );
+            $this->runningTasks[$bestId] = $task;
+
+            yield $task;
         }
-
-        $task = $this->availableTasks[$bestId];
-        unset(
-            $this->availableTasks[$bestId],
-            $this->pendingTasks[$bestId]
-        );
-        $this->runningTasks[$bestId] = $task;
-
-        return $task;
     }
 
     public function markCompleted(string $taskId): void

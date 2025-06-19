@@ -75,9 +75,7 @@ final class TaskOrchestrator
         }
         $updateInterval = (float)$updateInterval;
 
-        while (true) {
-            $task = $queue->getNextTask();
-
+        foreach ($queue as $task) {
             if ($task instanceof CompiledTaskNode) {
                 // launch a new task
                 $states[$task->id] = $state = $this->executionFactory->launch(
@@ -88,11 +86,7 @@ final class TaskOrchestrator
                     $handlerRegistry
                 );
                 $output->onTaskStarted($state);
-            } elseif ($task === false) {
-                // $task is false -> no tasks left and none running
-                break;
             } else {
-                // $task is true -> wait for running tasks to finish
                 $this->ipcPeer->tickFor($updateInterval);
             }
 

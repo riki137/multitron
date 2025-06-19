@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Multitron\Tests\Integration;
 
+use Multitron\Tree\CompiledTaskNode;
 use Multitron\Tree\TaskTreeBuilder;
 use Multitron\Tree\TaskTreeQueue;
 use Multitron\Orchestrator\TaskList;
@@ -64,15 +65,30 @@ final class TaskTreeIntegrationTest extends TestCase
         $list = $this->createTaskList();
         $queue = new TaskTreeQueue($list, 2);
 
-        $t1 = $queue->getNextTask();
-        $this->assertSame('DummyTask', $t1->id);
+        $iterator = $queue->getIterator();
 
-        $this->assertTrue($queue->getNextTask());
+        // 1) first yield must be our DummyTask
+        $this->assertTrue($iterator->valid(), 'Expected at least one yield');
+        $first = $iterator->current();
+        $this->assertInstanceOf(CompiledTaskNode::class, $first);
+        $this->assertSame('DummyTask', $first->id);
+
+        // 2) second yield should be null (i.e. “wait”)
+        $iterator->next();
+        $this->assertTrue($iterator->valid());
+        $this->assertNull($iterator->current());
+
+        // mark DummyTask done so B becomes available
         $queue->markCompleted('DummyTask');
 
-        $t2 = $queue->getNextTask();
-        $this->assertSame('B', $t2->id);
+        // 3) third yield must be task “B”
+        $iterator->next();
+        $this->assertTrue($iterator->valid());
+        $second = $iterator->current();
+        $this->assertInstanceOf(expected: CompiledTaskNode::class, actual: $second);
+        $this->assertSame('B', $second->id);
 
+        // fail B and verify its two partitions are skipped
         $skipped = $queue->markFailed('B');
         sort($skipped);
         $this->assertSame([
@@ -80,7 +96,9 @@ final class TaskTreeIntegrationTest extends TestCase
             'DummyPartitionTask 2/2',
         ], $skipped);
 
-        $this->assertFalse($queue->getNextTask());
+        // advance once more — should now be done
+        $iterator->next();
+        $this->assertFalse($iterator->valid());
     }
 }
 

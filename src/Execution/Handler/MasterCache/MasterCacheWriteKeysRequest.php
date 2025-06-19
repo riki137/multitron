@@ -86,7 +86,19 @@ final class MasterCacheWriteKeysRequest implements MasterCacheWriteRequest
     }
 
     /**
-     * @param array<int|string, mixed> $data
+     * Determines the maximum nesting depth of an array structure.
+     *
+     * This method uses an iterative depth-first search approach with a stack
+     * to traverse the nested array structure. It calculates how deeply arrays
+     * are nested within the input data.
+     *
+     * Examples:
+     * - ['a', 'b', 'c'] has depth 1
+     * - ['a', ['b', 'c']] has depth 2
+     * - ['a', ['b', ['c']]] has depth 3
+     *
+     * @param array<int|string, mixed> $data The array to analyze
+     * @return int The maximum nesting depth of the array
      */
     private function detectDepthIterative(array $data): int
     {
