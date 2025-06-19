@@ -76,7 +76,7 @@ final class TableRenderer
         $ret = [];
         foreach ($progress->occurrences as $key => $count) {
             if ($count > 0) {
-                $ret[] = "<fg=gray>{$count}x</><fg=white>{$key}</>";
+                $ret[] = "<fg=gray;options=bold>{$count}x</>{$key}";
             }
         }
         $warnCount = $state->getWarnings()->count();

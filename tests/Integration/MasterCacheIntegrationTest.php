@@ -4,12 +4,12 @@ declare(strict_types=1);
 namespace Multitron\Tests\Integration;
 
 use Multitron\Execution\Handler\MasterCache\MasterCacheServer;
-use PHPUnit\Framework\TestCase;
+use Multitron\Tests\Integration\AbstractIpcTestCase;
 use StreamIpc\NativeIpcPeer;
 use StreamIpc\Message\LogMessage;
 use StreamIpc\Message\Message;
 
-final class MasterCacheIntegrationTest extends TestCase
+final class MasterCacheIntegrationTest extends AbstractIpcTestCase
 {
     private string $worker1;
     private string $worker2;
@@ -18,11 +18,6 @@ final class MasterCacheIntegrationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        $autoload = realpath(__DIR__ . '/../../vendor/autoload.php');
-        if (!$autoload) {
-            $this->markTestSkipped('Could not locate vendor autoload');
-        }
 
         $this->initialData = [
             'root' => [
@@ -34,13 +29,11 @@ final class MasterCacheIntegrationTest extends TestCase
             ],
         ];
 
-        $this->worker1 = sys_get_temp_dir() . '/worker1_' . uniqid() . '.php';
         $script1 = <<<'PHP'
-<?php
-require %s;
 use StreamIpc\NativeIpcPeer;
 use Multitron\Comms\MasterCacheClient;
 use StreamIpc\Message\LogMessage;
+
 $peer = new NativeIpcPeer();
 $session = $peer->createStdioSession();
 $cache = new MasterCacheClient($session);
@@ -51,18 +44,13 @@ usleep(200000);
 $final = $cache->read(['root'])->await();
 $session->notify(new LogMessage('w1_final:' . json_encode($final)));
 PHP;
-        file_put_contents(
-            $this->worker1,
-            sprintf($script1, var_export($autoload, true), var_export($this->initialData, true))
-        );
+        $this->worker1 = $this->createWorkerScript(sprintf($script1, var_export($this->initialData, true)));
 
-        $this->worker2 = sys_get_temp_dir() . '/worker2_' . uniqid() . '.php';
         $script2 = <<<'PHP'
-<?php
-require %s;
 use StreamIpc\NativeIpcPeer;
 use Multitron\Comms\MasterCacheClient;
 use StreamIpc\Message\LogMessage;
+
 $peer = new NativeIpcPeer();
 $session = $peer->createStdioSession();
 $cache = new MasterCacheClient($session);
@@ -73,16 +61,11 @@ $data['root']['layer1']['new'] = ['added' => true];
 $cache->write($data)->await();
 $session->notify(new LogMessage('w2_written'));
 PHP;
-        file_put_contents(
-            $this->worker2,
-            sprintf($script2, var_export($autoload, true))
-        );
+        $this->worker2 = $this->createWorkerScript($script2);
     }
 
     protected function tearDown(): void
     {
-        @unlink($this->worker1);
-        @unlink($this->worker2);
         parent::tearDown();
     }
 

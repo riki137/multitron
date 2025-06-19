@@ -6,24 +6,17 @@ namespace Multitron\Tests\Integration;
 use Multitron\Execution\ProcessExecutionFactory;
 use Multitron\Execution\Handler\IpcHandlerRegistry;
 use Multitron\Orchestrator\TaskState;
-use PHPUnit\Framework\TestCase;
+use Multitron\Tests\Integration\AbstractIpcTestCase;
 use StreamIpc\NativeIpcPeer;
 
-final class ProcessExecutionFactoryIntegrationTest extends TestCase
+final class ProcessExecutionFactoryIntegrationTest extends AbstractIpcTestCase
 {
     private string $workerScript;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $autoload = realpath(__DIR__ . '/../../vendor/autoload.php');
-        if (!$autoload) {
-            $this->markTestSkipped('Could not locate vendor autoload');
-        }
-        $this->workerScript = sys_get_temp_dir() . '/worker_' . uniqid() . '.php';
         $script = <<<'PHP'
-<?php
-require %s;
 use StreamIpc\NativeIpcPeer;
 use StreamIpc\Message\Message;
 use StreamIpc\Message\LogMessage;
@@ -42,14 +35,13 @@ while (!$started) {
     $peer->tick(0.1);
 }
 PHP;
-        file_put_contents($this->workerScript, sprintf($script, var_export($autoload, true)));
+        $this->workerScript = $this->createWorkerScript($script);
         $_ENV['MULTITRON_SCRIPTNAME'] = $this->workerScript;
     }
 
     protected function tearDown(): void
     {
         unset($_ENV['MULTITRON_SCRIPTNAME']);
-        @unlink($this->workerScript);
         parent::tearDown();
     }
 

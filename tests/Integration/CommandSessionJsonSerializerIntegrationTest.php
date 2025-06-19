@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace Multitron\Tests\Integration;
 
-use PHPUnit\Framework\TestCase;
+use Multitron\Tests\Integration\AbstractIpcTestCase;
 use StreamIpc\NativeIpcPeer;
 use StreamIpc\Message\LogMessage;
 use StreamIpc\Message\Message;
 use StreamIpc\Serialization\JsonMessageSerializer;
 
-final class CommandSessionJsonSerializerIntegrationTest extends TestCase
+final class CommandSessionJsonSerializerIntegrationTest extends AbstractIpcTestCase
 {
     private string $scriptPath;
 
@@ -17,18 +17,7 @@ final class CommandSessionJsonSerializerIntegrationTest extends TestCase
     {
         parent::setUp();
 
-        $autoloadPath = realpath(__DIR__ . '/../../vendor/autoload.php');
-        if (!$autoloadPath) {
-            $this->markTestSkipped('Could not locate vendor/autoload.php');
-        }
-
-        $this->scriptPath = sys_get_temp_dir() . '/ipc_json_' . uniqid() . '.php';
         $script = <<<'PHP'
-<?php
-declare(strict_types=1);
-
-require %s;
-
 use StreamIpc\NativeIpcPeer;
 use StreamIpc\Message\Message;
 use StreamIpc\Serialization\JsonMessageSerializer;
@@ -38,15 +27,11 @@ $session = $peer->createStdioSession();
 $session->onRequest(fn(Message $m) => $m);
 $peer->tick();
 PHP;
-        file_put_contents(
-            $this->scriptPath,
-            sprintf($script, var_export($autoloadPath, true))
-        );
+        $this->scriptPath = $this->createWorkerScript($script);
     }
 
     protected function tearDown(): void
     {
-        @unlink($this->scriptPath);
         parent::tearDown();
     }
 
