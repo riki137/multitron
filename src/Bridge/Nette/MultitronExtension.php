@@ -12,7 +12,6 @@ use Multitron\Orchestrator\Output\TableOutputFactory;
 use Multitron\Orchestrator\TaskOrchestrator;
 use Multitron\Tree\TaskTreeBuilderFactory;
 use Nette\DI\CompilerExtension;
-use Psr\Container\ContainerInterface;
 use StreamIpc\NativeIpcPeer;
 
 final class MultitronExtension extends CompilerExtension

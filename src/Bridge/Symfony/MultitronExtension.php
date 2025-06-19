@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Multitron\Bridge\Symfony;
 
+use Multitron\Console\MultitronWorkerCommand;
 use Multitron\Execution\Handler\DefaultIpcHandlerRegistryFactory;
 use Multitron\Execution\Handler\MasterCache\MasterCacheServer;
 use Multitron\Execution\Handler\ProgressServer;
@@ -17,7 +18,6 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Reference;
-use Multitron\Console\MultitronWorkerCommand;
 
 final class MultitronExtension extends Extension
 {

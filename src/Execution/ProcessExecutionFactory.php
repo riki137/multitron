@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Multitron\Execution;
 
 use Closure;
+use Multitron\Execution\Handler\IpcHandlerRegistry;
 use Multitron\Message\ContainerLoadedMessage;
 use Multitron\Message\StartTaskMessage;
+use Multitron\Orchestrator\TaskState;
 use RuntimeException;
 use StreamIpc\Envelope\ResponsePromise;
 use StreamIpc\Message\LogMessage;
@@ -116,9 +118,13 @@ final class ProcessExecutionFactory implements ExecutionFactory
      * @param array<string, mixed> $options
      * @param int $remainingTasks Number of tasks still to start not including this one
      */
-    public function launch(string $commandName, string $taskId, array $options, int $remainingTasks): Execution
+    public function launch(string $commandName, string $taskId, array $options, int $remainingTasks, IpcHandlerRegistry $registry): TaskState
     {
         $execution = $this->obtain($remainingTasks);
+
+        $state = new TaskState($taskId, $execution);
+        $registry->attach($state);
+
         // send the task id to the worker over IPC
         try {
             $execution->getSession()->request(new StartTaskMessage($commandName, $taskId, $options))->await();
@@ -128,7 +134,7 @@ final class ProcessExecutionFactory implements ExecutionFactory
             throw new RuntimeException($message);
         }
 
-        return $execution;
+        return $state;
     }
 
     public function shutdown(): void

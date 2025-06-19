@@ -80,9 +80,13 @@ final class TaskOrchestrator
 
             if ($task instanceof CompiledTaskNode) {
                 // launch a new task
-                $execution = $this->executionFactory->launch($commandName, $task->id, $options, $queue->pendingCount());
-                $states[$task->id] = $state = new TaskState($task->id, $execution);
-                $handlerRegistry->attach($state);
+                $states[$task->id] = $state = $this->executionFactory->launch(
+                    $commandName,
+                    $task->id,
+                    $options,
+                    $queue->pendingCount(),
+                    $handlerRegistry
+                );
                 $output->onTaskStarted($state);
             } elseif ($task === false) {
                 // $task is false -> no tasks left and none running
