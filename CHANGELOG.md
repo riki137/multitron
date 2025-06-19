@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TableRenderer occurence white color
 - Code coverage badge
 
+### Fixed
+- Unhandled request (IpcHandlerRegistry was too late)
 
 ## [1.0.0-beta1] - 2025-06-18
 - complete greenfield rewrite based on experience from the previous version
