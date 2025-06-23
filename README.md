@@ -101,6 +101,13 @@ To limit which tasks run, pass a pattern as the first argument. Wildcards work t
 php bin/console app:tasks cache-* # run only tasks whose ID or tag matches "cache-*"
 ```
 
+You can combine multiple patterns by separating them with commas. The filter applies
+to both task IDs and tags and is an OR pattern.
+
+```bash
+php bin/console app:tasks "db-%,cache-%,final-%"
+```
+
 You can also tune how often progress updates are rendered using the `-u`/`--update-interval` option (in seconds):
 
 ```bash

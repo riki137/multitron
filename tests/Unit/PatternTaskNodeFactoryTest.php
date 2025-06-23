@@ -21,9 +21,12 @@ final class PatternTaskNodeFactoryTest extends TestCase
         $root = PatternTaskNodeFactory::create('filter', 'beta,gamma', [$t1, $t2, $t3]);
         $compiled = (new TaskTreeCompiler())->compile($root);
 
-        $this->assertSame(['beta', 'gamma'], array_keys($compiled));
-        $this->assertSame([], $compiled['beta']->dependencies);
+        $ids = array_keys($compiled);
+        sort($ids);
+        $this->assertSame(['alpha', 'beta', 'gamma'], $ids);
+        $this->assertSame(['alpha'], $compiled['beta']->dependencies);
         $this->assertSame(['beta'], $compiled['gamma']->dependencies);
+        $this->assertSame([], $compiled['alpha']->dependencies);
     }
 }
 
