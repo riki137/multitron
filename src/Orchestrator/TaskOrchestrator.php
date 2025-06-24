@@ -13,6 +13,7 @@ use Multitron\Orchestrator\Output\ProgressOutputFactory;
 use Multitron\Tree\CompiledTaskNode;
 use Multitron\Tree\TaskTreeQueue;
 use RuntimeException;
+use StreamIpc\InvalidStreamException;
 use StreamIpc\IpcPeer;
 use StreamIpc\Transport\TimeoutException;
 use Symfony\Component\Console\Input\InputInterface;
@@ -73,6 +74,7 @@ final class TaskOrchestrator
         IpcHandlerRegistry $handlerRegistry
     ): int {
         $hadError = false;
+        /** @var TaskState[] $states */
         $states = [];
 
         $updateInterval = $options[self::OPTION_UPDATE_INTERVAL] ?? null;
@@ -93,7 +95,11 @@ final class TaskOrchestrator
                 );
                 $output->onTaskStarted($state);
             } else {
-                $this->ipcPeer->tickFor($updateInterval);
+                try {
+                    $this->ipcPeer->tickFor($updateInterval);
+                } catch (InvalidStreamException $e) {
+                    $this->handleStreamException($e, $states, $queue, $output);
+                }
             }
 
             // poll each running task for completion
@@ -103,25 +109,20 @@ final class TaskOrchestrator
                 if ($exit !== null) {
                     try {
                         $this->ipcPeer->tick(0.01);
-                    } catch (TimeoutException) {
-                    }
-                    if ($exit === 0) {
-                        $queue->markCompleted($state->getTaskId());
-                        $state->setStatus(TaskStatus::SUCCESS);
-                        $output->onTaskCompleted($state);
-                    } else {
-                        $this->outputError($output, $state);
-                        $skipped = $queue->markFailed($state->getTaskId());
-                        $state->setStatus(TaskStatus::ERROR);
-                        $output->onTaskCompleted($state);
-                        foreach ($skipped as $sid) {
-                            $skipState = new TaskState($sid);
-                            $skipState->setStatus(TaskStatus::SKIP);
-                            $output->onTaskCompleted($skipState);
+                        if ($exit === 0) {
+                            $queue->markCompleted($state->getTaskId());
+                            $state->setStatus(TaskStatus::SUCCESS);
+                            $output->onTaskCompleted($state);
+                            unset($states[$id]);
+                        } else {
+                            $this->onError($state, $queue, $output);
+                            $hadError = true;
                         }
-                        $hadError = true;
+                    } catch (TimeoutException) {
+                    } catch (InvalidStreamException $e) {
+                        $this->handleStreamException($e, $states, $queue, $output);
+                        continue; // skip this iteration as the state may have been removed
                     }
-                    unset($states[$id]);
                 }
             }
 
@@ -131,7 +132,7 @@ final class TaskOrchestrator
         return $hadError ? 1 : 0;
     }
 
-    public function outputError(ProgressOutput $output, TaskState $state): void
+    public function onError(TaskState $state, TaskTreeQueue $queue, ProgressOutput $output): void
     {
         $result = $state->getExecution()->kill();
         $output->log(
@@ -141,13 +142,33 @@ final class TaskOrchestrator
         $stdout = trim($result['stdout']);
         $stderr = trim($result['stderr']);
         if ($stdout === '' && $stderr === '') {
-            $output->log($state, 'Stdout and stderr were empty, no output to show.');
+            $output->log($state, 'Nothing left in stdout and stderr streams.');
         } else {
             if ($stdout !== '') {
                 $output->log($state, 'STDOUT: ' . $stdout);
             }
             if ($stderr !== '') {
                 $output->log($state, 'STDERR: ' . $stderr);
+            }
+        }
+
+        $skipped = $queue->markFailed($state->getTaskId());
+        $state->setStatus(TaskStatus::ERROR);
+        $output->onTaskCompleted($state);
+        foreach ($skipped as $sid) {
+            $skipState = new TaskState($sid);
+            $skipState->setStatus(TaskStatus::SKIP);
+            $output->onTaskCompleted($skipState);
+        }
+    }
+
+    public function handleStreamException(InvalidStreamException $e, array $states, TaskTreeQueue $queue, ProgressOutput $output): void
+    {
+        foreach ($states as $state) {
+            if ($state->getExecution()->getSession() === $e->getSession()) {
+                $this->onError($state, $queue, $output);
+                unset($states[$state->getTaskId()]);
+                return;
             }
         }
     }
