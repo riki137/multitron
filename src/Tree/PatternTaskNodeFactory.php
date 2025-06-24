@@ -18,21 +18,28 @@ class PatternTaskNodeFactory
         return new TaskNode(
             $id,
             children: $children,
-            postProcess: function (array $tasks) use ($patterns, $pattern): iterable {
-                /** @var CompiledTaskNode $task */
+            postProcess: function (array $tasks) use ($patterns): iterable {
+                $selected = [];
+
                 foreach ($tasks as $task) {
-                    foreach ($patterns as $pattern) {
-                        if (fnmatch($pattern, $task->id)) {
-                            yield self::filterDependencies($task, $patterns);
-                            continue 2;
-                        }
-                        foreach ($task->tags as $tag) {
-                            if (fnmatch($pattern, $tag)) {
-                                yield self::filterDependencies($task, $patterns);
-                                continue 3; // Skip to the next task
-                            }
+                    if (self::matches($task, $patterns)) {
+                        $selected[$task->id] = $task;
+                    }
+                }
+
+                $queue = array_values($selected);
+                while ($queue) {
+                    $current = array_pop($queue);
+                    foreach ($current->dependencies as $dep) {
+                        if (!isset($selected[$dep]) && isset($tasks[$dep])) {
+                            $selected[$dep] = $tasks[$dep];
+                            $queue[] = $tasks[$dep];
                         }
                     }
+                }
+
+                foreach ($selected as $task) {
+                    yield $task;
                 }
             }
         );
@@ -41,27 +48,19 @@ class PatternTaskNodeFactory
     /**
      * @param string[] $patterns
      */
-    private static function filterDependencies(CompiledTaskNode $task, array $patterns): CompiledTaskNode
+    private static function matches(CompiledTaskNode $task, array $patterns): bool
     {
-        if ($task->dependencies === []) {
-            return $task; // No dependencies to filter
-        }
-        $dependencies = array_filter($task->dependencies, function ($dependency) use ($patterns) {
-            foreach ($patterns as $pattern) {
-                if (fnmatch($pattern, $dependency)) {
+        foreach ($patterns as $pattern) {
+            if (fnmatch($pattern, $task->id)) {
+                return true;
+            }
+            foreach ($task->tags as $tag) {
+                if (fnmatch($pattern, $tag)) {
                     return true;
                 }
             }
-            return false;
-        });
-        if ($dependencies === $task->dependencies) {
-            return $task; // No filtering needed
         }
-        return new CompiledTaskNode(
-            $task->id,
-            $task->factory,
-            $dependencies,
-            $task->tags
-        );
+
+        return false;
     }
 }
