@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [1.0.0-beta4] - 2025-06-24
+
 ## [1.0.0-beta3] - 2025-06-24
 ### Added
 - memory limit option
@@ -48,7 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2024-08-20
 - After months of development, the first release of Multitron is here!
 
-[Unreleased]: https://github.com/riki137/multitron/compare/1.0.0-beta3...master
+[Unreleased]: https://github.com/riki137/multitron/compare/1.0.0-beta4...master
+[1.0.0-beta4]: https://github.com/riki137/multitron/compare/1.0.0-beta3...1.0.0-beta4
 [1.0.0-beta3]: https://github.com/riki137/multitron/compare/1.0.0-beta2...1.0.0-beta3
 [1.0.0-beta2]: https://github.com/riki137/multitron/compare/1.0.0-beta1...1.0.0-beta2
 [1.0.0-beta1]: https://github.com/riki137/multitron/compare/0.2.0...1.0.0-beta1
