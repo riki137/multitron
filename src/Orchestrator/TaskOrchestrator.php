@@ -134,7 +134,14 @@ final class TaskOrchestrator
 
     public function onError(TaskState $state, TaskTreeQueue $queue, ProgressOutput $output): void
     {
-        $result = $state->getExecution()->kill();
+        $execution = $state->getExecution();
+        if ($execution === null) {
+            $output->log($state, 'No execution found for task ' . $state->getTaskId());
+            $state->setStatus(TaskStatus::ERROR);
+            $output->onTaskCompleted($state);
+            return;
+        }
+        $result = $execution->kill();
         $output->log(
             $state,
             'Worker exited with code ' . var_export($result['exitCode'], true),
@@ -162,10 +169,14 @@ final class TaskOrchestrator
         }
     }
 
+    /**
+     * @param TaskState[] $states
+     */
     public function handleStreamException(InvalidStreamException $e, array $states, TaskTreeQueue $queue, ProgressOutput $output): void
     {
         foreach ($states as $state) {
-            if ($state->getExecution()->getSession() === $e->getSession()) {
+            $execution = $state->getExecution();
+            if ($execution?->getSession() === $e->getSession()) {
                 $this->onError($state, $queue, $output);
                 unset($states[$state->getTaskId()]);
                 return;
