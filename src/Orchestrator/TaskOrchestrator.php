@@ -110,6 +110,7 @@ final class TaskOrchestrator
                         $state->setStatus(TaskStatus::SUCCESS);
                         $output->onTaskCompleted($state);
                     } else {
+                        $this->outputError($output, $state);
                         $skipped = $queue->markFailed($state->getTaskId());
                         $state->setStatus(TaskStatus::ERROR);
                         $output->onTaskCompleted($state);
@@ -128,5 +129,26 @@ final class TaskOrchestrator
         }
 
         return $hadError ? 1 : 0;
+    }
+
+    public function outputError(ProgressOutput $output, TaskState $state): void
+    {
+        $result = $state->getExecution()->kill();
+        $output->log(
+            $state,
+            'Worker exited with code ' . var_export($result['exitCode'], true),
+        );
+        $stdout = trim($result['stdout']);
+        $stderr = trim($result['stderr']);
+        if ($stdout === '' && $stderr === '') {
+            $output->log($state, 'Stdout and stderr were empty, no output to show.');
+        } else {
+            if ($stdout !== '') {
+                $output->log($state, 'STDOUT: ' . $stdout);
+            }
+            if ($stderr !== '') {
+                $output->log($state, 'STDERR: ' . $stderr);
+            }
+        }
     }
 }
