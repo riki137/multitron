@@ -31,7 +31,7 @@ final class TaskOrchestratorIntegrationTest extends TestCase
         $peer = new NativeIpcPeer();
         $execFactory = new class($peer) implements ExecutionFactory {
             public function __construct(private IpcPeer $peer) {}
-            public function launch(string $commandName, string $taskId, array $options, int $remainingTasks, IpcHandlerRegistry $registry): \Multitron\Orchestrator\TaskState {
+            public function launch(string $commandName, string $taskId, array $options, int $remainingTasks, IpcHandlerRegistry $registry, ?callable $onException = null): \Multitron\Orchestrator\TaskState {
                 [$a, $b] = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
                 $session = $this->peer->createStreamSession($a, $a);
                 $exec = new class($session) implements Execution {
@@ -82,7 +82,7 @@ final class TaskOrchestratorIntegrationTest extends TestCase
         $peer = new NativeIpcPeer();
         $execFactory = new class($peer) implements ExecutionFactory {
             public function __construct(private IpcPeer $peer) {}
-            public function launch(string $commandName, string $taskId, array $options, int $remainingTasks, IpcHandlerRegistry $registry): \Multitron\Orchestrator\TaskState {
+            public function launch(string $commandName, string $taskId, array $options, int $remainingTasks, IpcHandlerRegistry $registry, ?callable $onException = null): \Multitron\Orchestrator\TaskState {
                 [$a, $b] = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
                 $session = $this->peer->createStreamSession($a, $a);
                 $exec = new class($session) implements Execution {

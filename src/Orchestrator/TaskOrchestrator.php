@@ -91,15 +91,12 @@ final class TaskOrchestrator
                     $task->id,
                     $options,
                     $queue->pendingCount(),
-                    $handlerRegistry
+                    $handlerRegistry,
+                    fn(InvalidStreamException $e) => $this->handleStreamException($e, $states, $queue, $output)
                 );
                 $output->onTaskStarted($state);
             } else {
-                try {
-                    $this->ipcPeer->tickFor($updateInterval);
-                } catch (InvalidStreamException $e) {
-                    $this->handleStreamException($e, $states, $queue, $output);
-                }
+                $this->ipcPeer->tickFor($updateInterval);
             }
 
             // poll each running task for completion
@@ -113,15 +110,12 @@ final class TaskOrchestrator
                             $queue->markCompleted($state->getTaskId());
                             $state->setStatus(TaskStatus::SUCCESS);
                             $output->onTaskCompleted($state);
-                            unset($states[$id]);
                         } else {
                             $this->onError($state, $queue, $output);
                             $hadError = true;
                         }
+                        unset($states[$id]);
                     } catch (TimeoutException) {
-                    } catch (InvalidStreamException $e) {
-                        $this->handleStreamException($e, $states, $queue, $output);
-                        continue; // skip this iteration as the state may have been removed
                     }
                 }
             }
@@ -142,15 +136,14 @@ final class TaskOrchestrator
             return;
         }
         $result = $execution->kill();
-        $output->log(
-            $state,
-            'Worker exited with code ' . var_export($result['exitCode'], true),
-        );
         $stdout = trim($result['stdout']);
         $stderr = trim($result['stderr']);
+
+        $message = 'Worker exited with code ' . var_export($result['exitCode'], true);
         if ($stdout === '' && $stderr === '') {
-            $output->log($state, 'Nothing left in stdout and stderr streams.');
+            $output->log($state, $message . ' (nothing left in STDOUT or STDERR)',);
         } else {
+            $output->log($state, $message);
             if ($stdout !== '') {
                 $output->log($state, 'STDOUT: ' . $stdout);
             }

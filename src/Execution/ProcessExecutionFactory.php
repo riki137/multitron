@@ -38,7 +38,7 @@ final class ProcessExecutionFactory implements ExecutionFactory
 
     /**
      * @param int|null $processBufferSize number of workers to keep buffered
-     * @param float    $timeout           seconds before IPC requests fail
+     * @param float $timeout seconds before IPC requests fail
      */
     public function __construct(NativeIpcPeer $ipcPeer, ?int $processBufferSize = null, float $timeout = self::DEFAULT_TIMEOUT)
     {
@@ -118,12 +118,21 @@ final class ProcessExecutionFactory implements ExecutionFactory
      * @param array<string, mixed> $options
      * @param int $remainingTasks Number of tasks still to start not including this one
      */
-    public function launch(string $commandName, string $taskId, array $options, int $remainingTasks, IpcHandlerRegistry $registry): TaskState
-    {
+    public function launch(
+        string $commandName,
+        string $taskId,
+        array $options,
+        int $remainingTasks,
+        IpcHandlerRegistry $registry,
+        ?callable $onException = null
+    ): TaskState {
         $execution = $this->obtain($remainingTasks);
 
         $state = new TaskState($taskId, $execution);
         $registry->attach($state);
+        if ($onException !== null) {
+            $execution->getSession()->onException($onException);
+        }
 
         // send the task id to the worker over IPC
         try {
