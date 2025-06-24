@@ -6,7 +6,8 @@ namespace Multitron\Execution;
 
 use Multitron\Execution\Handler\IpcHandlerRegistry;
 use Multitron\Orchestrator\TaskState;
-use StreamIpc\InvalidStreamException;
+use StreamIpc\IpcSession;
+use Throwable;
 
 interface ExecutionFactory
 {
@@ -15,7 +16,7 @@ interface ExecutionFactory
      *
      * @param array<string, mixed> $options
      * @param int $remainingTasks Number of tasks still to start including this one
-     * @param ?callable(InvalidStreamException): (void|false) $onException
+     * @param ?callable(Throwable, IpcSession): (void|false) $onException
      */
     public function launch(
         string $commandName,

@@ -18,6 +18,7 @@ use StreamIpc\IpcPeer;
 use StreamIpc\Transport\TimeoutException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Throwable;
 
 final class TaskOrchestrator
 {
@@ -92,7 +93,7 @@ final class TaskOrchestrator
                     $options,
                     $queue->pendingCount(),
                     $handlerRegistry,
-                    fn(InvalidStreamException $e) => $this->handleStreamException($e, $states, $queue, $output)
+                    fn(Throwable $e) => $this->handleStreamException($e, $states, $queue, $output)
                 );
                 $output->onTaskStarted($state);
             } else {
@@ -165,8 +166,11 @@ final class TaskOrchestrator
     /**
      * @param TaskState[] $states
      */
-    public function handleStreamException(InvalidStreamException $e, array $states, TaskTreeQueue $queue, ProgressOutput $output): void
+    public function handleStreamException(Throwable $e, array $states, TaskTreeQueue $queue, ProgressOutput $output): void
     {
+        if (!$e instanceof InvalidStreamException) {
+            throw $e;
+        }
         foreach ($states as $state) {
             $execution = $state->getExecution();
             if ($execution?->getSession() === $e->getSession()) {
