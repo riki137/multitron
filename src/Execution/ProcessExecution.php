@@ -60,10 +60,16 @@ final readonly class ProcessExecution implements Execution
     public function kill(): array
     {
         $this->process->kill();
+        $stdoutStream = $this->process->getStdout();
+        $stderrStream = $this->process->getStderr();
+
+        $stdout = is_resource($stdoutStream) ? (string)stream_get_contents($stdoutStream) : '';
+        $stderr = is_resource($stderrStream) ? (string)stream_get_contents($stderrStream) : '';
+
         return [
             'exitCode' => $this->process->getExitCode(),
-            'stdout' => (string)stream_get_contents($this->process->getStdout()),
-            'stderr' => (string)stream_get_contents($this->process->getStderr()),
+            'stdout' => $stdout,
+            'stderr' => $stderr,
         ];
     }
 }
