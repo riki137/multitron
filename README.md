@@ -55,14 +55,14 @@ final class HelloTask implements Task
 You can register tasks in a command that extends `Multitron\Console\AbstractMultitronCommand`:
 
 ```php
-use Multitron\Console\AbstractMultitronCommand;
+use Multitron\Console\TaskCommand;
 use Multitron\Orchestrator\TaskOrchestrator;
 use Multitron\Tree\TaskTreeBuilder;
 use Multitron\Tree\TaskTreeBuilderFactory;
 use Symfony\Component\Console\Attribute\AsCommand;
 
 #[AsCommand(name: 'app:tasks')]
-final class MyCommand extends AbstractMultitronCommand
+final class MyCommand extends TaskCommand
 {
     public function __construct(TaskTreeBuilderFactory $factory, TaskOrchestrator $orchestrator)
     {

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Multitron\Bridge\Nette;
 
+use Multitron\Bridge\Native\MultitronFactory;
+use Multitron\Console\TaskCommandDeps;
+use Multitron\Console\WorkerCommand;
 use Multitron\Execution\Handler\DefaultIpcHandlerRegistryFactory;
 use Multitron\Execution\Handler\MasterCache\MasterCacheServer;
 use Multitron\Execution\Handler\ProgressServer;
@@ -20,28 +23,16 @@ final class MultitronExtension extends CompilerExtension
     {
         $builder = $this->getContainerBuilder();
 
-        $builder->addDefinition($this->prefix('taskTreeBuilderFactory'))
-            ->setType(TaskTreeBuilderFactory::class);
+        $factory = $builder->addDefinition($this->prefix('factory'))
+            ->setType(MultitronFactory::class)
+            ->setCreator(MultitronFactory::class);
 
-        $builder->addDefinition($this->prefix('nativeIpcPeer'))
-            ->setType(NativeIpcPeer::class);
+        $builder->addDefinition($this->prefix('commandDeps'))
+            ->setType(TaskCommandDeps::class)
+            ->setCreator([$factory, 'getCommandDeps']);
 
-        $builder->addDefinition($this->prefix('masterCacheServer'))
-            ->setType(MasterCacheServer::class);
-
-        $builder->addDefinition($this->prefix('progressServer'))
-            ->setType(ProgressServer::class);
-
-        $builder->addDefinition($this->prefix('handlerFactory'))
-            ->setType(DefaultIpcHandlerRegistryFactory::class);
-
-        $builder->addDefinition($this->prefix('tableOutputFactory'))
-            ->setType(TableOutputFactory::class);
-
-        $builder->addDefinition($this->prefix('executionFactory'))
-            ->setType(ProcessExecutionFactory::class);
-
-        $builder->addDefinition($this->prefix('taskOrchestrator'))
-            ->setType(TaskOrchestrator::class);
+        $builder->addDefinition($this->prefix('workerCommand'))
+            ->setType(WorkerCommand::class)
+            ->setFactory([$factory, 'getWorkerCommand']);
     }
 }
