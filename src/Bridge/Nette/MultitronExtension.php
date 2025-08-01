@@ -21,7 +21,7 @@ final class MultitronExtension extends CompilerExtension
 
         $builder->addDefinition($this->prefix('commandDeps'))
             ->setType(TaskCommandDeps::class)
-            ->setCreator([$factory, 'getCommandDeps']);
+            ->setCreator([$factory, 'getTaskCommandDeps']);
 
         $builder->addDefinition($this->prefix('workerCommand'))
             ->setType(WorkerCommand::class)
