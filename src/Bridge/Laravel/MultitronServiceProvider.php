@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Multitron\Bridge\Laravel;
 
+use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\ServiceProvider;
 use Multitron\Bridge\Native\MultitronFactory;
 use Multitron\Console\TaskCommandDeps;
 use Multitron\Console\WorkerCommand;
-use Psr\Container\ContainerInterface;
 
 final class MultitronServiceProvider extends ServiceProvider
 {
@@ -18,12 +18,12 @@ final class MultitronServiceProvider extends ServiceProvider
 
         $this->app->singleton(
             TaskCommandDeps::class,
-            fn(ContainerInterface $c) => $c->get(MultitronFactory::class)->getCommandDeps()
+            fn (Container $c) => $c->make(MultitronFactory::class)->getTaskCommandDeps()
         );
 
         $this->app->singleton(
             WorkerCommand::class,
-            fn(ContainerInterface $c) => $c->get(MultitronFactory::class)->getWorkerCommand()
+            fn (Container $c) => $c->make(MultitronFactory::class)->getWorkerCommand()
         );
 
         $this->commands([WorkerCommand::class]);

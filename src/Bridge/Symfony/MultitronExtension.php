@@ -18,7 +18,8 @@ final class MultitronExtension extends Extension
     {
         $container->setDefinition('multitron.factory', new Definition(MultitronFactory::class));
 
-        $container->setDefinition('multitron.command_deps',
+        $container->setDefinition(
+            'multitron.command_deps',
             (new Definition(TaskCommandDeps::class))
                 ->setFactory([new Reference('multitron.factory'), 'getCommandDeps'])
         );

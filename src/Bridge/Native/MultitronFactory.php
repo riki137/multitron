@@ -32,11 +32,14 @@ final class MultitronFactory
     private ?ProgressOutputFactory $progressOutputFactory = null;
 
     private ?IpcHandlerRegistryFactory $ipcHandlerRegistryFactory = null;
-    private float $workerTimeout = ProcessExecutionFactory::DEFAULT_TIMEOUT;
-    private ?int $processBufferSize = null;
-    private ?TaskCommandDeps $taskCommandDeps = null;
-    private ?TaskTreeBuilderFactory $taskTreeBuilderFactory = null;
 
+    private float $workerTimeout = ProcessExecutionFactory::DEFAULT_TIMEOUT;
+
+    private ?int $processBufferSize = null;
+
+    private ?TaskCommandDeps $taskCommandDeps = null;
+
+    private ?TaskTreeBuilderFactory $taskTreeBuilderFactory = null;
 
     public function __construct(private readonly ContainerInterface $container)
     {

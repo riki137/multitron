@@ -7,15 +7,7 @@ namespace Multitron\Bridge\Nette;
 use Multitron\Bridge\Native\MultitronFactory;
 use Multitron\Console\TaskCommandDeps;
 use Multitron\Console\WorkerCommand;
-use Multitron\Execution\Handler\DefaultIpcHandlerRegistryFactory;
-use Multitron\Execution\Handler\MasterCache\MasterCacheServer;
-use Multitron\Execution\Handler\ProgressServer;
-use Multitron\Execution\ProcessExecutionFactory;
-use Multitron\Orchestrator\Output\TableOutputFactory;
-use Multitron\Orchestrator\TaskOrchestrator;
-use Multitron\Tree\TaskTreeBuilderFactory;
 use Nette\DI\CompilerExtension;
-use StreamIpc\NativeIpcPeer;
 
 final class MultitronExtension extends CompilerExtension
 {
