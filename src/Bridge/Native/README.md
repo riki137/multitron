@@ -98,9 +98,12 @@ $factory = new MultitronFactory($container);
 // Example: Change the worker timeout
 $factory->setWorkerTimeout(300.0);
 
+$app = new \Symfony\Component\Console\Application();
 // Now create the commands with the customized factory
 $app->add(new AppTaskCommand($factory->getTaskCommandDeps()));
 $app->add($factory->getWorkerCommand());
+
+$app->run();
 ```
 
 ---
