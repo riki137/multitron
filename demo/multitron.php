@@ -15,8 +15,8 @@ use Multitron\Execution\Handler\DefaultIpcHandlerRegistryFactory;
 use Multitron\Execution\Handler\MasterCache\MasterCacheServer;
 use Multitron\Execution\Handler\ProgressServer;
 use Multitron\Orchestrator\Output\TableOutputFactory;
-use Multitron\Console\MultitronWorkerCommand;
-use Multitron\Console\AbstractMultitronCommand;
+use Multitron\Console\WorkerCommand;
+use Multitron\Console\TaskCommand;
 use StreamIpc\NativeIpcPeer;
 use Symfony\Component\Console\Application;
 use Multitron\Tree\TaskTreeBuilder;
@@ -52,9 +52,9 @@ $orchestrator = new TaskOrchestrator(
 );
 
 $app = new Application('Multitron Demo', '1.0');
-$app->add(new MultitronWorkerCommand($ipc));
+$app->add(new WorkerCommand($ipc));
 
-class DemoCommand extends AbstractMultitronCommand {
+class DemoCommand extends TaskCommand {
 
     public function getName(): ?string
     {

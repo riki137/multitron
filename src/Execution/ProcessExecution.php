@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Multitron\Execution;
 
-use Multitron\Console\MultitronWorkerCommand;
+use Multitron\Console\WorkerCommand;
 use RuntimeException;
 use StreamIpc\IpcSession;
 use StreamIpc\NativeIpcPeer;
@@ -35,7 +35,7 @@ final readonly class ProcessExecution implements Execution
         $this->process = new Process([
             PHP_BINARY,
             $script,
-            MultitronWorkerCommand::NAME,
+            WorkerCommand::NAME,
         ]);
         $this->session = $ipcPeer->createStreamSession(
             $this->process->getStdin(),

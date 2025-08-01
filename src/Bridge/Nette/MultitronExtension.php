@@ -4,15 +4,10 @@ declare(strict_types=1);
 
 namespace Multitron\Bridge\Nette;
 
-use Multitron\Execution\Handler\DefaultIpcHandlerRegistryFactory;
-use Multitron\Execution\Handler\MasterCache\MasterCacheServer;
-use Multitron\Execution\Handler\ProgressServer;
-use Multitron\Execution\ProcessExecutionFactory;
-use Multitron\Orchestrator\Output\TableOutputFactory;
-use Multitron\Orchestrator\TaskOrchestrator;
-use Multitron\Tree\TaskTreeBuilderFactory;
+use Multitron\Bridge\Native\MultitronFactory;
+use Multitron\Console\TaskCommandDeps;
+use Multitron\Console\WorkerCommand;
 use Nette\DI\CompilerExtension;
-use StreamIpc\NativeIpcPeer;
 
 final class MultitronExtension extends CompilerExtension
 {
@@ -20,28 +15,16 @@ final class MultitronExtension extends CompilerExtension
     {
         $builder = $this->getContainerBuilder();
 
-        $builder->addDefinition($this->prefix('taskTreeBuilderFactory'))
-            ->setType(TaskTreeBuilderFactory::class);
+        $factory = $builder->addDefinition($this->prefix('factory'))
+            ->setType(MultitronFactory::class)
+            ->setCreator(MultitronFactory::class);
 
-        $builder->addDefinition($this->prefix('nativeIpcPeer'))
-            ->setType(NativeIpcPeer::class);
+        $builder->addDefinition($this->prefix('commandDeps'))
+            ->setType(TaskCommandDeps::class)
+            ->setCreator([$factory, 'getTaskCommandDeps']);
 
-        $builder->addDefinition($this->prefix('masterCacheServer'))
-            ->setType(MasterCacheServer::class);
-
-        $builder->addDefinition($this->prefix('progressServer'))
-            ->setType(ProgressServer::class);
-
-        $builder->addDefinition($this->prefix('handlerFactory'))
-            ->setType(DefaultIpcHandlerRegistryFactory::class);
-
-        $builder->addDefinition($this->prefix('tableOutputFactory'))
-            ->setType(TableOutputFactory::class);
-
-        $builder->addDefinition($this->prefix('executionFactory'))
-            ->setType(ProcessExecutionFactory::class);
-
-        $builder->addDefinition($this->prefix('taskOrchestrator'))
-            ->setType(TaskOrchestrator::class);
+        $builder->addDefinition($this->prefix('workerCommand'))
+            ->setType(WorkerCommand::class)
+            ->setFactory([$factory, 'getWorkerCommand']);
     }
 }

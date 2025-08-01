@@ -18,14 +18,20 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-abstract class AbstractMultitronCommand extends Command
+abstract class TaskCommand extends Command
 {
+    private readonly TaskTreeBuilderFactory $builderFactory;
+
+    private readonly TaskOrchestrator $orchestrator;
+
     /**
      * @internal Commands are usually wired through the DI container.
      */
-    public function __construct(private readonly TaskTreeBuilderFactory $builderFactory, private readonly TaskOrchestrator $orchestrator)
+    public function __construct(TaskCommandDeps $deps)
     {
         parent::__construct();
+        $this->builderFactory = $deps->taskTreeBuilderFactory;
+        $this->orchestrator = $deps->taskOrchestrator;
     }
 
     /**
@@ -78,8 +84,8 @@ abstract class AbstractMultitronCommand extends Command
     final protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $application = $this->getApplication();
-        if ($application === null || !$application->has(MultitronWorkerCommand::NAME)) {
-            throw new RuntimeException(MultitronWorkerCommand::class . ' command not found. Please add it to your ' . Application::class . ' in your Dependency Injection container.');
+        if ($application === null || !$application->has(WorkerCommand::NAME)) {
+            throw new RuntimeException(WorkerCommand::class . ' command not found. Please add it to your ' . Application::class . ' in your Dependency Injection container.');
         }
         return $this->orchestrator->run((string)$this->getName(), $this->getTaskList($input), $input, $output);
     }

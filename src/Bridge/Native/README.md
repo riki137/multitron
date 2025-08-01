@@ -20,16 +20,6 @@ composer require riki137/multitron psr/container symfony/console
 
 Create (or update) your CLI script—here `bin/multitron.php`. It must:
 
-1. **Bootstrap**: load Composer’s autoloader.
-2. **Wire core services**: IPC peer, execution factory, handler factory, output factory.
-3. **Instantiate** a PSR-11 container (stub if you only use closures).
-4. **Build** `TaskTreeBuilderFactory` and `TaskOrchestrator`.
-5. **Register** two commands on the same `Symfony\Component\Console\Application`:
-
-    * `Multitron\Console\MultitronWorkerCommand` (runnable via `multitron:worker`)
-    * Your custom task command (e.g. `app:tasks`) extending `AbstractMultitronCommand`
-6. **Run** the application.
-
 ```php
 #!/usr/bin/env php
 <?php
@@ -37,59 +27,42 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload.php';
 
+use Multitron\Bridge\Native\MultitronFactory;
+use Multitron\Comms\TaskCommunicator;
+use Multitron\Console\TaskCommand;
+use Multitron\Execution\Task;
+use Multitron\Tree\TaskTreeBuilder;
 use Psr\Container\ContainerInterface;
-use Multitron\Tree\TaskTreeBuilderFactory;
-use Multitron\Orchestrator\TaskOrchestrator;
-use Multitron\Execution\ProcessExecutionFactory;
-use Multitron\Orchestrator\Output\TableOutputFactory;
-use Multitron\Execution\Handler\DefaultIpcHandlerRegistryFactory;
-use Multitron\Execution\Handler\MasterCache\MasterCacheServer;
-use Multitron\Execution\Handler\ProgressServer;
-use StreamIpc\NativeIpcPeer;
 use Symfony\Component\Console\Application;
-use Multitron\Console\MultitronWorkerCommand;
-use Multitron\Console\AbstractMultitronCommand;
+use Symfony\Component\Console\Attribute\AsCommand;
 
-// 1. IPC & execution setup
-$ipc         = new NativeIpcPeer();
-$execFactory = new ProcessExecutionFactory($ipc);
-$handlerFact = new DefaultIpcHandlerRegistryFactory(
-    new MasterCacheServer(),
-    new ProgressServer()
-);
-$outputFact  = new TableOutputFactory();
+// If you use a framework, you probably already have a container instance
+class AppContainer implements ContainerInterface {
+    public function get(string $id)
+    {
+        return new $id();
+    }
 
-// 2. PSR-11 container stub
-$container = new class implements ContainerInterface {
-    public function get(string $id)       { throw new \RuntimeException("Service {$id} not found"); }
-    public function has(string $id): bool { return false; }
+    public function has(string $id): bool
+    {
+        return class_exists($id);
+    }
 };
 
-// 3. Builder & orchestrator
-$builderFact  = new TaskTreeBuilderFactory($container);
-$orchestrator = new TaskOrchestrator(
-    $ipc,
-    $execFactory,
-    $outputFact,
-    $handlerFact
-);
+$factory = new MultitronFactory(new AppContainer());
 
-// 4. Console application
-$app = new Application('My Multitron App', '1.0');
+$app = new Application();
+$app->add($factory->getWorkerCommand()); // must be in the same script as the App commands
 
-// 5a. Worker command (must be registered here)
-$app->add(new MultitronWorkerCommand($ipc));
-
-// 5b. Your task command
-$app->add(new class($builderFact, $orchestrator) extends AbstractMultitronCommand {
-    protected static $defaultName = 'app:tasks';
-
-    public function getNodes(\Multitron\Tree\TaskTreeBuilder $b): array
+#[AsCommand('app:tasks')]
+class AppTaskCommand extends TaskCommand
+{
+    public function getNodes(TaskTreeBuilder $b): array
     {
         return [
             // Example closure-based task:
-            $b->task('say-hello', fn() => new class implements \Multitron\Execution\Task {
-                public function execute(\Multitron\Comms\TaskCommunicator $comm): void
+            $b->task('say-hello', fn() => new class implements Task {
+                public function execute(TaskCommunicator $comm): void
                 {
                     $comm->log('👋 Hello from Multitron!');
                 }
@@ -97,7 +70,9 @@ $app->add(new class($builderFact, $orchestrator) extends AbstractMultitronComman
             // Add more tasks, use $b->service(), $b->group(), $b->partitioned(), etc.
         ];
     }
-});
+}
+
+$app->add(new AppTaskCommand($factory->getTaskCommandDeps()));
 
 $app->run();
 ```
@@ -106,6 +81,29 @@ Make it executable:
 
 ```bash
 chmod +x bin/multitron.php
+```
+
+---
+
+## Customization
+
+The `MultitronFactory` allows you to customize various aspects of Multitron's behavior. You can create your own instances of services and set them on the factory before you create the commands.
+
+```php
+$factory = new MultitronFactory($container);
+
+// Example: Use a different progress output factory
+// $factory->setProgressOutputFactory(new MyAwesomeProgressOutputFactory());
+
+// Example: Change the worker timeout
+$factory->setWorkerTimeout(300.0);
+
+$app = new \Symfony\Component\Console\Application();
+// Now create the commands with the customized factory
+$app->add(new AppTaskCommand($factory->getTaskCommandDeps()));
+$app->add($factory->getWorkerCommand());
+
+$app->run();
 ```
 
 ---

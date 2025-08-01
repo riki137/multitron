@@ -40,6 +40,7 @@
         "phpunit/phpunit": "^11.5",
         "squizlabs/php_codesniffer": "^3.13",
         "symfony/dependency-injection": "^7.3",
-        "illuminate/support": "^11.0"
+        "illuminate/support": "^12",
+        "illuminate/container": "^12"
     }
 }

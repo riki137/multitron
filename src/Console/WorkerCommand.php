@@ -18,7 +18,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(name: self::NAME)]
-final class MultitronWorkerCommand extends Command
+final class WorkerCommand extends Command
 {
     public const NAME = 'multitron:worker';
 
@@ -56,7 +56,7 @@ final class MultitronWorkerCommand extends Command
             throw new RuntimeException('Console Application not initialized. You need to run the command in a console context.');
         }
         $command = $application->find($startTask->commandName);
-        if (!$command instanceof AbstractMultitronCommand) {
+        if (!$command instanceof TaskCommand) {
             throw new RuntimeException('Command not found');
         }
         foreach ($command->getTaskList() as $node) {
