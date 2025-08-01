@@ -1,37 +1,47 @@
 <?php
-
 declare(strict_types=1);
 
 namespace Multitron\Execution;
 
 use RuntimeException;
+use function is_resource;
 
+/**
+ * Thin, race-free wrapper around proc_open().
+ *
+ *  • getExitCode()  – non-blocking; returns null while running.
+ *  • wait()         – blocking; always returns the real exit code.
+ *  • close()        – idempotent; closes pipes + reaps child; returns exit code.
+ *
+ * @psalm-type Pipes = array{0:resource,1:resource,2:resource}
+ */
 class Process
 {
     /** @var resource */
     private $process;
 
-    /** @var array<int, resource> */
+    /** @var Pipes|never[] */
     private array $pipes = [];
 
+    /** @var int<0,255>|null  */
     private ?int $exitCode = null;
 
-    /**
-     * @param list<string> $command Array of command + args
-     * @param string|null $cwd Working directory
-     * @param array<string, string>|null $env Environment overrides
-     */
-    public function __construct(array $command, ?string $cwd = null, ?array $env = null)
-    {
-        $descriptors = [
-            0 => ['pipe', 'r'],
-            1 => ['pipe', 'w'],
-            2 => ['pipe', 'w'],
-        ];
+    private bool $closed = false;
 
+    /**
+     * @param list<string> $cmd
+     * @param string|null $cwd
+     * @param array<string,string>|null $env
+     */
+    public function __construct(array $cmd, ?string $cwd = null, ?array $env = null)
+    {
         $proc = proc_open(
-            $command,
-            $descriptors,
+            $cmd,
+            [
+                0 => ['pipe', 'r'],
+                1 => ['pipe', 'w'],
+                2 => ['pipe', 'w'],
+            ],
             $this->pipes,
             $cwd,
             $env,
@@ -39,7 +49,7 @@ class Process
         );
 
         if (!is_resource($proc)) {
-            throw new RuntimeException('Failed to start process: ' . implode(' ', $command));
+            throw new RuntimeException('Failed to start process: ' . implode(' ', $cmd));
         }
         $this->process = $proc;
         if (count($this->pipes) !== 3) {
@@ -47,81 +57,111 @@ class Process
         }
     }
 
-    /** @return resource Writable stream for stdin */
+    /** @return resource */
     public function getStdin()
     {
         return $this->pipes[0];
     }
 
-    /** @return resource Readable stream for stdout */
+    /** @return resource */
     public function getStdout()
     {
         return $this->pipes[1];
     }
 
-    /** @return resource Readable stream for stderr */
+    /** @return resource */
     public function getStderr()
     {
         return $this->pipes[2];
     }
 
-    /**
-     * @return bool True if the process is still running
-     */
     public function isRunning(): bool
     {
         if ($this->exitCode !== null) {
             return false;
         }
-        $status = proc_get_status($this->process);
-        return $status['running'];
+        return proc_get_status($this->process)['running'];
     }
 
     /**
-     * @return int|null Exit code once the process has finished, or null if still running
+     * Non-blocking: null while still running.
+     * Once non-running, guarantees a *real* 0-255 exit-code (never –1).
+     * @return int<0,255>|null
      */
     public function getExitCode(): ?int
     {
         if ($this->exitCode !== null) {
             return $this->exitCode;
         }
+
         $status = proc_get_status($this->process);
         if ($status['running']) {
-            return null;
+            return null; // still alive
         }
-        // store it so future calls don’t need proc_get_status again
-        $this->exitCode = $status['exitcode'];
-        return $this->exitCode;
+
+        // First peek *may* already be –1; if so, fall through to close()
+        if ($status['exitcode'] !== -1) {
+            assert($status['exitcode'] >= 0 && $status['exitcode'] <= 255);
+            return $this->exitCode = $status['exitcode'];
+        }
+
+        // Either sentinel or we want to be 100 % sure – reap the child.
+        return $this->close();
     }
 
     /**
-     * Send a signal to the process (default SIGKILL)
-     *
-     * @param int $signal
-     * @return void
+     * Blocking wait that always returns the real exit code.
+     * Safe to call multiple times; subsequent calls return the cached value.
+     * @return int<0,255>
      */
-    public function kill(int $signal = SIGKILL): void
+    public function wait(): int
     {
-        if (is_resource($this->process) && !proc_terminate($this->process, $signal)) {
-            proc_close($this->process);
+        if ($this->exitCode !== null) {
+            return $this->exitCode;
         }
-    }
-
-    /**
-     * Close pipes and wait for exit. Returns the exit code.
-     *
-     * @return int
-     */
-    public function close(): int
-    {
+        // Flush & close pipes before waiting; avoids deadlocks on full buffers.
         foreach ($this->pipes as $pipe) {
-            fclose($pipe);
+            if (is_resource($pipe)) {
+                fclose($pipe);
+            }
         }
-        return $this->exitCode = proc_close($this->process);
+
+        return $this->close();
+    }
+
+    /**
+     * Send a signal (default SIGKILL) and reap the child.
+     * Returns the exit code *after* the signal.
+     * @return int<0,255>
+     */
+    public function kill(int $signal = SIGKILL): int
+    {
+        if (is_resource($this->process)) {
+            proc_terminate($this->process, $signal);
+        }
+        return $this->wait();
+    }
+
+    /**
+     * Internal: closes the proc handle exactly once and caches exit code.
+     * @return int<0,255>
+     */
+    private function close(): int
+    {
+        if ($this->closed) {
+            return $this->exitCode ?? 250; // should already be set
+        }
+        $this->closed = true;
+        $exitCode = proc_close($this->process);
+        assert($exitCode >= 0 && $exitCode <= 255, 'Exit code must be in range 0-255');
+        return $this->exitCode = $exitCode;
     }
 
     public function __destruct()
     {
-        $this->kill();
+        if (!$this->closed) {
+            // kills & reaps if still running; harmless if already waited.
+            $this->kill();
+        }
     }
 }

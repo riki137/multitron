@@ -14,7 +14,7 @@ final class ProcessIntegrationTest extends TestCase
         $this->assertTrue($proc->isRunning());
         usleep(150000); // let the command finish
         $stdout = stream_get_contents($proc->getStdout());
-        $exit = $proc->close();
+        $exit = $proc->kill();
         $this->assertSame('hi', $stdout);
         $this->assertSame(0, $exit);
         $this->assertSame(0, $proc->getExitCode());
@@ -29,6 +29,5 @@ final class ProcessIntegrationTest extends TestCase
             usleep(100000);
         }
         $this->assertFalse($proc->isRunning());
-        $proc->close();
     }
 }

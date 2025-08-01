@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- CommandDeps as the AbstractMultitronCommand's only dependency
 - MultitronFactory
+
+### Improved
+- naming of major classes
+- CommandDeps as the TaskCommand's only dependency
+- individual framework extensions/bridges
+- Process exit code handling
 
 
 ## [1.0.0-beta5] - 2025-06-24
