@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Multitron\Execution;
 
 use RuntimeException;
-use function is_resource;
 
 /**
  * Thin, race-free wrapper around proc_open().
@@ -23,10 +22,8 @@ class Process
     /** @var Pipes|never[] */
     private array $pipes = [];
 
-    /** @var int<0,255>|null  */
+    /** @var int<0,255>|null */
     private ?int $exitCode = null;
-
-    private bool $closed = false;
 
     /**
      * @param list<string> $cmd
@@ -85,7 +82,7 @@ class Process
 
     /**
      * Non-blocking: null while still running.
-     * Once non-running, guarantees a *real* 0-255 exit-code (never –1).
+     * Once non-running, guarantees a *real* 0–255 exit code (never –1).
      * @return int<0,255>|null
      */
     public function getExitCode(): ?int
@@ -99,14 +96,15 @@ class Process
             return null; // still alive
         }
 
-        // First peek *may* already be –1; if so, fall through to close()
+        // Happy path: PHP already exposes the real exit code.
         if ($status['exitcode'] !== -1) {
             assert($status['exitcode'] >= 0 && $status['exitcode'] <= 255);
-            return $this->exitCode = $status['exitcode'];
+            return $this->exitCode = (int)$status['exitcode'];
         }
 
-        // Either sentinel or we want to be 100 % sure – reap the child.
-        return $this->close();
+        // Finished, but PHP still shows the sentinel –1.
+        // Fall back to the blocking path which closes pipes first and reaps reliably.
+        return $this->wait();
     }
 
     /**
@@ -119,11 +117,13 @@ class Process
         if ($this->exitCode !== null) {
             return $this->exitCode;
         }
-        // Flush & close pipes before waiting; avoids deadlocks on full buffers.
-        foreach ($this->pipes as $pipe) {
+
+        // Close pipes before reaping to avoid buffer deadlocks and –1 from proc_close().
+        foreach ($this->pipes as $i => $pipe) {
             if (is_resource($pipe)) {
                 fclose($pipe);
             }
+            unset($this->pipes[$i]);
         }
 
         return $this->close();
@@ -144,23 +144,43 @@ class Process
 
     /**
      * Internal: closes the proc handle exactly once and caches exit code.
+     * Never returns –1; falls back to pre-close status or 128+signal.
+     * Idempotent via $exitCode guard.
      * @return int<0,255>
      */
     private function close(): int
     {
-        if ($this->closed) {
-            return $this->exitCode ?? 250; // should already be set
+        if ($this->exitCode !== null) {
+            return $this->exitCode;
         }
-        $this->closed = true;
-        $exitCode = proc_close($this->process);
-        assert($exitCode >= 0 && $exitCode <= 255, 'Exit code must be in range 0-255');
-        return $this->exitCode = $exitCode;
+
+        // Snapshot before closing: used if proc_close() returns –1.
+        $st = proc_get_status($this->process);
+        $preExit = (!$st['running'] && $st['exitcode'] !== -1) ? (int)$st['exitcode'] : null;
+        $termSig = (!empty($st['signaled']) && isset($st['termsig'])) ? (int)$st['termsig'] : null;
+
+        $rc = proc_close($this->process);
+
+        if ($rc === -1) {
+            if ($preExit !== null) {
+                $rc = $preExit; // trusted real exit captured earlier
+            } elseif ($termSig !== null && $termSig > 0) {
+                // POSIX convention: 128 + signal (e.g. SIGKILL => 137)
+                $rc = 128 + $termSig;
+            } else {
+                // Last-resort valid code; loud in logs, never negative.
+                $rc = 255;
+            }
+        }
+
+        assert($rc >= 0 && $rc <= 255, 'Exit code must be in range 0–255');
+        return $this->exitCode = $rc;
     }
 
     public function __destruct()
     {
-        if (!$this->closed) {
-            // kills & reaps if still running; harmless if already waited.
+        // Kills & reaps if still running; harmless if already waited.
+        if ($this->exitCode === null) {
             $this->kill();
         }
     }
