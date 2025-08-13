@@ -74,10 +74,7 @@ class Process
 
     public function isRunning(): bool
     {
-        if ($this->exitCode !== null) {
-            return false;
-        }
-        return $this->getExitCode() === null; // still alive
+        return $this->getExitCode() === null;
     }
 
     /**
@@ -156,7 +153,7 @@ class Process
         // Snapshot before closing: used if proc_close() returns –1.
         $st = proc_get_status($this->process);
         $preExit = (!$st['running'] && $st['exitcode'] !== -1) ? (int)$st['exitcode'] : null;
-        $termSig = (!empty($st['signaled']) && isset($st['termsig'])) ? (int)$st['termsig'] : null;
+        $termSig = empty($st['signaled']) ? null : (int)$st['termsig'];
 
         $rc = proc_close($this->process);
 

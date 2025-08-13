@@ -19,7 +19,7 @@ final class TableOutput implements ProgressOutput
 
     private readonly OutputInterface $section;
 
-    /** @var list<string> */
+    /** @var string[] */
     private array $logBuffer = [];
 
     private readonly TableRenderer $renderer;
@@ -68,7 +68,7 @@ final class TableOutput implements ProgressOutput
     }
 
     /**
-     * @return list<string>
+     * @return string[]
      */
     private function buildSectionBuffer(): array
     {
@@ -155,11 +155,15 @@ final class TableOutput implements ProgressOutput
         }
     }
 
-    private function attachMemoryWarning(array &$sectionBuffer): void
+    /**
+     * @param string[] $buffer
+     * @return void
+     */
+    private function attachMemoryWarning(array &$buffer): void
     {
         $freeMem = self::freeMemory();
         if ($freeMem !== null && $freeMem < self::GB) {
-            $sectionBuffer[] =
+            $buffer[] =
                 $this->renderer->getRowLabel('LOW MEMORY', TaskStatus::SKIP) .
                 ' Only ' . TaskProgress::formatMemoryUsage($freeMem) . ' RAM available, processes might crash.';
         }
