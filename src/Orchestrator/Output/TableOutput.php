@@ -83,12 +83,7 @@ final class TableOutput implements ProgressOutput
                 $workersMem += $mem;
             }
         }
-        $freeMem = self::freeMemory();
-        if ($freeMem !== null && $freeMem < self::GB) {
-            $sectionBuffer[] =
-                $this->renderer->getRowLabel('LOW MEMORY', TaskStatus::SKIP) .
-                ' Only ' . TaskProgress::formatMemoryUsage($freeMem) . ' RAM available, processes might crash.';
-        }
+        $this->attachMemoryWarning($sectionBuffer);
         $sectionBuffer[] = $this->renderer->getSummaryRow(
             $partiallyDone,
             self::memoryUsage(),
@@ -118,6 +113,7 @@ final class TableOutput implements ProgressOutput
 
             ob_start();
         } else {
+            $this->attachMemoryWarning($this->logBuffer);
             if ($this->logBuffer !== []) {
                 $this->output->writeln($this->logBuffer);
                 $this->logBuffer = [];
@@ -156,6 +152,16 @@ final class TableOutput implements ProgressOutput
         } else {
             $section = $this->buildSectionBuffer();
             $this->output->writeln(array_merge($this->logBuffer, $section));
+        }
+    }
+
+    private function attachMemoryWarning(array &$sectionBuffer): void
+    {
+        $freeMem = self::freeMemory();
+        if ($freeMem !== null && $freeMem < self::GB) {
+            $sectionBuffer[] =
+                $this->renderer->getRowLabel('LOW MEMORY', TaskStatus::SKIP) .
+                ' Only ' . TaskProgress::formatMemoryUsage($freeMem) . ' RAM available, processes might crash.';
         }
     }
 }
