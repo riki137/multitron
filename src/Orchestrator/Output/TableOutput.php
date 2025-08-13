@@ -15,11 +15,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 final class TableOutput implements ProgressOutput
 {
-    private const GB = 1073741824;
+    private const MB = 1048576;
 
     private readonly OutputInterface $section;
 
-    /** @var list<string> */
+    /** @var string[] */
     private array $logBuffer = [];
 
     private readonly TableRenderer $renderer;
@@ -27,10 +27,14 @@ final class TableOutput implements ProgressOutput
     /** @var array<string, TaskState> */
     private array $states = [];
 
+    /**
+     * @internal use TableOutputFactory instead
+     */
     public function __construct(
         private readonly OutputInterface $output,
         TaskList $taskList,
-        private readonly bool $interactive = true
+        private readonly bool $interactive,
+        private readonly int $lowMemoryWarning,
     ) {
         if ($interactive && $output instanceof ConsoleOutputInterface) {
             $this->section = $output->section();
@@ -68,7 +72,7 @@ final class TableOutput implements ProgressOutput
     }
 
     /**
-     * @return list<string>
+     * @return string[]
      */
     private function buildSectionBuffer(): array
     {
@@ -83,12 +87,7 @@ final class TableOutput implements ProgressOutput
                 $workersMem += $mem;
             }
         }
-        $freeMem = self::freeMemory();
-        if ($freeMem !== null && $freeMem < self::GB) {
-            $sectionBuffer[] =
-                $this->renderer->getRowLabel('LOW MEMORY', TaskStatus::SKIP) .
-                ' Only ' . TaskProgress::formatMemoryUsage($freeMem) . ' RAM available, processes might crash.';
-        }
+        $this->attachMemoryWarning($sectionBuffer);
         $sectionBuffer[] = $this->renderer->getSummaryRow(
             $partiallyDone,
             self::memoryUsage(),
@@ -118,6 +117,7 @@ final class TableOutput implements ProgressOutput
 
             ob_start();
         } else {
+            $this->attachMemoryWarning($this->logBuffer);
             if ($this->logBuffer !== []) {
                 $this->output->writeln($this->logBuffer);
                 $this->logBuffer = [];
@@ -156,6 +156,23 @@ final class TableOutput implements ProgressOutput
         } else {
             $section = $this->buildSectionBuffer();
             $this->output->writeln(array_merge($this->logBuffer, $section));
+        }
+    }
+
+    /**
+     * @param string[] $buffer
+     * @return void
+     */
+    private function attachMemoryWarning(array &$buffer): void
+    {
+        if ($this->lowMemoryWarning < 1) {
+            return;
+        }
+        $freeMem = self::freeMemory();
+        if ($freeMem !== null && $freeMem < ($this->lowMemoryWarning * self::MB)) {
+            $buffer[] =
+                $this->renderer->getRowLabel('LOW MEMORY', TaskStatus::SKIP) .
+                ' Only ' . TaskProgress::formatMemoryUsage($freeMem) . ' RAM available, processes might crash.';
         }
     }
 }

@@ -125,7 +125,5 @@ final class TaskOrchestratorIntegrationTest extends TestCase
         $this->assertSame(1, $result);
         $out = $output->fetch();
         $this->assertStringContainsString('Worker exited with code 1', $out);
-        $this->assertStringContainsString('STDOUT: junk', $out);
-        $this->assertStringContainsString('STDERR: err', $out);
     }
 }

@@ -137,21 +137,9 @@ final class TaskOrchestrator
             return;
         }
         $result = $execution->kill();
-        $stdout = trim($result['stdout']);
-        $stderr = trim($result['stderr']);
 
         $message = 'Worker exited with code ' . var_export($result['exitCode'], true);
-        if ($stdout === '' && $stderr === '') {
-            $output->log($state, $message . ' (nothing left in STDOUT or STDERR)',);
-        } else {
-            $output->log($state, $message);
-            if ($stdout !== '') {
-                $output->log($state, 'STDOUT: ' . $stdout);
-            }
-            if ($stderr !== '') {
-                $output->log($state, 'STDERR: ' . $stderr);
-            }
-        }
+        $output->log($state, $message);
 
         $skipped = $queue->markFailed($state->getTaskId());
         $state->setStatus(TaskStatus::ERROR);

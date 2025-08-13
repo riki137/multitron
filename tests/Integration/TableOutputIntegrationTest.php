@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Multitron\Tests\Integration;
 
 use Multitron\Orchestrator\Output\TableOutput;
+use Multitron\Orchestrator\Output\TableOutputFactory;
 use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskState;
 use Multitron\Orchestrator\TaskStatus;
@@ -30,7 +31,7 @@ final class TableOutputIntegrationTest extends TestCase
     {
         $list = $this->createTaskList();
         $buffer = new BufferedOutput();
-        $table = new TableOutput($buffer, $list, false);
+        $table = new TableOutput($buffer, $list, false, TableOutputFactory::DEFAULT_LOW_MEMORY_WARNING);
 
         $state = new TaskState('task1');
         $table->onTaskStarted($state);
@@ -49,7 +50,7 @@ final class TableOutputIntegrationTest extends TestCase
     {
         $list = $this->createTaskList();
         $buffer = new BufferedOutput();
-        $table = new TableOutput($buffer, $list, false);
+        $table = new TableOutput($buffer, $list, false, TableOutputFactory::DEFAULT_LOW_MEMORY_WARNING);
 
         $state = new TaskState('task1');
         $table->onTaskStarted($state);

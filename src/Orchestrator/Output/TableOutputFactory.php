@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Multitron\Orchestrator\Output;
 
+use InvalidArgumentException;
 use Multitron\Execution\Handler\IpcHandlerRegistry;
 use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskState;
@@ -16,6 +17,9 @@ final class TableOutputFactory implements ProgressOutputFactory
 {
     public const OPTION_COLORS = 'colors';
     public const OPTION_INTERACTIVE = 'interactive';
+    public const OPTION_LOW_MEMORY_WARNING = 'low-memory-warn';
+
+    public const DEFAULT_LOW_MEMORY_WARNING = 1024;
 
     /**
      * @param array<string, mixed> $options
@@ -34,7 +38,12 @@ final class TableOutputFactory implements ProgressOutputFactory
             $interactive = filter_var($interactiveOpt, FILTER_VALIDATE_BOOLEAN);
         }
 
-        $table = new TableOutput($output, $taskList, $interactive);
+        $lowMemoryWarning = $options[self::OPTION_LOW_MEMORY_WARNING] ?? self::DEFAULT_LOW_MEMORY_WARNING;
+        if (!is_int($lowMemoryWarning) || $lowMemoryWarning < 0) {
+            throw new InvalidArgumentException('Low memory warning must be a positive integer.');
+        }
+
+        $table = new TableOutput($output, $taskList, $interactive, $lowMemoryWarning);
         $registry->onMessage(function (Message $message, TaskState $state) use ($table) {
             if ($message instanceof LogMessage) {
                 $table->log($state, $message->message);
