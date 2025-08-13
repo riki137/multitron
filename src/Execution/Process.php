@@ -77,7 +77,7 @@ class Process
         if ($this->exitCode !== null) {
             return false;
         }
-        return proc_get_status($this->process)['running'];
+        return $this->getExitCode() === null; // still alive
     }
 
     /**
