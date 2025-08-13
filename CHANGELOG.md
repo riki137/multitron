@@ -8,10 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - low memory table output in non-interactive mode
+- low memory warning TaskCommand console option
 
 ### Improved
-- process exit code handling again
-
+- process exit code handling (again)
 
 ## [1.0.0-beta6] - 2025-08-01
 ### Added
