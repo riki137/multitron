@@ -15,7 +15,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 final class TableOutput implements ProgressOutput
 {
-    private const GB = 1073741824;
+    private const MB = 1048576;
 
     private readonly OutputInterface $section;
 
@@ -27,10 +27,14 @@ final class TableOutput implements ProgressOutput
     /** @var array<string, TaskState> */
     private array $states = [];
 
+    /**
+     * @internal use TableOutputFactory instead
+     */
     public function __construct(
         private readonly OutputInterface $output,
         TaskList $taskList,
-        private readonly bool $interactive = true
+        private readonly bool $interactive,
+        private readonly int $lowMemoryWarning,
     ) {
         if ($interactive && $output instanceof ConsoleOutputInterface) {
             $this->section = $output->section();
@@ -161,8 +165,11 @@ final class TableOutput implements ProgressOutput
      */
     private function attachMemoryWarning(array &$buffer): void
     {
+        if ($this->lowMemoryWarning < 1) {
+            return;
+        }
         $freeMem = self::freeMemory();
-        if ($freeMem !== null && $freeMem < self::GB) {
+        if ($freeMem !== null && $freeMem < ($this->lowMemoryWarning * self::MB)) {
             $buffer[] =
                 $this->renderer->getRowLabel('LOW MEMORY', TaskStatus::SKIP) .
                 ' Only ' . TaskProgress::formatMemoryUsage($freeMem) . ' RAM available, processes might crash.';
