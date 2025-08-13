@@ -119,11 +119,10 @@ class Process
         }
 
         // Close pipes before reaping to avoid buffer deadlocks and –1 from proc_close().
-        foreach ($this->pipes as $i => $pipe) {
+        foreach ($this->pipes as $pipe) {
             if (is_resource($pipe)) {
                 fclose($pipe);
             }
-            unset($this->pipes[$i]);
         }
 
         return $this->close();
