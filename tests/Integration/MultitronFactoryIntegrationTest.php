@@ -19,8 +19,15 @@ final class MultitronFactoryIntegrationTest extends TestCase
     private function createContainer(): ContainerInterface
     {
         return new class implements ContainerInterface {
-            public function get(string $id): object { return new $id(); }
-            public function has(string $id): bool { return class_exists($id); }
+            public function get(string $id): object
+            {
+                return new $id();
+            }
+
+            public function has(string $id): bool
+            {
+                return class_exists($id);
+            }
         };
     }
 

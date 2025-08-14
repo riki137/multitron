@@ -3,21 +3,24 @@ declare(strict_types=1);
 
 namespace Multitron\Tests\Unit;
 
+use Multitron\Comms\TaskCommunicator;
 use Multitron\Console\TableRenderer;
+use Multitron\Execution\Task;
 use Multitron\Message\TaskProgress;
 use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskStatus;
 use Multitron\Tree\TaskNode;
-use Multitron\Execution\Task;
-use Multitron\Comms\TaskCommunicator;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 
 final class TableRendererTest extends TestCase
 {
     private function createRenderer(): TableRenderer
     {
         $task = new TaskNode('task1', fn() => new class implements Task {
-            public function execute(TaskCommunicator $comm): void {}
+            public function execute(TaskCommunicator $comm): void
+            {
+            }
         });
         $root = new TaskNode('root', null, [$task]);
         return new TableRenderer(new TaskList($root));
@@ -36,7 +39,7 @@ final class TableRendererTest extends TestCase
         $progress = new TaskProgress();
         $progress->total = 10;
         $progress->done = 12;
-        $ref = new \ReflectionMethod(TableRenderer::class, 'getCount');
+        $ref = new ReflectionMethod(TableRenderer::class, 'getCount');
         $ref->setAccessible(true);
         $out = $ref->invoke(null, $progress);
         $this->assertStringContainsString('<fg=yellow>', $out);

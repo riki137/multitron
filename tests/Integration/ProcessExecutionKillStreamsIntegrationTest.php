@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace Multitron\Tests\Integration;
 
 use Multitron\Execution\ProcessExecution;
-use StreamIpc\NativeIpcPeer;
 use ReflectionProperty;
+use StreamIpc\NativeIpcPeer;
 
 final class ProcessExecutionKillStreamsIntegrationTest extends AbstractIpcTestCase
 {

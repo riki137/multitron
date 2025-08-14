@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace Multitron\Tests\Integration;
 
+use Multitron\Comms\TaskCommunicator;
+use Multitron\Execution\Task;
+use Multitron\Orchestrator\TaskList;
 use Multitron\Tree\CompiledTaskNode;
+use Multitron\Tree\Partition\PartitionedTask;
 use Multitron\Tree\TaskTreeBuilder;
 use Multitron\Tree\TaskTreeQueue;
-use Multitron\Orchestrator\TaskList;
-use Multitron\Tree\Partition\PartitionedTask;
-use Multitron\Execution\Task;
-use Multitron\Comms\TaskCommunicator;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 
@@ -104,10 +104,14 @@ final class TaskTreeIntegrationTest extends TestCase
 
 final class DummyTask implements Task
 {
-    public function execute(TaskCommunicator $comm): void {}
+    public function execute(TaskCommunicator $comm): void
+    {
+    }
 }
 
 final class DummyPartitionTask extends PartitionedTask
 {
-    public function execute(TaskCommunicator $comm): void {}
+    public function execute(TaskCommunicator $comm): void
+    {
+    }
 }

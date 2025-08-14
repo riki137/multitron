@@ -3,11 +3,11 @@ declare(strict_types=1);
 
 namespace Multitron\Tests\Unit;
 
-use Multitron\Tree\TaskNode;
-use Multitron\Tree\PatternTaskNodeFactory;
-use Multitron\Tree\TaskTreeCompiler;
-use Multitron\Execution\Task;
 use Multitron\Comms\TaskCommunicator;
+use Multitron\Execution\Task;
+use Multitron\Tree\PatternTaskNodeFactory;
+use Multitron\Tree\TaskNode;
+use Multitron\Tree\TaskTreeCompiler;
 use PHPUnit\Framework\TestCase;
 
 final class PatternTaskNodeFactoryTest extends TestCase
@@ -32,5 +32,7 @@ final class PatternTaskNodeFactoryTest extends TestCase
 
 final class PtnDummyTask implements Task
 {
-    public function execute(TaskCommunicator $comm): void {}
+    public function execute(TaskCommunicator $comm): void
+    {
+    }
 }

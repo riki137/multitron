@@ -7,8 +7,8 @@ use Multitron\Comms\ProgressClient;
 use Multitron\Message\TaskProgress;
 use Multitron\Message\TaskWarningStateMessage;
 use PHPUnit\Framework\TestCase;
-use StreamIpc\NativeIpcPeer;
 use StreamIpc\Message\Message;
+use StreamIpc\NativeIpcPeer;
 
 final class ProgressClientIntegrationTest extends TestCase
 {
@@ -52,10 +52,10 @@ final class ProgressClientIntegrationTest extends TestCase
 
         $this->assertGreaterThanOrEqual(4, count($received));
         $this->assertInstanceOf(TaskProgress::class, $received[0]);
-        $this->assertInstanceOf(TaskProgress::class, $received[count($received)-2]);
+        $this->assertInstanceOf(TaskProgress::class, $received[count($received) - 2]);
         $this->assertNotNull($received[0]->memoryUsage);
 
-        $last = $received[count($received)-1];
+        $last = $received[count($received) - 1];
         $this->assertInstanceOf(TaskWarningStateMessage::class, $last);
         $this->assertArrayHasKey('bad', $last->warnings);
         $this->assertSame(['bad! 1', 'bad!2'], $last->warnings['bad']);

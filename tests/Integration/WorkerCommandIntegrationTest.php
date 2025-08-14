@@ -3,10 +3,9 @@ declare(strict_types=1);
 
 namespace Multitron\Tests\Integration;
 
-use Multitron\Execution\ProcessExecutionFactory;
 use Multitron\Execution\Handler\IpcHandlerRegistry;
+use Multitron\Execution\ProcessExecutionFactory;
 use Multitron\Tests\Integration\AbstractIpcTestCase;
-use Symfony\Component\Console\Attribute\AsCommand;
 use StreamIpc\NativeIpcPeer;
 
 final class WorkerCommandIntegrationTest extends AbstractIpcTestCase

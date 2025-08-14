@@ -4,9 +4,8 @@ declare(strict_types=1);
 namespace Multitron\Tests\Integration;
 
 use Multitron\Tests\Integration\AbstractIpcTestCase;
-use StreamIpc\NativeIpcPeer;
 use StreamIpc\Message\LogMessage;
-use StreamIpc\Message\Message;
+use StreamIpc\NativeIpcPeer;
 use StreamIpc\Serialization\JsonMessageSerializer;
 
 final class CommandSessionJsonSerializerIntegrationTest extends AbstractIpcTestCase
