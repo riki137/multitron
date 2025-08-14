@@ -25,13 +25,19 @@ abstract class TaskCommand extends Command
     private readonly TaskOrchestrator $orchestrator;
 
     /**
+     * @param int<0,max>|null $defaultConcurrency Default concurrency level for task execution. Null means amount of CPU threads.
+     */
+    private readonly ?int $defaultConcurrency;
+
+    /**
      * @internal Commands are usually wired through the DI container.
      */
     public function __construct(TaskCommandDeps $deps)
     {
-        parent::__construct();
         $this->builderFactory = $deps->taskTreeBuilderFactory;
         $this->orchestrator = $deps->taskOrchestrator;
+        $this->defaultConcurrency = $deps->defaultConcurrency;
+        parent::__construct();
     }
 
     /**
@@ -46,7 +52,7 @@ abstract class TaskCommand extends Command
             InputArgument::OPTIONAL,
             'fnmatch() pattern to filter tasks. You can optionally use % instead of * for wildcards. Works for groups too.'
         );
-        $this->addOption(TaskOrchestrator::OPTION_CONCURRENCY, 'c', InputOption::VALUE_REQUIRED, 'Max concurrent tasks executed');
+        $this->addOption(TaskOrchestrator::OPTION_CONCURRENCY, 'c', InputOption::VALUE_REQUIRED, 'Max concurrent tasks executed', $this->defaultConcurrency);
         $this->addOption(TaskOrchestrator::OPTION_UPDATE_INTERVAL, 'u', InputOption::VALUE_REQUIRED, 'Update interval in seconds', TaskOrchestrator::DEFAULT_UPDATE_INTERVAL);
         $this->addOption(TaskOrchestrator::OPTION_MEMORY_LIMIT, 'm', InputOption::VALUE_REQUIRED, 'PHP memory_limit for all processes', TaskOrchestrator::DEFAULT_MEMORY_LIMIT);
         $this->addOption(TableOutputFactory::OPTION_COLORS, null, InputOption::VALUE_NEGATABLE, 'Use ANSI colors in output', true);
