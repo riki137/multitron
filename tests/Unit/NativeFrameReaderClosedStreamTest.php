@@ -1,4 +1,5 @@
 <?php
+
 namespace Multitron\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;

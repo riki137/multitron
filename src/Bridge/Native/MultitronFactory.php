@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Multitron\Bridge\Native;
 
+use InvalidArgumentException;
 use Multitron\Console\TaskCommandDeps;
 use Multitron\Console\WorkerCommand;
 use Multitron\Execution\ExecutionFactory;
@@ -37,11 +38,16 @@ final class MultitronFactory
 
     private ?int $processBufferSize = null;
 
+    /**
+     * @var int<0,max>|null Default concurrency level for task execution. Null means amount of CPU threads.
+     */
+    private ?int $defaultConcurrency = null;
+
     private ?TaskCommandDeps $taskCommandDeps = null;
 
     private ?TaskTreeBuilderFactory $taskTreeBuilderFactory = null;
 
-    public function __construct(private readonly ContainerInterface $container)
+    public function __construct(private readonly ?ContainerInterface $container)
     {
     }
 
@@ -50,9 +56,47 @@ final class MultitronFactory
         return $this->workerCommand ??= new WorkerCommand($this->getIpcPeer());
     }
 
+    public function setWorkerCommand(?WorkerCommand $workerCommand): self
+    {
+        $this->workerCommand = $workerCommand;
+        return $this;
+    }
+
     public function getIpcPeer(): NativeIpcPeer
     {
         return $this->ipcPeer ??= new NativeIpcPeer();
+    }
+
+    public function setIpcPeer(?NativeIpcPeer $ipcPeer): self
+    {
+        $this->ipcPeer = $ipcPeer;
+        return $this;
+    }
+
+    public function getTaskCommandDeps(): TaskCommandDeps
+    {
+        return $this->taskCommandDeps ??= new TaskCommandDeps(
+            $this->getTaskTreeBuilderFactory(),
+            $this->getTaskOrchestrator(),
+            $this->defaultConcurrency
+        );
+    }
+
+    public function setTaskCommandDeps(?TaskCommandDeps $taskCommandDeps): self
+    {
+        $this->taskCommandDeps = $taskCommandDeps;
+        return $this;
+    }
+
+    public function getTaskTreeBuilderFactory(): TaskTreeBuilderFactory
+    {
+        return $this->taskTreeBuilderFactory ??= new TaskTreeBuilderFactory($this->container);
+    }
+
+    public function setTaskTreeBuilderFactory(?TaskTreeBuilderFactory $taskTreeBuilderFactory): self
+    {
+        $this->taskTreeBuilderFactory = $taskTreeBuilderFactory;
+        return $this;
     }
 
     public function getTaskOrchestrator(): TaskOrchestrator
@@ -65,14 +109,10 @@ final class MultitronFactory
         );
     }
 
-    public function getProcessBufferSize(): ?int
+    public function setTaskOrchestrator(?TaskOrchestrator $taskOrchestrator): self
     {
-        return $this->processBufferSize;
-    }
-
-    public function getWorkerTimeout(): float
-    {
-        return $this->workerTimeout;
+        $this->taskOrchestrator = $taskOrchestrator;
+        return $this;
     }
 
     public function getExecutionFactory(): ExecutionFactory
@@ -84,9 +124,43 @@ final class MultitronFactory
         );
     }
 
+    public function setExecutionFactory(?ExecutionFactory $executionFactory): self
+    {
+        $this->executionFactory = $executionFactory;
+        return $this;
+    }
+
+    public function getProcessBufferSize(): ?int
+    {
+        return $this->processBufferSize;
+    }
+
+    public function setProcessBufferSize(?int $processBufferSize): self
+    {
+        $this->processBufferSize = $processBufferSize;
+        return $this;
+    }
+
+    public function getWorkerTimeout(): float
+    {
+        return $this->workerTimeout;
+    }
+
+    public function setWorkerTimeout(float $workerTimeout): self
+    {
+        $this->workerTimeout = $workerTimeout;
+        return $this;
+    }
+
     public function getProgressOutputFactory(): ProgressOutputFactory
     {
         return $this->progressOutputFactory ??= new TableOutputFactory();
+    }
+
+    public function setProgressOutputFactory(?ProgressOutputFactory $progressOutputFactory): self
+    {
+        $this->progressOutputFactory = $progressOutputFactory;
+        return $this;
     }
 
     public function getIpcHandlerRegistryFactory(): IpcHandlerRegistryFactory
@@ -97,76 +171,23 @@ final class MultitronFactory
         );
     }
 
-    public function getTaskCommandDeps(): TaskCommandDeps
-    {
-        return $this->taskCommandDeps ??= new TaskCommandDeps(
-            $this->getTaskTreeBuilderFactory(),
-            $this->getTaskOrchestrator(),
-        );
-    }
-
-    public function getTaskTreeBuilderFactory(): TaskTreeBuilderFactory
-    {
-        return $this->taskTreeBuilderFactory ??= new TaskTreeBuilderFactory($this->container);
-    }
-
-    public function setWorkerCommand(?WorkerCommand $workerCommand): self
-    {
-        $this->workerCommand = $workerCommand;
-        return $this;
-    }
-
-    public function setIpcPeer(?NativeIpcPeer $ipcPeer): self
-    {
-        $this->ipcPeer = $ipcPeer;
-        return $this;
-    }
-
-    public function setTaskOrchestrator(?TaskOrchestrator $taskOrchestrator): self
-    {
-        $this->taskOrchestrator = $taskOrchestrator;
-        return $this;
-    }
-
-    public function setExecutionFactory(?ExecutionFactory $executionFactory): self
-    {
-        $this->executionFactory = $executionFactory;
-        return $this;
-    }
-
-    public function setProgressOutputFactory(?ProgressOutputFactory $progressOutputFactory): self
-    {
-        $this->progressOutputFactory = $progressOutputFactory;
-        return $this;
-    }
-
     public function setIpcHandlerRegistryFactory(?IpcHandlerRegistryFactory $ipcHandlerRegistryFactory): self
     {
         $this->ipcHandlerRegistryFactory = $ipcHandlerRegistryFactory;
         return $this;
     }
 
-    public function setWorkerTimeout(float $workerTimeout): self
+    public function getDefaultConcurrency(): ?int
     {
-        $this->workerTimeout = $workerTimeout;
-        return $this;
+        return $this->defaultConcurrency;
     }
 
-    public function setProcessBufferSize(?int $processBufferSize): self
+    public function setDefaultConcurrency(?int $defaultConcurrency): self
     {
-        $this->processBufferSize = $processBufferSize;
-        return $this;
-    }
-
-    public function setTaskCommandDeps(?TaskCommandDeps $taskCommandDeps): self
-    {
-        $this->taskCommandDeps = $taskCommandDeps;
-        return $this;
-    }
-
-    public function setTaskTreeBuilderFactory(?TaskTreeBuilderFactory $taskTreeBuilderFactory): self
-    {
-        $this->taskTreeBuilderFactory = $taskTreeBuilderFactory;
+        if ($defaultConcurrency < 0) {
+            throw new InvalidArgumentException('Default concurrency must be a positive integer or null.');
+        }
+        $this->defaultConcurrency = $defaultConcurrency;
         return $this;
     }
 }

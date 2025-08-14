@@ -5,14 +5,16 @@ namespace Multitron\Tests\Integration;
 
 use Multitron\Execution\Handler\MasterCache\MasterCacheServer;
 use Multitron\Tests\Integration\AbstractIpcTestCase;
-use StreamIpc\NativeIpcPeer;
 use StreamIpc\Message\LogMessage;
 use StreamIpc\Message\Message;
+use StreamIpc\NativeIpcPeer;
 
 final class MasterCacheIntegrationTest extends AbstractIpcTestCase
 {
     private string $worker1;
+
     private string $worker2;
+
     private array $initialData;
 
     protected function setUp(): void

@@ -5,6 +5,7 @@ namespace Multitron\Tree;
 
 use Closure;
 use LogicException;
+use Multitron\Bridge\Native\MultitronFactory;
 use Multitron\Execution\Task;
 use Multitron\Tree\Partition\PartitionedTaskInterface;
 use Psr\Container\ContainerInterface;
@@ -14,7 +15,7 @@ use Psr\Container\ContainerInterface;
  */
 final readonly class TaskTreeBuilder
 {
-    public function __construct(private ContainerInterface $container)
+    public function __construct(private ?ContainerInterface $container)
     {
     }
 
@@ -38,12 +39,22 @@ final readonly class TaskTreeBuilder
      */
     public function service(string $class, array $dependencies = [], ?string $id = null): TaskNode
     {
+        if ($this->container === null) {
+            throw new LogicException('Cannot create service task: TaskTreeBuilderFactory has no container injected.' .
+                ' Make sure an instance of ' . ContainerInterface::class . ' is autowired in your DI container OR is passed to ' .
+                MultitronFactory::class . ' constructor.');
+        }
         return $this->task($id ?? $this->shortClassName($class), fn() => $this->getTask($class), $dependencies);
     }
 
     /** Fetch a task service from the container and ensure it implements Task. */
     private function getTask(string $class): Task
     {
+        if ($this->container === null) {
+            throw new LogicException('Cannot create service task: TaskTreeBuilderFactory has no container injected.' .
+                ' Make sure an instance of ' . ContainerInterface::class . ' is autowired in your DI container OR is passed to ' .
+                MultitronFactory::class . ' constructor.');
+        }
         $task = $this->container->get($class);
         if (!$task instanceof Task) {
             $type = get_debug_type($task);
@@ -83,11 +94,12 @@ final readonly class TaskTreeBuilder
      * @param class-string $class FQCN implementing PartitionedTaskInterface.
      * @param int $partitionCount Number of partitions.
      * @param array<TaskNode|string> $dependencies Dependencies for the partitioned tasks.
+     * @param string|null $id Optional base identifier for the partitioned tasks. Defaults to short class name.
      */
-    public function partitioned(string $class, int $partitionCount, array $dependencies = []): TaskNode
+    public function partitioned(string $class, int $partitionCount, array $dependencies = [], ?string $id = null): TaskNode
     {
         return $this->partitionedClosure(
-            $class,
+            $id ?? $class,
             fn(): PartitionedTaskInterface => $this->getPartitionedTask($class),
             $partitionCount,
             $dependencies

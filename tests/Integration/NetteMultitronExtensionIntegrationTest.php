@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace Multitron\Tests\Integration;
 
 use Multitron\Bridge\Nette\MultitronExtension;
-use PHPUnit\Framework\TestCase;
 use Nette\DI\Compiler;
 use Nette\DI\ContainerBuilder;
+use PHPUnit\Framework\TestCase;
 
 final class NetteMultitronExtensionIntegrationTest extends TestCase
 {

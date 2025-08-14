@@ -3,25 +3,25 @@ declare(strict_types=1);
 
 namespace Multitron\Tests\Integration;
 
+use Multitron\Comms\TaskCommunicator;
+use Multitron\Execution\Task;
 use Multitron\Orchestrator\Output\TableOutput;
 use Multitron\Orchestrator\Output\TableOutputFactory;
 use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskState;
 use Multitron\Orchestrator\TaskStatus;
 use Multitron\Tree\TaskNode;
-use Multitron\Execution\Task;
-use Multitron\Comms\TaskCommunicator;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Output\BufferedOutput;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
-use Symfony\Component\Console\Output\ConsoleSectionOutput;
 
 final class TableOutputIntegrationTest extends TestCase
 {
     private function createTaskList(): TaskList
     {
         $task = new TaskNode('task1', fn() => new class implements Task {
-            public function execute(TaskCommunicator $comm): void {}
+            public function execute(TaskCommunicator $comm): void
+            {
+            }
         });
         $root = new TaskNode('root', null, [$task]);
         return new TaskList($root);

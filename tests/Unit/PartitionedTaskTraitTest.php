@@ -12,8 +12,16 @@ final class PartitionedTaskTraitTest extends TestCase
     {
         $task = new class {
             use PartitionedTaskTrait;
-            public function getIndex(): int { return $this->partitionIndex; }
-            public function getCount(): int { return $this->partitionCount; }
+
+            public function getIndex(): int
+            {
+                return $this->partitionIndex;
+            }
+
+            public function getCount(): int
+            {
+                return $this->partitionCount;
+            }
         };
 
         $task->setPartitioning(2, 5);

@@ -3,11 +3,11 @@ declare(strict_types=1);
 
 namespace Multitron\Tests\Integration;
 
+use Multitron\Comms\TaskCommunicator;
+use Multitron\Execution\Task;
+use Multitron\Orchestrator\TaskList;
 use Multitron\Tree\TaskTreeBuilder;
 use Multitron\Tree\TaskTreeQueue;
-use Multitron\Orchestrator\TaskList;
-use Multitron\Execution\Task;
-use Multitron\Comms\TaskCommunicator;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 
@@ -16,8 +16,15 @@ final class PatternFilterIntegrationTest extends TestCase
     private function createTaskList(): TaskList
     {
         $container = new class implements ContainerInterface {
-            public function get(string $id): object { return new $id(); }
-            public function has(string $id): bool { return class_exists($id); }
+            public function get(string $id): object
+            {
+                return new $id();
+            }
+
+            public function has(string $id): bool
+            {
+                return class_exists($id);
+            }
         };
         $builder = new TaskTreeBuilder($container);
 
@@ -101,5 +108,7 @@ final class PatternFilterIntegrationTest extends TestCase
 
 final class PatternFilterDummyTask implements Task
 {
-    public function execute(TaskCommunicator $comm): void {}
+    public function execute(TaskCommunicator $comm): void
+    {
+    }
 }

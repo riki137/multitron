@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace Multitron\Tests\Unit;
 
+use Multitron\Comms\TaskCommunicator;
+use Multitron\Execution\Task;
 use Multitron\Tree\TaskNode;
 use Multitron\Tree\TaskTreeCompiler;
-use Multitron\Execution\Task;
-use Multitron\Comms\TaskCommunicator;
 use PHPUnit\Framework\TestCase;
 
 final class TaskTreeCompilerTest extends TestCase
@@ -26,5 +26,7 @@ final class TaskTreeCompilerTest extends TestCase
 
 final class CompDummyTask implements Task
 {
-    public function execute(TaskCommunicator $comm): void {}
+    public function execute(TaskCommunicator $comm): void
+    {
+    }
 }

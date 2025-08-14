@@ -11,16 +11,39 @@ use PHPUnit\Framework\TestCase;
 final class RecorderOutput implements ProgressOutput
 {
     public int $started = 0;
+
     public int $updated = 0;
+
     public int $completed = 0;
+
     public int $logged = 0;
+
     public int $rendered = 0;
 
-    public function onTaskStarted(TaskState $state): void { $this->started++; }
-    public function onTaskUpdated(TaskState $state): void { $this->updated++; }
-    public function onTaskCompleted(TaskState $state): void { $this->completed++; }
-    public function log(TaskState $state, string $message): void { $this->logged++; }
-    public function render(): void { $this->rendered++; }
+    public function onTaskStarted(TaskState $state): void
+    {
+        $this->started++;
+    }
+
+    public function onTaskUpdated(TaskState $state): void
+    {
+        $this->updated++;
+    }
+
+    public function onTaskCompleted(TaskState $state): void
+    {
+        $this->completed++;
+    }
+
+    public function log(TaskState $state, string $message): void
+    {
+        $this->logged++;
+    }
+
+    public function render(): void
+    {
+        $this->rendered++;
+    }
 }
 
 final class ChainProgressOutputTest extends TestCase

@@ -1,11 +1,13 @@
 <?php
+
 namespace Multitron\Tests\Unit;
 
+use LogicException;
 use PHPUnit\Framework\TestCase;
+use StreamIpc\Message\LogMessage;
 use StreamIpc\Serialization\NativeMessageSerializer;
 use StreamIpc\Transport\NativeMessageTransport;
 use StreamIpc\Transport\StreamClosedException;
-use StreamIpc\Message\LogMessage;
 
 final class NativeMessageTransportFailureTest extends TestCase
 {
@@ -26,11 +28,11 @@ final class NativeMessageTransportFailureTest extends TestCase
     public function testReadFromUnknownStreamThrows(): void
     {
         $write = fopen('php://memory', 'r+');
-        $read  = fopen('php://memory', 'r+');
+        $read = fopen('php://memory', 'r+');
         $transport = new NativeMessageTransport($write, [$read], new NativeMessageSerializer());
 
         $other = fopen('php://memory', 'r+');
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         try {
             $transport->readFromStream($other);
         } finally {
