@@ -8,27 +8,9 @@ use Multitron\Comms\TaskCommunicator;
 use Multitron\Execution\Task;
 use Multitron\Tree\Partition\PartitionedTask;
 use Psr\Container\ContainerInterface;
-use Multitron\Tree\TaskTreeBuilderFactory;
-use Multitron\Orchestrator\TaskOrchestrator;
-use Multitron\Execution\ProcessExecutionFactory;
-use Multitron\Execution\Handler\DefaultIpcHandlerRegistryFactory;
-use Multitron\Execution\Handler\MasterCache\MasterCacheServer;
-use Multitron\Execution\Handler\ProgressServer;
-use Multitron\Orchestrator\Output\TableOutputFactory;
-use Multitron\Console\WorkerCommand;
-use Multitron\Console\TaskCommand;
-use StreamIpc\NativeIpcPeer;
+use Multitron\Bridge\Native\MultitronFactory;
 use Symfony\Component\Console\Application;
 use Multitron\Tree\TaskTreeBuilder;
-
-// IPC & execution setup
-$ipc = new NativeIpcPeer();
-$execFactory = new ProcessExecutionFactory($ipc);
-$handlerFact = new DefaultIpcHandlerRegistryFactory(
-    new MasterCacheServer(),
-    new ProgressServer()
-);
-$outputFact = new TableOutputFactory();
 
 // Minimal PSR-11 container stub
 $container = new class implements ContainerInterface {
@@ -43,18 +25,13 @@ $container = new class implements ContainerInterface {
     }
 };
 
-$builderFact = new TaskTreeBuilderFactory($container);
-$orchestrator = new TaskOrchestrator(
-    $ipc,
-    $execFactory,
-    $outputFact,
-    $handlerFact
-);
+// Use MultitronFactory for all orchestration and dependencies
+$factory = new MultitronFactory($container);
 
 $app = new Application('Multitron Demo', '1.0');
-$app->add(new WorkerCommand($ipc));
+$app->add($factory->getWorkerCommand());
 
-class DemoCommand extends TaskCommand {
+class DemoCommand extends \Multitron\Console\TaskCommand {
 
     public function getName(): ?string
     {
@@ -98,6 +75,7 @@ class DemoCommand extends TaskCommand {
     }
 }
 
-$app->add(new DemoCommand($builderFact, $orchestrator));
+// Use factory to provide TaskTreeBuilderFactory and TaskOrchestrator
+$app->add(new DemoCommand($factory->getTaskCommandDeps()));
 
 $app->run();
