@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - default concurrency constructor parameter for TaskCommandDeps
+- container dependency is now optional
 
 
 ## [1.0.0-beta8] - 2025-08-14

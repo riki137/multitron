@@ -47,7 +47,7 @@ final class MultitronFactory
 
     private ?TaskTreeBuilderFactory $taskTreeBuilderFactory = null;
 
-    public function __construct(private readonly ContainerInterface $container)
+    public function __construct(private readonly ?ContainerInterface $container)
     {
     }
 
