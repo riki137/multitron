@@ -5,6 +5,7 @@ namespace Multitron\Tests\Unit;
 
 use InvalidArgumentException;
 use Multitron\Bridge\Native\MultitronFactory;
+use Multitron\Comms\NativeIpcAdapter;
 use Multitron\Console\TaskCommandDeps;
 use Multitron\Console\WorkerCommand;
 use Multitron\Execution\ExecutionFactory;
@@ -38,11 +39,11 @@ final class MultitronFactoryTest extends TestCase
     {
         $factory = new MultitronFactory($this->createContainer());
 
-        $ipc = new NativeIpcPeer();
-        $factory->setIpcPeer($ipc);
-        $this->assertSame($ipc, $factory->getIpcPeer());
+        $ipc = new NativeIpcAdapter(new NativeIpcPeer());
+        $factory->setIpcAdapter($ipc);
+        $this->assertSame($ipc, $factory->getIpcAdapter());
 
-        $worker = new WorkerCommand($factory->getIpcPeer());
+        $worker = new WorkerCommand($factory->getIpcAdapter());
         $factory->setWorkerCommand($worker);
         $this->assertSame($worker, $factory->getWorkerCommand());
 
@@ -51,7 +52,7 @@ final class MultitronFactoryTest extends TestCase
         $regFactory = $this->createMock(IpcHandlerRegistryFactory::class);
 
         $orch = new TaskOrchestrator(
-            $factory->getIpcPeer(),
+            $factory->getIpcAdapter()->getPeer(),
             $exec,
             $outFactory,
             $regFactory,

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Multitron\Tests\Integration;
 
+use Multitron\Comms\NativeIpcAdapter;
 use Multitron\Comms\TaskCommunicator;
 use Multitron\Console\TaskCommand;
 use Multitron\Console\TaskCommandDeps;
@@ -141,6 +142,7 @@ final class TaskCommandIntegrationTest extends TestCase
     public function testExecuteRunsTasks(): void
     {
         $peer = new NativeIpcPeer();
+        $adapter = new NativeIpcAdapter($peer);
         $deps = $this->createDeps($peer);
         $command = new #[AsCommand('demo')] class($deps) extends TaskCommand {
             public function getNodes(TaskTreeBuilder $builder): array
@@ -156,7 +158,7 @@ final class TaskCommandIntegrationTest extends TestCase
         };
 
         $app = new Application();
-        $worker = new WorkerCommand($peer);
+        $worker = new WorkerCommand($adapter);
         $app->add($worker);
         $app->add($command);
 

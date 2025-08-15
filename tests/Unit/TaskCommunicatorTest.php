@@ -82,4 +82,17 @@ final class TaskCommunicatorTest extends TestCase
         $this->assertInstanceOf(ResponsePromise::class, $promise);
         $this->assertCount(1, $this->transport->sent);
     }
+
+    public function testNotifySendsMessage(): void
+    {
+        $msg = new LogMessage('note');
+        $this->comm->notify($msg);
+        $this->assertSame([$msg], $this->transport->sent);
+    }
+
+    public function testShutdownFlushesProgress(): void
+    {
+        $this->comm->shutdown();
+        $this->assertNotEmpty($this->transport->sent);
+    }
 }

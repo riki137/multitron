@@ -39,8 +39,8 @@ final class MultitronFactoryIntegrationTest extends TestCase
         $this->assertInstanceOf(WorkerCommand::class, $worker);
         $this->assertSame($worker, $factory->getWorkerCommand());
 
-        $ipc = $factory->getIpcPeer();
-        $this->assertSame($ipc, $factory->getIpcPeer());
+        $ipc = $factory->getIpcAdapter();
+        $this->assertSame($ipc, $factory->getIpcAdapter());
 
         $orch = $factory->getTaskOrchestrator();
         $this->assertInstanceOf(TaskOrchestrator::class, $orch);
@@ -71,7 +71,7 @@ final class MultitronFactoryIntegrationTest extends TestCase
     {
         $factory = new MultitronFactory($this->createContainer());
 
-        $worker = new WorkerCommand($factory->getIpcPeer());
+        $worker = new WorkerCommand($factory->getIpcAdapter());
         $factory->setWorkerCommand($worker);
         $this->assertSame($worker, $factory->getWorkerCommand());
 

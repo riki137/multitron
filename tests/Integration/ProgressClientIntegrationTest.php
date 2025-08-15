@@ -61,4 +61,37 @@ final class ProgressClientIntegrationTest extends TestCase
         $this->assertSame(['bad! 1', 'bad!2'], $last->warnings['bad']);
         $this->assertSame(['bad' => 3], $last->warningCount);
     }
+
+    public function testAdditionalProgressMethods(): void
+    {
+        [$a, $b] = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+        $peer = new NativeIpcPeer();
+        $serverSession = $peer->createStreamSession($a, $a);
+        $clientSession = $peer->createStreamSession($b, $b);
+
+        $received = [];
+        $serverSession->onMessage(function (Message $msg) use (&$received) {
+            $received[] = $msg;
+        });
+
+        $client = new ProgressClient($clientSession, 0.0);
+        $client->addTotal(2);
+        $peer->tick(0.01);
+        $this->assertSame(2, $received[0]->total);
+
+        $client->setDone(5);
+        $peer->tick(0.01);
+        $this->assertSame(5, $received[1]->done);
+
+        $client->setOccurrence('files', 7);
+        $peer->tick(0.01);
+        $this->assertSame(7, $received[2]->occurrences['FILE']);
+
+        $client->setWarning('warn', 3);
+        $client->shutdown();
+        $peer->tick(0.01);
+        $last = $received[count($received) - 1];
+        $this->assertInstanceOf(TaskWarningStateMessage::class, $last);
+        $this->assertSame(['warn' => 3], $last->warningCount);
+    }
 }
