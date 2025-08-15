@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Multitron\Tests\Unit;
 
-use Multitron\Execution\Execution;
 use Multitron\Execution\ExecutionFactory;
+use Multitron\Tests\Mocks\DummyExecution;
+use Multitron\Tests\Mocks\DummyOutput;
+use Multitron\Tests\Mocks\OrchestratorPeer;
 use Multitron\Execution\Handler\IpcHandlerRegistryFactory;
-use Multitron\Orchestrator\Output\ProgressOutput;
 use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskOrchestrator;
 use Multitron\Orchestrator\TaskState;
@@ -17,85 +18,6 @@ use Multitron\Tree\TaskTreeQueue;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use StreamIpc\InvalidStreamException;
-use StreamIpc\IpcPeer;
-use StreamIpc\IpcSession;
-use StreamIpc\Message\Message;
-use StreamIpc\Transport\MessageTransport;
-
-class OrchestratorTransport implements MessageTransport
-{
-    public function send(Message $message): void
-    {
-    }
-
-    public function getReadStreams(): array
-    {
-        return [];
-    }
-
-    public function readFromStream($stream): array
-    {
-        return [];
-    }
-}
-
-class OrchestratorPeer extends IpcPeer
-{
-    public IpcSession $session;
-
-    public function __construct()
-    {
-        parent::__construct();
-        $this->session = $this->createSession(new OrchestratorTransport());
-    }
-
-    public function makeSession(): IpcSession
-    {
-        return $this->createSession(new OrchestratorTransport());
-    }
-
-    public function tick(?float $timeout = null): void
-    {
-    }
-}
-
-class DummyExecution implements Execution
-{
-    public function __construct(private IpcSession $session) {}
-
-    public function getSession(): IpcSession
-    {
-        return $this->session;
-    }
-
-    public function getExitCode(): ?int
-    {
-        return 1;
-    }
-
-    public function kill(): array
-    {
-        return ['exitCode' => 1, 'stdout' => '', 'stderr' => ''];
-    }
-}
-
-class DummyOutput implements ProgressOutput
-{
-    public array $completed = [];
-
-    public function onTaskStarted(TaskState $state): void {}
-
-    public function onTaskUpdated(TaskState $state): void {}
-
-    public function onTaskCompleted(TaskState $state): void
-    {
-        $this->completed[] = $state;
-    }
-
-    public function log(TaskState $state, string $message): void {}
-
-    public function render(): void {}
-}
 
 final class TaskOrchestratorTest extends TestCase
 {

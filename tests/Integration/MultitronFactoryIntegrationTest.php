@@ -10,25 +10,15 @@ use Multitron\Execution\ExecutionFactory;
 use Multitron\Execution\Handler\IpcHandlerRegistryFactory;
 use Multitron\Orchestrator\Output\ProgressOutputFactory;
 use Multitron\Orchestrator\TaskOrchestrator;
+use Multitron\Tests\Mocks\AppContainer;
 use Multitron\Tree\TaskTreeBuilderFactory;
 use PHPUnit\Framework\TestCase;
-use Psr\Container\ContainerInterface;
 
 final class MultitronFactoryIntegrationTest extends TestCase
 {
-    private function createContainer(): ContainerInterface
+    private function createContainer(): AppContainer
     {
-        return new class implements ContainerInterface {
-            public function get(string $id): object
-            {
-                return new $id();
-            }
-
-            public function has(string $id): bool
-            {
-                return class_exists($id);
-            }
-        };
+        return new AppContainer();
     }
 
     public function testFactoryCreatesAndCachesDefaultServices(): void
@@ -81,3 +71,4 @@ final class MultitronFactoryIntegrationTest extends TestCase
         $this->assertSame(123.0, $factory->getWorkerTimeout());
     }
 }
+

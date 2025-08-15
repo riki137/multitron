@@ -17,28 +17,10 @@ final class WorkerCommandIntegrationTest extends AbstractIpcTestCase
         parent::setUp();
         $script = <<<'PHP'
 require %s;
-use Psr\Container\ContainerInterface;
 use Symfony\Component\Console\Application;
-use Symfony\Component\Console\Attribute\AsCommand;
 use Multitron\Bridge\Native\MultitronFactory;
-use Multitron\Console\TaskCommand;
-use Multitron\Execution\Task;
-use Multitron\Comms\TaskCommunicator;
-use Multitron\Tree\TaskTreeBuilder;
-
-class AppContainer implements ContainerInterface {
-    public function get(string $id): object { return new $id(); }
-    public function has(string $id): bool { return class_exists($id); }
-}
-
-#[AsCommand('app:demo')]
-class DemoCommand extends TaskCommand {
-    public function getNodes(TaskTreeBuilder $b): array {
-        return [
-            $b->task('task', fn() => new class implements Task { public function execute(TaskCommunicator $c): void {} }),
-        ];
-    }
-}
+use Multitron\Tests\Mocks\AppContainer;
+use Multitron\Tests\Mocks\DemoCommand;
 
 $factory = new MultitronFactory(new AppContainer());
 $app = new Application();
