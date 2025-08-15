@@ -5,6 +5,7 @@ namespace Multitron\Tests\Unit;
 
 use InvalidArgumentException;
 use Multitron\Bridge\Native\MultitronFactory;
+use Multitron\Comms\NativeIpcAdapter;
 use Multitron\Console\TaskCommandDeps;
 use Multitron\Console\WorkerCommand;
 use Multitron\Execution\ExecutionFactory;
@@ -12,37 +13,27 @@ use Multitron\Execution\ProcessExecutionFactory;
 use Multitron\Execution\Handler\IpcHandlerRegistryFactory;
 use Multitron\Orchestrator\Output\ProgressOutputFactory;
 use Multitron\Orchestrator\TaskOrchestrator;
+use Multitron\Tests\Mocks\AppContainer;
 use Multitron\Tree\TaskTreeBuilderFactory;
 use PHPUnit\Framework\TestCase;
-use Psr\Container\ContainerInterface;
 use StreamIpc\NativeIpcPeer;
 
 final class MultitronFactoryTest extends TestCase
 {
-    private function createContainer(): ContainerInterface
+    private function createContainer(): AppContainer
     {
-        return new class implements ContainerInterface {
-            public function get(string $id): object
-            {
-                return new $id();
-            }
-
-            public function has(string $id): bool
-            {
-                return class_exists($id);
-            }
-        };
+        return new AppContainer();
     }
 
     public function testAllSettersAndDefaults(): void
     {
         $factory = new MultitronFactory($this->createContainer());
 
-        $ipc = new NativeIpcPeer();
-        $factory->setIpcPeer($ipc);
-        $this->assertSame($ipc, $factory->getIpcPeer());
+        $ipc = new NativeIpcAdapter(new NativeIpcPeer());
+        $factory->setIpcAdapter($ipc);
+        $this->assertSame($ipc, $factory->getIpcAdapter());
 
-        $worker = new WorkerCommand($factory->getIpcPeer());
+        $worker = new WorkerCommand($factory->getIpcAdapter());
         $factory->setWorkerCommand($worker);
         $this->assertSame($worker, $factory->getWorkerCommand());
 
@@ -51,7 +42,7 @@ final class MultitronFactoryTest extends TestCase
         $regFactory = $this->createMock(IpcHandlerRegistryFactory::class);
 
         $orch = new TaskOrchestrator(
-            $factory->getIpcPeer(),
+            $factory->getIpcAdapter()->getPeer(),
             $exec,
             $outFactory,
             $regFactory,
@@ -95,3 +86,4 @@ final class MultitronFactoryTest extends TestCase
         $factory->setDefaultConcurrency(-1);
     }
 }
+

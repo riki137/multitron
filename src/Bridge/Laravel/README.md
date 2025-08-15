@@ -1,23 +1,75 @@
 # Laravel Integration
 
-Register the `Multitron\Bridge\Laravel\MultitronServiceProvider` in your `config/app.php` to autowire all Multitron services:
+Multitron ships with a service provider and console command that make it simple to run tasks inside a Laravel application.
 
-```php
-'providers' => [
-    // ...
-    Multitron\Bridge\Laravel\MultitronServiceProvider::class,
-],
+## Install
+
+```bash
+composer require riki137/multitron
 ```
 
-The service provider makes these singletons available:
+## Register the service provider
 
-- `Multitron\Tree\TaskTreeBuilderFactory`
-- `Multitron\Orchestrator\TaskOrchestrator`
-- `StreamIpc\NativeIpcPeer`
-- `Multitron\Execution\ProcessExecutionFactory`
-- `Multitron\Orchestrator\Output\TableOutputFactory`
-- `Multitron\Execution\Handler\DefaultIpcHandlerRegistryFactory`
-- `Multitron\Execution\Handler\MasterCache\MasterCacheServer`
-- `Multitron\Execution\Handler\ProgressServer`
+On Laravel 11 and newer add the provider to `bootstrap/providers.php`:
 
-The provider also registers `Multitron\Console\MultitronWorkerCommand` as an Artisan command so your application can launch worker processes.
+```php
+return [
+    App\Providers\AppServiceProvider::class,
+    Multitron\Bridge\Laravel\MultitronServiceProvider::class,
+];
+```
+
+(For older Laravel versions register the provider in `config/app.php`.)
+
+The provider exposes singletons such as `TaskTreeBuilderFactory` and
+`TaskOrchestrator` and also registers the `Multitron\\Console\\MultitronWorkerCommand`
+so worker processes can be launched.
+
+## Define a command
+
+Create a task and an Artisan command that extends
+`Multitron\\Console\\TaskCommand` and accepts
+`Multitron\\Console\\TaskCommandDeps`:
+
+```php
+namespace App\Console\Commands;
+
+use App\Tasks\HelloTask;
+use Multitron\Console\TaskCommand;
+use Multitron\Console\TaskCommandDeps;
+use Multitron\Tree\TaskTreeBuilder;
+use Symfony\Component\Console\Attribute\AsCommand;
+
+#[AsCommand(name: 'multitron:demo')]
+final class MultitronDemoCommand extends TaskCommand
+{
+    public function __construct(TaskCommandDeps $deps)
+    {
+        parent::__construct($deps);
+    }
+
+    public function getNodes(TaskTreeBuilder $builder): array
+    {
+        return [
+            $builder->service(HelloTask::class),
+        ];
+    }
+}
+```
+
+Register the command in `bootstrap/app.php`:
+
+```php
+return Application::configure()
+    // ...
+    ->withCommands([
+        App\Console\Commands\MultitronDemoCommand::class,
+    ])
+    ->create();
+```
+
+Now you can run the command and Multitron will orchestrate your tasks:
+
+```bash
+php artisan multitron:demo
+```
