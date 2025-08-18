@@ -52,35 +52,33 @@ final class HelloTask implements Task
 ```
 
 
-You can register tasks in a command that extends `Multitron\Console\AbstractMultitronCommand`:
+You can register tasks in a command that extends `Multitron\Console\TaskCommand`:
 
 ```php
 use Multitron\Console\TaskCommand;
-use Multitron\Orchestrator\TaskOrchestrator;
+use Multitron\Tree\TaskNode;
 use Multitron\Tree\TaskTreeBuilder;
-use Multitron\Tree\TaskTreeBuilderFactory;
 use Symfony\Component\Console\Attribute\AsCommand;
 
 #[AsCommand(name: 'app:tasks')]
 final class MyCommand extends TaskCommand
 {
-    public function __construct(TaskTreeBuilderFactory $factory, TaskOrchestrator $orchestrator)
+    /**
+     * @return TaskNode[]
+     */
+    public function getNodes(TaskTreeBuilder $b): array
     {
-        parent::__construct($factory, $orchestrator);
-    }
-
-    public function getNodes(TaskTreeBuilder $b): void
-    {
-        $cache = $b->group('cache-clear', [
-            $b->service(ClearCacheTask::class),
-            $b->service(ClearLogsTask::class),
-        ]);
-
-        $b->service(OtherCacheClearTask::class, [$cache]);
-        $b->service(MyFirstTask::class);
-        $second = $b->service(MySecondTask::class);
-        $third = $b->service(MyThirdTask::class, [$second]);
-        $b->partitioned(MyPartitionedTask::class, 4, [$third, $cache]);
+        return [
+            $cache = $b->group('cache-clear', [
+                $b->service(ClearCacheTask::class),
+                $b->service(ClearLogsTask::class),
+            ]),
+            $b->service(AfterCacheClearTask::class, dependencies: [$cache]),
+            $first = $b->service(MyFirstTask::class),
+            $second = $b->service(MySecondTask::class, dependencies: [$first]),
+            $anotherSecond = $b->service(MyAnotherSecondTask::class, dependencies: [$first]),
+            $b->partitioned(MyPartitionedTask::class, 4, dependencies: [$second, $cache]),
+        ];
     }
 }
 ```
@@ -133,9 +131,13 @@ final class MyTask implements Task
 {
     public function execute(TaskCommunicator $comm): void
     {
-        $comm->cache->write(['foo' => ['bar' => 'baz']], 2);
-        $baz = $comm->cache->read(['foo' => ['bar']])->await()['foo']['bar']; // baz
-        $comm->cache->write(['stats' => ['hits' => ($values['stats']['hits'] ?? 0) + 1]], 2);
+        $comm->cache->write(['foo' => ['bar' => 'baz']]);
+        $baz = $comm->cache->read(['foo' => ['bar']])->await()['foo']['bar']; // returns "baz"
+        
+        // Read existing values first, then update
+        $existing = $comm->cache->read(['stats' => ['hits']])->await();
+        $hits = $existing['stats']['hits'] ?? 0;
+        $comm->cache->write(['stats' => ['hits' => $hits + 1]]);
     }
 }
 ```
@@ -169,7 +171,7 @@ When a workload can be split into chunks, partitioned tasks run those chunks in 
 ```php
 use Multitron\Tree\Partition\PartitionedTask;
 
-final class BuildReportTask extends PartitionedTask
+final class BuildReportTask extends PartitionedTask // or implements PartitionedTaskInterface, use PartitionedTaskTrait
 {
     public function execute(TaskCommunicator $comm): void
     {
@@ -206,12 +208,16 @@ Multitron renders progress using a `ProgressOutputFactory`. Replace the default 
 ```php
 use Multitron\Orchestrator\Output\ChainProgressOutputFactory;
 use Multitron\Orchestrator\Output\TableOutputFactory;
+use Multitron\Bridge\Native\MultitronFactory;
 
-$factory = new ChainProgressOutputFactory(
-    new TableOutputFactory(),
-    new JsonOutputFactory(), // your custom factory
+$factory = new MultitronFactory();
+
+$outputFactory = new ChainProgressOutputFactory(
+    $factory->getProgressOutputFactory(),
+    new JsonOutputFactory(), // your own class for custom output
 );
-$orchestrator = new TaskOrchestrator($ipc, $container, $execFactory, $factory, $handlerFactory);
+
+$factory->setProgressOutputFactory($outputFactory);
 ```
 
 Implement the factory to send progress anywhere you like.
