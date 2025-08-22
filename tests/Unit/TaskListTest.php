@@ -3,23 +3,16 @@ declare(strict_types=1);
 
 namespace Multitron\Tests\Unit;
 
-use Multitron\Comms\TaskCommunicator;
-use Multitron\Execution\Task;
 use Multitron\Orchestrator\TaskList;
+use Multitron\Tests\Mocks\DummyTask;
 use Multitron\Tree\TaskNode;
 use PHPUnit\Framework\TestCase;
 
-final class DummyTaskTL implements Task
-{
-    public function execute(TaskCommunicator $c): void
-    {
-    }
-}
 final class TaskListTest extends TestCase
 {
     public function testGetHasAndIteration(): void
     {
-        $child = new TaskNode('child', fn() => new DummyTaskTL());
+        $child = new TaskNode('child', fn() => new DummyTask());
         $root = new TaskNode('root', null, [$child]);
         $list = new TaskList($root);
 
@@ -39,3 +32,4 @@ final class TaskListTest extends TestCase
         $this->assertSame(['child'], $ids);
     }
 }
+

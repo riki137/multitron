@@ -1,23 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Illuminate\Console;
-
-if (!class_exists(Application::class)) {
-    class Application
-    {
-        public static function starting(callable $cb): void
-        {
-            $cb(new self());
-        }
-
-        public function resolveCommands(array $commands): void
-        {
-        }
-    }
-}
-
 namespace Multitron\Tests\Integration;
+
+require_once __DIR__ . '/../Mocks/Illuminate/Console/Application.php';
 
 use Illuminate\Container\Container;
 use Multitron\Bridge\Laravel\MultitronServiceProvider;

@@ -3,13 +3,12 @@ declare(strict_types=1);
 
 namespace Multitron\Tests\Integration;
 
-use Multitron\Comms\TaskCommunicator;
-use Multitron\Execution\Task;
 use Multitron\Orchestrator\Output\TableOutput;
 use Multitron\Orchestrator\Output\TableOutputFactory;
 use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskState;
 use Multitron\Orchestrator\TaskStatus;
+use Multitron\Tests\Mocks\DummyTask;
 use Multitron\Tree\TaskNode;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -18,11 +17,7 @@ final class TableOutputIntegrationTest extends TestCase
 {
     private function createTaskList(): TaskList
     {
-        $task = new TaskNode('task1', fn() => new class implements Task {
-            public function execute(TaskCommunicator $comm): void
-            {
-            }
-        });
+        $task = new TaskNode('task1', fn() => new DummyTask());
         $root = new TaskNode('root', null, [$task]);
         return new TaskList($root);
     }
@@ -63,3 +58,4 @@ final class TableOutputIntegrationTest extends TestCase
         $this->assertStringContainsString('TOTAL', $out);
     }
 }
+

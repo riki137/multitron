@@ -10,6 +10,7 @@ use Multitron\Execution\Handler\IpcHandlerRegistry;
 use Multitron\Execution\Handler\MasterCache\MasterCacheServer;
 use Multitron\Execution\Handler\ProgressServer;
 use Multitron\Orchestrator\TaskState;
+use Multitron\Tests\Mocks\DummyExecution;
 use PHPUnit\Framework\TestCase;
 use StreamIpc\IpcSession;
 use StreamIpc\NativeIpcPeer;
@@ -18,26 +19,7 @@ final class IpcHandlerRegistryIntegrationTest extends TestCase
 {
     private function createExecution(IpcSession $session): Execution
     {
-        return new class($session) implements Execution {
-            public function __construct(private IpcSession $session)
-            {
-            }
-
-            public function getSession(): IpcSession
-            {
-                return $this->session;
-            }
-
-            public function getExitCode(): ?int
-            {
-                return null;
-            }
-
-            public function kill(): array
-            {
-                return [];
-            }
-        };
+        return new DummyExecution($session, null, []);
     }
 
     public function testHandlersForwardMessagesAndRequests(): void
@@ -75,3 +57,4 @@ final class IpcHandlerRegistryIntegrationTest extends TestCase
         ], $warnings);
     }
 }
+

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Multitron\Bridge\Native;
 
 use InvalidArgumentException;
+use Multitron\Comms\IpcAdapter;
+use Multitron\Comms\NativeIpcAdapter;
 use Multitron\Console\TaskCommandDeps;
 use Multitron\Console\WorkerCommand;
 use Multitron\Execution\ExecutionFactory;
@@ -24,7 +26,7 @@ final class MultitronFactory
 {
     private ?WorkerCommand $workerCommand = null;
 
-    private ?NativeIpcPeer $ipcPeer = null;
+    private ?IpcAdapter $ipcAdapter = null;
 
     private ?TaskOrchestrator $taskOrchestrator = null;
 
@@ -53,7 +55,7 @@ final class MultitronFactory
 
     public function getWorkerCommand(): WorkerCommand
     {
-        return $this->workerCommand ??= new WorkerCommand($this->getIpcPeer());
+        return $this->workerCommand ??= new WorkerCommand($this->getIpcAdapter());
     }
 
     public function setWorkerCommand(?WorkerCommand $workerCommand): self
@@ -62,14 +64,14 @@ final class MultitronFactory
         return $this;
     }
 
-    public function getIpcPeer(): NativeIpcPeer
+    public function getIpcAdapter(): IpcAdapter
     {
-        return $this->ipcPeer ??= new NativeIpcPeer();
+        return $this->ipcAdapter ??= new NativeIpcAdapter(new NativeIpcPeer());
     }
 
-    public function setIpcPeer(?NativeIpcPeer $ipcPeer): self
+    public function setIpcAdapter(?IpcAdapter $ipcAdapter): MultitronFactory
     {
-        $this->ipcPeer = $ipcPeer;
+        $this->ipcAdapter = $ipcAdapter;
         return $this;
     }
 
@@ -102,7 +104,7 @@ final class MultitronFactory
     public function getTaskOrchestrator(): TaskOrchestrator
     {
         return $this->taskOrchestrator ??= new TaskOrchestrator(
-            $this->getIpcPeer(),
+            $this->getIpcAdapter()->getPeer(),
             $this->getExecutionFactory(),
             $this->getProgressOutputFactory(),
             $this->getIpcHandlerRegistryFactory()
@@ -117,11 +119,21 @@ final class MultitronFactory
 
     public function getExecutionFactory(): ExecutionFactory
     {
-        return $this->executionFactory ??= new ProcessExecutionFactory(
-            $this->getIpcPeer(),
-            $this->getProcessBufferSize(),
-            $this->getWorkerTimeout()
-        );
+        if ($this->executionFactory === null) {
+            $ipcPeer = $this->getIpcAdapter()->getPeer();
+            if (!$ipcPeer instanceof NativeIpcPeer) {
+                throw new InvalidArgumentException('ProcessExecutionFactory requires NativeIpcPeer. ' .
+                    'Either use a different ExecutionFactory or set IpcAdapter to NativeIpcAdapter.');
+            }
+
+            return $this->executionFactory = new ProcessExecutionFactory(
+                $ipcPeer,
+                $this->getProcessBufferSize(),
+                $this->getWorkerTimeout()
+            );
+        }
+
+        return $this->executionFactory;
     }
 
     public function setExecutionFactory(?ExecutionFactory $executionFactory): self

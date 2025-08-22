@@ -3,12 +3,11 @@ declare(strict_types=1);
 
 namespace Multitron\Tests\Unit;
 
-use Multitron\Comms\TaskCommunicator;
 use Multitron\Console\TableRenderer;
-use Multitron\Execution\Task;
 use Multitron\Message\TaskProgress;
 use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskStatus;
+use Multitron\Tests\Mocks\DummyTask;
 use Multitron\Tree\TaskNode;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
@@ -17,11 +16,7 @@ final class TableRendererTest extends TestCase
 {
     private function createRenderer(): TableRenderer
     {
-        $task = new TaskNode('task1', fn() => new class implements Task {
-            public function execute(TaskCommunicator $comm): void
-            {
-            }
-        });
+        $task = new TaskNode('task1', fn() => new DummyTask());
         $root = new TaskNode('root', null, [$task]);
         return new TableRenderer(new TaskList($root));
     }
@@ -64,3 +59,4 @@ final class TableRendererTest extends TestCase
         $this->assertMatchesRegularExpression('/hello\n\s+world <fg=gray>\(\d{2}:\d{2}:\d{2}\)<\/>/', $log);
     }
 }
+
