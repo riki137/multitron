@@ -14,7 +14,7 @@ jobs:
         php: ['8.2', '8.3']
     name: Composer PHP ${{ matrix.php }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
@@ -28,7 +28,7 @@ jobs:
         php: ['8.2', '8.3']
     name: PHPUnit PHP ${{ matrix.php }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
@@ -48,13 +48,13 @@ jobs:
         php: ['8.2', '8.3']
     name: PHPStan PHP ${{ matrix.php }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
           coverage: none
       - run: composer update --no-progress --no-interaction
-      - run: vendor/bin/phpstan analyze src --level=5 --no-progress
+      - run: vendor/bin/phpstan analyse --configuration=phpstan.neon --no-progress --memory-limit=1G
 
   phpstan_lowest:
     runs-on: ubuntu-latest
@@ -63,18 +63,18 @@ jobs:
         php: ['8.2', '8.3']
     name: PHPStan Lowest PHP ${{ matrix.php }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
           coverage: none
       - run: composer update --prefer-lowest --no-progress --no-interaction
-      - run: vendor/bin/phpstan analyze src --level=5 --no-progress
+      - run: vendor/bin/phpstan analyse --configuration=phpstan.neon --no-progress --memory-limit=1G
 
   codesniffer:
     runs-on: ubuntu-latest
     name: PHPCS
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - run: composer update --no-progress --no-interaction
       - run: vendor/bin/phpcs src --standard=PSR2 -n

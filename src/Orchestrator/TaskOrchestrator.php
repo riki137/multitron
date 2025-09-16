@@ -93,7 +93,9 @@ final class TaskOrchestrator
                     $options,
                     $queue->pendingCount(),
                     $handlerRegistry,
-                    fn(Throwable $e) => $this->handleStreamException($e, $states, $queue, $output)
+                    function (Throwable $e) use (&$states, $queue, $output): void {
+                        $this->handleStreamException($e, $states, $queue, $output);
+                    }
                 );
                 $output->onTaskStarted($state);
             } else {
@@ -116,7 +118,8 @@ final class TaskOrchestrator
                             $hadError = true;
                         }
                         unset($states[$id]);
-                    } catch (TimeoutException) {
+                    } catch (TimeoutException $timeout) {
+                        $output->log($state, 'IPC timeout while polling task ' . $state->getTaskId() . ': ' . $timeout->getMessage());
                     }
                 }
             }
@@ -154,7 +157,7 @@ final class TaskOrchestrator
     /**
      * @param TaskState[] $states
      */
-    public function handleStreamException(Throwable $e, array $states, TaskTreeQueue $queue, ProgressOutput $output): void
+    public function handleStreamException(Throwable $e, array &$states, TaskTreeQueue $queue, ProgressOutput $output): void
     {
         if (!$e instanceof InvalidStreamException) {
             throw $e;

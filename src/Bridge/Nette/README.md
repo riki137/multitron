@@ -5,7 +5,7 @@
 First, require the necessary packages:
 
 ```bash
-composer require riki137/mulitrtron contributte/psr11-container-interface
+composer require riki137/multitron contributte/psr11-container-interface
 ```
 
 ## Configuration

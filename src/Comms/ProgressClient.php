@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Multitron\Comms;
 
 use Multitron\Message\TaskProgress;
+use Multitron\Orchestrator\System\MemoryInfo;
 use Multitron\Orchestrator\TaskWarningState;
 use StreamIpc\IpcSession;
 
@@ -38,7 +39,7 @@ final class ProgressClient
     {
         if ($force || ((microtime(true) - $this->lastNotified) >= $this->interval)) {
             $this->lastNotified = microtime(true);
-            $this->progress->memoryUsage = self::memoryUsage();
+            $this->progress->memoryUsage = MemoryInfo::processBytes();
             $this->session->notify($this->progress);
         }
     }
@@ -129,14 +130,5 @@ final class ProgressClient
     {
         $this->flush(true);
         $this->session->notify($this->warnings->toMessage());
-    }
-
-    /**
-     * Helper for retrieving the current memory footprint of the PHP process.
-     * Uses the real usage flag so the number matches system allocation.
-     */
-    private static function memoryUsage(): int
-    {
-        return memory_get_usage(true);
     }
 }
