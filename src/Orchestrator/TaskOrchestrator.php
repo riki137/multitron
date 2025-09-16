@@ -43,8 +43,11 @@ final class TaskOrchestrator
     public function run(string $commandName, TaskList $taskList, InputInterface $input, OutputInterface $output): int
     {
         $limit = $input->getOption(self::OPTION_MEMORY_LIMIT);
-        if (is_string($limit) && $limit !== '') {
-            ini_set('memory_limit', $limit);
+        if ($limit === null || (is_string($limit) && $limit !== '')) {
+            $previousLimit = ini_set('memory_limit', $limit ?? self::DEFAULT_MEMORY_LIMIT);
+            if ($previousLimit === false && $limit !== null) {
+                throw new RuntimeException('Failed to set memory limit to ' . $limit . '.');
+            }
         }
         $option = $input->getOption(self::OPTION_CONCURRENCY);
         $concurrency = is_numeric($option) ? (int)$option : CpuDetector::getCpuCount();
@@ -84,47 +87,51 @@ final class TaskOrchestrator
         }
         $updateInterval = (float)$updateInterval;
 
-        foreach ($queue as $task) {
-            if ($task instanceof CompiledTaskNode) {
-                // launch a new task
-                $states[$task->id] = $state = $this->executionFactory->launch(
-                    $commandName,
-                    $task->id,
-                    $options,
-                    $queue->pendingCount(),
-                    $handlerRegistry,
-                    function (Throwable $e) use (&$states, $queue, $output): void {
-                        $this->handleStreamException($e, $states, $queue, $output);
-                    }
-                );
-                $output->onTaskStarted($state);
-            } else {
-                $this->ipcPeer->tickFor($updateInterval);
-            }
-
-            // poll each running task for completion
-            foreach ($states as $id => $state) {
-                $execution = $state->getExecution();
-                $exit = $execution?->getExitCode();
-                if ($exit !== null) {
-                    try {
-                        $this->ipcPeer->tick(0.01);
-                        if ($exit === 0) {
-                            $queue->markCompleted($state->getTaskId());
-                            $state->setStatus(TaskStatus::SUCCESS);
-                            $output->onTaskCompleted($state);
-                        } else {
-                            $this->onError($state, $queue, $output);
-                            $hadError = true;
+        try {
+            foreach ($queue as $task) {
+                if ($task instanceof CompiledTaskNode) {
+                    // launch a new task
+                    $states[$task->id] = $state = $this->executionFactory->launch(
+                        $commandName,
+                        $task->id,
+                        $options,
+                        $queue->pendingCount(),
+                        $handlerRegistry,
+                        function (Throwable $e) use (&$states, $queue, $output): void {
+                            $this->handleStreamException($e, $states, $queue, $output);
                         }
-                        unset($states[$id]);
-                    } catch (TimeoutException $timeout) {
-                        $output->log($state, 'IPC timeout while polling task ' . $state->getTaskId() . ': ' . $timeout->getMessage());
+                    );
+                    $output->onTaskStarted($state);
+                } else {
+                    $this->ipcPeer->tickFor($updateInterval);
+                }
+
+                // poll each running task for completion
+                foreach ($states as $id => $state) {
+                    $execution = $state->getExecution();
+                    $exit = $execution?->getExitCode();
+                    if ($exit !== null) {
+                        try {
+                            $this->ipcPeer->tick(0.01);
+                            if ($exit === 0) {
+                                $queue->markCompleted($state->getTaskId());
+                                $state->setStatus(TaskStatus::SUCCESS);
+                                $output->onTaskCompleted($state);
+                            } else {
+                                $this->onError($state, $queue, $output);
+                                $hadError = true;
+                            }
+                            unset($states[$id]);
+                        } catch (TimeoutException $timeout) {
+                            $output->log($state, 'IPC timeout while polling task ' . $state->getTaskId() . ': ' . $timeout->getMessage());
+                        }
                     }
                 }
-            }
 
-            $output->render();
+                $output->render();
+            }
+        } finally {
+            $this->executionFactory->shutdown();
         }
 
         return $hadError ? 1 : 0;

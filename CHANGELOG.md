@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - riki137/stream-ipc to ^1.0 stable
 - Enhanced orchestrator resiliency by removing completed tasks after stream failures and logging IPC timeouts.
+- polished memory limit behavior
 
 ## [1.0.0-beta9] - 2025-08-14
 ### Added

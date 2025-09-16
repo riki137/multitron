@@ -6,10 +6,10 @@ namespace Multitron\Orchestrator\Output;
 
 use Multitron\Console\TableRenderer;
 use Multitron\Message\TaskProgress;
+use Multitron\Orchestrator\System\MemoryInfo;
 use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskState;
 use Multitron\Orchestrator\TaskStatus;
-use Multitron\Orchestrator\System\MemoryInfo;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\ConsoleSectionOutput;
 use Symfony\Component\Console\Output\OutputInterface;

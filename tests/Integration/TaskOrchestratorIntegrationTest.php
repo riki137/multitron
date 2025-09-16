@@ -118,6 +118,102 @@ final class TaskOrchestratorIntegrationTest extends TestCase
         $this->assertFalse($queue->hasUnfinishedTasks());
     }
 
+    public function testDoRunCallsShutdownExactlyOnce(): void
+    {
+        $peer = new NativeIpcPeer();
+        $execFactory = new class($peer) implements ExecutionFactory {
+            public int $shutdownCalls = 0;
+            public bool $launchCalled = false;
+            public bool $shutdownBeforeLaunch = false;
+
+            public function __construct(private IpcPeer $peer)
+            {
+            }
+
+            public function launch(string $commandName, string $taskId, array $options, int $remainingTasks, IpcHandlerRegistry $registry, ?callable $onException = null): TaskState
+            {
+                $this->launchCalled = true;
+                [$a, $b] = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+                $session = $this->peer->createStreamSession($a, $a);
+                $exec = new class($session) implements Execution {
+                    public function __construct(private IpcSession $session)
+                    {
+                    }
+
+                    public function getSession(): IpcSession
+                    {
+                        return $this->session;
+                    }
+
+                    public function getExitCode(): ?int
+                    {
+                        return 0;
+                    }
+
+                    public function kill(): array
+                    {
+                        return ['exitCode' => 0, 'stdout' => '', 'stderr' => ''];
+                    }
+                };
+                $state = new TaskState($taskId, $exec);
+                $registry->attach($state);
+                return $state;
+            }
+
+            public function shutdown(): void
+            {
+                if (! $this->launchCalled) {
+                    $this->shutdownBeforeLaunch = true;
+                }
+                $this->shutdownCalls++;
+            }
+        };
+
+        $registryFactory = new class implements IpcHandlerRegistryFactory {
+            public function create(): IpcHandlerRegistry
+            {
+                return new IpcHandlerRegistry();
+            }
+        };
+        $tableFactory = new TableOutputFactory();
+        $orchestrator = new TaskOrchestrator($peer, $execFactory, $tableFactory, $registryFactory);
+
+        $container = new class implements ContainerInterface {
+            public function get(string $id): object
+            {
+                return new $id();
+            }
+
+            public function has(string $id): bool
+            {
+                return true;
+            }
+        };
+
+        $builder = new TaskTreeBuilder($container);
+        $task = $builder->task('A', fn() => new class implements Task { public function execute(TaskCommunicator $comm): void
+        {
+        }
+        });
+        $root = $builder->group('root', [$task]);
+        $list = new TaskList($root);
+        $queue = new TaskTreeQueue($list, 1);
+
+        $inputDef = new InputDefinition([new InputOption(TaskOrchestrator::OPTION_UPDATE_INTERVAL, 'u', InputOption::VALUE_REQUIRED)]);
+        $input = new ArrayInput(['--' . TaskOrchestrator::OPTION_UPDATE_INTERVAL => '0.01'], $inputDef);
+        $output = new BufferedOutput();
+        $registry = $registryFactory->create();
+        $progress = $tableFactory->create($list, $output, $registry, ['interactive' => false]);
+
+        $result = $orchestrator->doRun('demo', $input->getOptions(), $queue, $progress, $registry);
+
+        $this->assertSame(0, $result);
+        $this->assertFalse($queue->hasUnfinishedTasks());
+        $this->assertTrue($execFactory->launchCalled);
+        $this->assertSame(1, $execFactory->shutdownCalls);
+        $this->assertFalse($execFactory->shutdownBeforeLaunch);
+    }
+
     public function testLogsFailureAndExitCode(): void
     {
         $peer = new NativeIpcPeer();

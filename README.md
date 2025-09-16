@@ -118,6 +118,14 @@ You may also constrain memory usage with the `-m`/`--memory-limit` option:
 php bin/console app:tasks -m 512M
 ```
 
+When you want proactive alerts about constrained environments, pass the `--low-memory-warn` option. The value represents the
+available-memory threshold in megabytes (defaults to `1024`). Multitron prints a warning when free memory drops below the
+limit, helping you catch memory pressure before workers crash. Set the option to `0` to disable the warning entirely:
+
+```bash
+php bin/console app:tasks --low-memory-warn=512
+```
+
 You can disable colors with `--no-colors` and switch off interactive table rendering using `--interactive=no`. The default `--interactive=detect` automatically falls back to plain output when run in CI.
 
 ### Central Cache

@@ -1,6 +1,14 @@
 {
     "name": "riki137/multitron",
     "description": "Tool for managing fast both asynchronous and multi-threaded execution of tasks. Focused on performance and pleasant CLI interface.",
+    "homepage": "https://github.com/riki137/multitron",
+    "keywords": [
+        "php",
+        "parallel",
+        "tasks",
+        "cli",
+        "multitron"
+    ],
     "type": "library",
     "license": "MIT",
     "autoload": {

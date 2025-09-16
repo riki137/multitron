@@ -54,7 +54,7 @@ abstract class TaskCommand extends Command
         );
         $this->addOption(TaskOrchestrator::OPTION_CONCURRENCY, 'c', InputOption::VALUE_REQUIRED, 'Max concurrent tasks executed', $this->defaultConcurrency);
         $this->addOption(TaskOrchestrator::OPTION_UPDATE_INTERVAL, 'u', InputOption::VALUE_REQUIRED, 'Update interval in seconds', TaskOrchestrator::DEFAULT_UPDATE_INTERVAL);
-        $this->addOption(TaskOrchestrator::OPTION_MEMORY_LIMIT, 'm', InputOption::VALUE_REQUIRED, 'PHP memory_limit for all processes', TaskOrchestrator::DEFAULT_MEMORY_LIMIT);
+        $this->addOption(TaskOrchestrator::OPTION_MEMORY_LIMIT, 'm', InputOption::VALUE_OPTIONAL, 'PHP memory_limit for all processes. Use empty string for default memory limit.');
         $this->addOption(TableOutputFactory::OPTION_COLORS, null, InputOption::VALUE_NEGATABLE, 'Use ANSI colors in output', true);
         $this->addOption(TableOutputFactory::OPTION_INTERACTIVE, null, InputOption::VALUE_REQUIRED, 'Interactive output (yes, no, detect)', 'detect');
         $this->addOption(TableOutputFactory::OPTION_LOW_MEMORY_WARNING, null, InputOption::VALUE_REQUIRED, 'Show a warning if available memory drops below the configured threshold (in MB). 0 for no warning.', TableOutputFactory::DEFAULT_LOW_MEMORY_WARNING);

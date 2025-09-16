@@ -35,8 +35,7 @@ final class MemoryInfo
         }
 
         // Fallback: PHP's allocator (includes overhead; stable and safe)
-        $bytes = @memory_get_usage(true);
-        return is_int($bytes) && $bytes >= 0 ? $bytes : 0;
+        return @memory_get_usage(true);
     }
 
     /**
