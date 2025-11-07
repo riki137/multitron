@@ -8,6 +8,7 @@ use Multitron\Execution\ExecutionFactory;
 use Multitron\Tests\Mocks\DummyExecution;
 use Multitron\Tests\Mocks\DummyOutput;
 use Multitron\Tests\Mocks\OrchestratorPeer;
+use Multitron\Execution\Handler\DefaultIpcHandlerRegistryFactory;
 use Multitron\Execution\Handler\IpcHandlerRegistryFactory;
 use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskOrchestrator;
@@ -60,6 +61,72 @@ final class TaskOrchestratorTest extends TestCase
         $other = $this->peer->makeSession();
         $this->orch->handleStreamException(new InvalidStreamException($other), ['t1' => $state], $this->queue, $this->output);
         $this->assertCount(0, $this->output->completed);
+    }
+
+    public function testOnErrorWithNullExecution(): void
+    {
+        $state = new TaskState('t1', null);
+        $this->orch->onError($state, $this->queue, $this->output);
+        
+        $this->assertSame(TaskStatus::ERROR, $state->getStatus());
+        $this->assertCount(1, $this->output->completed);
+        $this->assertCount(1, $this->output->logs);
+        $this->assertStringContainsString('No execution found', $this->output->logs[0][1]);
+    }
+
+    public function testOnErrorWithExecution(): void
+    {
+        $exec = new DummyExecution($this->peer->session);
+        $state = new TaskState('t1', $exec);
+        
+        // Add a task to the queue so we can test skipping
+        $taskList = new TaskList(new TaskNode('root', null, [
+            new TaskNode('t1', fn() => new \Multitron\Tests\Mocks\DummyTask()),
+            new TaskNode('t2', fn() => new \Multitron\Tests\Mocks\DummyTask(), dependencies: ['t1']),
+        ]));
+        $queue = new TaskTreeQueue($taskList);
+        
+        $this->orch->onError($state, $queue, $this->output);
+        
+        $this->assertSame(TaskStatus::ERROR, $state->getStatus());
+        $this->assertGreaterThanOrEqual(1, $this->output->completed);
+        $this->assertCount(1, $this->output->logs);
+        $this->assertStringContainsString('Worker exited with code', $this->output->logs[0][1]);
+    }
+
+    public function testDoRunWithInvalidUpdateInterval(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Update interval must be a number');
+        
+        $registry = new \Multitron\Execution\Handler\IpcHandlerRegistry();
+        
+        $this->orch->doRun(
+            'test',
+            ['update-interval' => 'invalid'],
+            $this->queue,
+            $this->output,
+            $registry
+        );
+    }
+
+    public function testOnErrorWithSkippedDependencies(): void
+    {
+        $exec = new DummyExecution($this->peer->session);
+        $state = new TaskState('t1', $exec);
+        
+        // Create a more complex dependency tree
+        $taskList = new TaskList(new TaskNode('root', null, [
+            new TaskNode('t1', fn() => new \Multitron\Tests\Mocks\DummyTask()),
+            new TaskNode('t2', fn() => new \Multitron\Tests\Mocks\DummyTask(), dependencies: ['t1']),
+            new TaskNode('t3', fn() => new \Multitron\Tests\Mocks\DummyTask(), dependencies: ['t2']),
+        ]));
+        $queue = new TaskTreeQueue($taskList);
+        
+        $this->orch->onError($state, $queue, $this->output);
+        
+        // Should have skipped t2 and t3
+        $this->assertGreaterThanOrEqual(2, $this->output->completed);
     }
 }
 
