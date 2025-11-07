@@ -120,16 +120,8 @@ final class MultitronFactory
     public function getExecutionFactory(): ExecutionFactory
     {
         if ($this->executionFactory === null) {
-            $ipcPeer = $this->getIpcAdapter()->getPeer();
-            if (!$ipcPeer instanceof NativeIpcPeer) {
-                throw new InvalidArgumentException('ProcessExecutionFactory requires NativeIpcPeer. ' .
-                    'Either use a different ExecutionFactory or set IpcAdapter to NativeIpcAdapter.');
-            }
-
-            return $this->executionFactory = new ProcessExecutionFactory(
-                $ipcPeer,
-                $this->getProcessBufferSize(),
-                $this->getWorkerTimeout()
+            return $this->executionFactory = $this->getIpcAdapter()->createExecutionFactory(
+                $this->getProcessBufferSize(), $this->getWorkerTimeout()
             );
         }
 

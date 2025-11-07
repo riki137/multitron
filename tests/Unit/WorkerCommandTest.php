@@ -6,6 +6,7 @@ namespace Multitron\Tests\Unit;
 use Multitron\Comms\IpcAdapter;
 use Multitron\Console\TaskCommandDeps;
 use Multitron\Console\WorkerCommand;
+use Multitron\Execution\ExecutionFactory;
 use Multitron\Message\ContainerLoadedMessage;
 use Multitron\Message\StartTaskMessage;
 use Multitron\Orchestrator\Output\TableOutputFactory;
@@ -85,6 +86,11 @@ class TestIpcAdapter implements IpcAdapter
     public function getPeer(): IpcPeer
     {
         return $this->peer;
+    }
+
+    public function createExecutionFactory(?int $processBufferSize, float $timeout): ExecutionFactory
+    {
+        return new DummyExecutionFactory($this->getPeer());
     }
 }
 
