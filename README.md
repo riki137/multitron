@@ -6,7 +6,7 @@
 [![Build Status](https://img.shields.io/github/actions/workflow/status/riki137/multitron/ci.yml?branch=master&style=flat-square)](https://github.com/riki137/multitron/actions?query=workflow%3Aci+branch%3Amaster)
 [![Code Coverage](https://codecov.io/gh/riki137/multitron/branch/master/graph/badge.svg?style=flat-square)](https://codecov.io/gh/riki137/multitron)
 ![PHP Version](https://img.shields.io/packagist/php-v/riki137/multitron.svg)
-![PHPStan Level 5](https://img.shields.io/badge/PHPStan-level%205-brightgreen.svg?style=flat-square)
+![PHPStan Level 9](https://img.shields.io/badge/PHPStan-level%209-brightgreen.svg?style=flat-square)
 
 **Multitron** is a powerful, high-performance **PHP task orchestrator** designed to simplify parallel processing, concurrency, and automation in PHP applications. Quickly execute complex tasks asynchronously, maximizing the efficiency and scalability of your workflows.
 
@@ -238,6 +238,3 @@ Your feedback, issues, and contributions are highly encouraged. Open a GitHub is
 
 Multitron is MIT licensed. See the [LICENSE](LICENSE) file for full details.
 
----
-
-**SEO Keywords:** PHP Task Orchestrator, Parallel Processing PHP, Symfony CLI Automation, Asynchronous PHP Tasks, Multitron PHP, PHP Concurrency, PHP Task Manager, Open-source PHP Library

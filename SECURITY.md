@@ -27,7 +27,7 @@ If you discover a security vulnerability in Multitron, please report it privatel
 ## Security Considerations
 
 ### Process Execution
-Multitron spawns worker processes using PHP's `pcntl` extension. Ensure:
+Multitron spawns worker processes using Inter-Process Communication (IPC). Ensure:
 - Task factories don't execute untrusted code
 - Command-line options are validated in your tasks
 - Worker processes run with appropriate system permissions

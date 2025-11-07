@@ -45,8 +45,6 @@
         "psr/container": "^2.0",
         "psr/container-implementation": "*"
     },
-    "minimum-stability": "beta",
-    "prefer-stable": true,
     "require-dev": {
         "tracy/tracy": "^2.10",
         "psr/log": "^3.0",

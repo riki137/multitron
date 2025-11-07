@@ -57,7 +57,7 @@ Be respectful, professional, and constructive in all interactions.
 5. **Run Tests**
    ```bash
    vendor/bin/phpunit
-   vendor/bin/phpstan analyze src --level=5
+   vendor/bin/phpstan analyze src --level=9
    vendor/bin/phpcs src --standard=PSR2 -n
    ```
 
