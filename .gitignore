@@ -5,3 +5,4 @@ composer.lock
 coverage.xml
 coverage*
 .phpunit.cache
+.DS_Store

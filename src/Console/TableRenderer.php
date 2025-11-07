@@ -86,7 +86,7 @@ final class TableRenderer
         return implode(' ', $ret);
     }
 
-    private static function getProgressBar(TaskProgress $progress, float $percent = null, string $barColor = 'green'): string
+    private static function getProgressBar(TaskProgress $progress, ?float $percent = null, string $barColor = 'green'): string
     {
         $percent ??= $progress->getPercentage();
         $textColor = 'white';

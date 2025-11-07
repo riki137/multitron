@@ -45,9 +45,11 @@ final class AppTaskCommand extends TaskCommand
         parent::__construct($deps);
     }
 
-    public function getNodes(TaskTreeBuilder $b): void
+    public function getNodes(TaskTreeBuilder $b): array
     {
-        // define your tasks here
+        return [
+            // define your tasks here
+        ];
     }
 }
 ```

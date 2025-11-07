@@ -74,5 +74,33 @@ final class TaskOrchestratorIntegrationTest extends TestCase
         $out = $output->fetch();
         $this->assertStringContainsString('Worker exited with code 1', $out);
     }
-}
 
+    public function testFailureSkipsDependencies(): void
+    {
+        $peer = new NativeIpcPeer();
+        $execFactory = new DummyExecutionFactory($peer, 1, ['exitCode' => 1, 'stdout' => '', 'stderr' => '']);
+        $registryFactory = new DummyIpcHandlerRegistryFactory();
+        $tableFactory = new TableOutputFactory();
+        $orchestrator = new TaskOrchestrator($peer, $execFactory, $tableFactory, $registryFactory);
+
+        $builder = new TaskTreeBuilder(new AppContainer());
+        $a = $builder->task('A', fn() => new DummyTask());
+        $b = $builder->task('B', fn() => new DummyTask(), [$a]);
+        $c = $builder->task('C', fn() => new DummyTask(), [$b]);
+        $root = $builder->group('root', [$a, $b, $c]);
+        $list = new TaskList($root);
+        $queue = new TaskTreeQueue($list, 1);
+
+        $inputDef = new InputDefinition([new InputOption(TaskOrchestrator::OPTION_UPDATE_INTERVAL, 'u', InputOption::VALUE_REQUIRED)]);
+        $input = new ArrayInput(['--' . TaskOrchestrator::OPTION_UPDATE_INTERVAL => '0.01'], $inputDef);
+        $output = new BufferedOutput();
+        $registry = $registryFactory->create();
+        $progress = $tableFactory->create($list, $output, $registry, ['interactive' => false]);
+
+        $result = $orchestrator->doRun('demo', $input->getOptions(), $queue, $progress, $registry);
+
+        $this->assertSame(1, $result);
+        $out = $output->fetch();
+        $this->assertStringContainsString('⚠', $out);
+    }
+}

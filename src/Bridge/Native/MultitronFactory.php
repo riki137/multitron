@@ -121,7 +121,8 @@ final class MultitronFactory
     {
         if ($this->executionFactory === null) {
             return $this->executionFactory = $this->getIpcAdapter()->createExecutionFactory(
-                $this->getProcessBufferSize(), $this->getWorkerTimeout()
+                $this->getProcessBufferSize(),
+                $this->getWorkerTimeout()
             );
         }
 

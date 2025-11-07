@@ -9,6 +9,7 @@ use Multitron\Orchestrator\TaskState;
 class DummyOutput implements ProgressOutput
 {
     public array $completed = [];
+    public array $logs = [];
 
     public function onTaskStarted(TaskState $state): void {}
 
@@ -19,7 +20,10 @@ class DummyOutput implements ProgressOutput
         $this->completed[] = $state;
     }
 
-    public function log(TaskState $state, string $message): void {}
+    public function log(TaskState $state, string $message): void
+    {
+        $this->logs[] = [$state, $message];
+    }
 
     public function render(): void {}
 }

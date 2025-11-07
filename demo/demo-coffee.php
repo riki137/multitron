@@ -62,7 +62,7 @@ final class BrewCoffeeTask implements Task
 
 /**
  * Task 3 (partitioned): runs as multiple shards in parallel.
- * - We simulate 1_000..5_000 tiny items.
+ * - We simulate 1,000..2,000 tiny items.
  * - Each shard reports progress.
  * - Occasionally we record an "occurrence" called SKIP to show counters.
  */

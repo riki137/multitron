@@ -5,7 +5,8 @@
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/riki137/multitron/ci.yml?branch=master&style=flat-square)](https://github.com/riki137/multitron/actions?query=workflow%3Aci+branch%3Amaster)
 [![Code Coverage](https://codecov.io/gh/riki137/multitron/branch/master/graph/badge.svg?style=flat-square)](https://codecov.io/gh/riki137/multitron)
-[![PHPStan Level 9](https://img.shields.io/badge/PHPStan-level%209-brightgreen.svg?style=flat-square)](https://github.com/phpstan/phpstan)
+![PHP Version](https://img.shields.io/packagist/php-v/riki137/multitron.svg)
+![PHPStan Level 9](https://img.shields.io/badge/PHPStan-level%209-brightgreen.svg?style=flat-square)
 
 **Multitron** is a powerful, high-performance **PHP task orchestrator** designed to simplify parallel processing, concurrency, and automation in PHP applications. Quickly execute complex tasks asynchronously, maximizing the efficiency and scalability of your workflows.
 
@@ -14,6 +15,24 @@
 ---
 
 <img src="demo/kapture.gif" alt="Multitron in Action" width="100%" />
+
+---
+
+## Table of Contents
+
+- [Why Choose Multitron?](#why-choose-multitron)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Basic Example](#usage)
+  - [Running Tasks](#usage)
+  - [Central Cache](#central-cache)
+  - [Reporting Progress](#reporting-progress)
+  - [Partitioned Tasks](#partitioned-tasks)
+  - [Accessing CLI Options](#accessing-cli-options)
+  - [Custom Progress Output](#custom-progress-output)
+- [Contributing](#contribute-to-multitron)
+- [License](#license)
 
 ---
 
@@ -224,6 +243,69 @@ Implement the factory to send progress anywhere you like.
 
 ---
 
+## Troubleshooting
+
+### "ext-pcntl is required"
+Multitron requires the `pcntl` extension for process management. Install it:
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install php-pcntl
+
+# macOS (usually included)
+# If missing, use Homebrew PHP
+brew install php
+```
+
+### Worker processes hang or timeout
+- Check the worker timeout setting (default 60s):
+  ```php
+  $factory->setWorkerTimeout(300.0); // 5 minutes
+  ```
+- Ensure your tasks don't have infinite loops
+- Check for deadlocks in IPC communication
+
+### "WorkerCommand not found" error
+Make sure you've registered the worker command:
+
+```php
+// Symfony - register extension in Kernel
+$container->registerExtension(new MultitronExtension());
+
+// Laravel - add to bootstrap/providers.php
+MultitronServiceProvider::class,
+
+// Native - add to application
+$app->add($factory->getWorkerCommand());
+```
+
+### Memory limit errors
+Adjust the memory limit:
+```bash
+php bin/console app:tasks -m 1G
+```
+
+Or set it in your task command initialization.
+
+### Tasks not running in parallel
+- Check concurrency setting: `php bin/console app:tasks -c 8`
+- Verify task dependencies aren't creating a serial execution path
+- Ensure you have enough CPU cores available
+
+### Progress not updating
+- Check the update interval: `php bin/console app:tasks -u 0.5`
+- In CI environments, use `--interactive=no` for plain output
+- Verify you're calling `$comm->progress->addDone()` in your tasks
+
+### Cache data not persisting between tasks
+- Ensure you're using `$comm->cache->write()` before `read()`
+- Remember to call `->await()` on read promises
+- Cache is process-scoped; it doesn't persist after the command finishes
+
+For more help, check existing [GitHub Issues](https://github.com/riki137/multitron/issues) or open a new one.
+
+---
+
 ## Contribute to Multitron!
 
 Your feedback, issues, and contributions are highly encouraged. Open a GitHub issue or start a pull request to help improve PHP concurrency and task management:
@@ -237,6 +319,3 @@ Your feedback, issues, and contributions are highly encouraged. Open a GitHub is
 
 Multitron is MIT licensed. See the [LICENSE](LICENSE) file for full details.
 
----
-
-**SEO Keywords:** PHP Task Orchestrator, Parallel Processing PHP, Symfony CLI Automation, Asynchronous PHP Tasks, Multitron PHP, PHP Concurrency, PHP Task Manager, Open-source PHP Library

@@ -12,15 +12,15 @@ use RuntimeException;
  *  • wait()         – blocking; always returns the real exit code.
  *  • close()        – idempotent; closes pipes + reaps child; returns exit code.
  *
- * @psalm-type Pipes = array{0:resource,1:resource,2:resource}
+ * @psalm-type Pipes = array<0|1|2, resource>
  */
-class Process
+final class Process
 {
     /** @var resource */
     private $process;
 
-    /** @var Pipes|never[] */
-    private array $pipes = [];
+    /** @var Pipes */
+    private readonly array $pipes;
 
     /** @var int<0,255>|null */
     private ?int $exitCode = null;
@@ -32,6 +32,7 @@ class Process
      */
     public function __construct(array $cmd, ?string $cwd = null, ?array $env = null)
     {
+        $pipes = [];
         $proc = proc_open(
             $cmd,
             [
@@ -39,11 +40,12 @@ class Process
                 1 => ['pipe', 'w'],
                 2 => ['pipe', 'w'],
             ],
-            $this->pipes,
+            $pipes,
             $cwd,
             $env,
             ['bypass_shell' => true]
         );
+        $this->pipes = $pipes;
 
         if (!is_resource($proc)) {
             throw new RuntimeException('Failed to start process: ' . implode(' ', $cmd));

@@ -37,8 +37,9 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Attribute\AsCommand;
 
 // If you use a framework, you probably already have a container instance
+// This is a minimal example - use a proper DI container in production (Pimple, PHP-DI, etc.)
 class AppContainer implements ContainerInterface {
-    public function get(string $id)
+    public function get(string $id): mixed
     {
         return new $id();
     }
