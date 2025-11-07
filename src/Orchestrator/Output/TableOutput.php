@@ -161,7 +161,6 @@ final class TableOutput implements ProgressOutput
 
     /**
      * @param string[] $buffer
-     * @return void
      */
     private function attachMemoryWarning(array &$buffer): void
     {

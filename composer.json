@@ -3,6 +3,19 @@
     "description": "Tool for managing fast both asynchronous and multi-threaded execution of tasks. Focused on performance and pleasant CLI interface.",
     "type": "library",
     "license": "MIT",
+    "keywords": [
+        "php",
+        "task-orchestrator",
+        "parallel-processing",
+        "concurrency",
+        "async",
+        "task-runner",
+        "symfony-console",
+        "multi-threading",
+        "process-management",
+        "workflow",
+        "batch-processing"
+    ],
     "autoload": {
         "psr-4": {
             "Multitron\\": "src/"
@@ -12,6 +25,11 @@
         "psr-4": {
             "Multitron\\Tests\\": "tests/"
         }
+    },
+    "homepage": "https://github.com/riki137/multitron",
+    "support": {
+        "issues": "https://github.com/riki137/multitron/issues",
+        "source": "https://github.com/riki137/multitron"
     },
     "repositories": [],
     "authors": [
