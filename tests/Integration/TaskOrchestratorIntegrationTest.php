@@ -3,22 +3,16 @@ declare(strict_types=1);
 
 namespace Multitron\Tests\Integration;
 
-use Multitron\Comms\TaskCommunicator;
-use Multitron\Execution\Execution;
-use Multitron\Execution\ExecutionFactory;
-use Multitron\Execution\Handler\IpcHandlerRegistry;
-use Multitron\Execution\Handler\IpcHandlerRegistryFactory;
-use Multitron\Execution\Task;
 use Multitron\Orchestrator\Output\TableOutputFactory;
 use Multitron\Orchestrator\TaskList;
 use Multitron\Orchestrator\TaskOrchestrator;
-use Multitron\Orchestrator\TaskState;
+use Multitron\Tests\Mocks\AppContainer;
+use Multitron\Tests\Mocks\DummyExecutionFactory;
+use Multitron\Tests\Mocks\DummyIpcHandlerRegistryFactory;
+use Multitron\Tests\Mocks\DummyTask;
 use Multitron\Tree\TaskTreeBuilder;
 use Multitron\Tree\TaskTreeQueue;
 use PHPUnit\Framework\TestCase;
-use Psr\Container\ContainerInterface;
-use StreamIpc\IpcPeer;
-use StreamIpc\IpcSession;
 use StreamIpc\NativeIpcPeer;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -30,78 +24,14 @@ final class TaskOrchestratorIntegrationTest extends TestCase
     public function testDoRunCompletesAllTasks(): void
     {
         $peer = new NativeIpcPeer();
-        $execFactory = new class($peer) implements ExecutionFactory {
-            public function __construct(private IpcPeer $peer)
-            {
-            }
-
-            public function launch(string $commandName, string $taskId, array $options, int $remainingTasks, IpcHandlerRegistry $registry, ?callable $onException = null): TaskState
-            {
-                [$a, $b] = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
-                $session = $this->peer->createStreamSession($a, $a);
-                $exec = new class($session) implements Execution {
-                    private ?int $exitCode = null;
-
-                    public function __construct(private IpcSession $session)
-                    {
-                    }
-
-                    public function getSession(): IpcSession
-                    {
-                        return $this->session;
-                    }
-
-                    public function getExitCode(): ?int
-                    {
-                        return $this->exitCode ??= 0;
-                    }
-
-                    public function kill(): array
-                    {
-                        return ['exitCode' => $this->exitCode, 'stdout' => '', 'stderr' => ''];
-                    }
-                };
-                $state = new TaskState($taskId, $exec);
-                $registry->attach($state);
-                return $state;
-            }
-
-            public function shutdown(): void
-            {
-            }
-        };
-
-        $registryFactory = new class implements IpcHandlerRegistryFactory {
-            public function create(): IpcHandlerRegistry
-            {
-                return new IpcHandlerRegistry();
-            }
-        };
+        $execFactory = new DummyExecutionFactory($peer);
+        $registryFactory = new DummyIpcHandlerRegistryFactory();
         $tableFactory = new TableOutputFactory();
         $orchestrator = new TaskOrchestrator($peer, $execFactory, $tableFactory, $registryFactory);
 
-        $container = new class implements ContainerInterface {
-            public function get(string $id): object
-            {
-                return new $id();
-            }
-
-            public function has(string $id): bool
-            {
-                return true;
-            }
-        };
-        $builder = new TaskTreeBuilder($container);
-
-        $a = $builder->task('A', fn() => new class implements Task { public function execute(TaskCommunicator $comm): void
-        {
-        }
-        });
-
-        $b = $builder->task('B', fn() => new class implements Task { public function execute(TaskCommunicator $comm): void
-        {
-        }
-        }, [$a]);
+        $builder = new TaskTreeBuilder(new AppContainer());
+        $a = $builder->task('A', fn() => new DummyTask());
+        $b = $builder->task('B', fn() => new DummyTask(), [$a]);
         $root = $builder->group('root', [$a, $b]);
         $list = new TaskList($root);
         $queue = new TaskTreeQueue($list, 2);
@@ -121,71 +51,13 @@ final class TaskOrchestratorIntegrationTest extends TestCase
     public function testLogsFailureAndExitCode(): void
     {
         $peer = new NativeIpcPeer();
-        $execFactory = new class($peer) implements ExecutionFactory {
-            public function __construct(private IpcPeer $peer)
-            {
-            }
-
-            public function launch(string $commandName, string $taskId, array $options, int $remainingTasks, IpcHandlerRegistry $registry, ?callable $onException = null): TaskState
-            {
-                [$a, $b] = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
-                $session = $this->peer->createStreamSession($a, $a);
-                $exec = new class($session) implements Execution {
-                    public function __construct(private IpcSession $session)
-                    {
-                    }
-
-                    public function getSession(): IpcSession
-                    {
-                        return $this->session;
-                    }
-
-                    public function getExitCode(): ?int
-                    {
-                        return 1;
-                    }
-
-                    public function kill(): array
-                    {
-                        return ['exitCode' => 1, 'stdout' => 'junk', 'stderr' => 'err'];
-                    }
-                };
-                $state = new TaskState($taskId, $exec);
-                $registry->attach($state);
-                return $state;
-            }
-
-            public function shutdown(): void
-            {
-            }
-        };
-
-        $registryFactory = new class implements IpcHandlerRegistryFactory {
-            public function create(): IpcHandlerRegistry
-            {
-                return new IpcHandlerRegistry();
-            }
-        };
+        $execFactory = new DummyExecutionFactory($peer, 1, ['exitCode' => 1, 'stdout' => 'junk', 'stderr' => 'err']);
+        $registryFactory = new DummyIpcHandlerRegistryFactory();
         $tableFactory = new TableOutputFactory();
         $orchestrator = new TaskOrchestrator($peer, $execFactory, $tableFactory, $registryFactory);
 
-        $container = new class implements ContainerInterface {
-            public function get(string $id): object
-            {
-                return new $id();
-            }
-
-            public function has(string $id): bool
-            {
-                return true;
-            }
-        };
-        $builder = new TaskTreeBuilder($container);
-
-        $task = $builder->task('A', fn() => new class implements Task { public function execute(TaskCommunicator $comm): void
-        {
-        }
-        });
+        $builder = new TaskTreeBuilder(new AppContainer());
+        $task = $builder->task('A', fn() => new DummyTask());
         $root = $builder->group('root', [$task]);
         $list = new TaskList($root);
         $queue = new TaskTreeQueue($list, 1);
@@ -203,3 +75,4 @@ final class TaskOrchestratorIntegrationTest extends TestCase
         $this->assertStringContainsString('Worker exited with code 1', $out);
     }
 }
+

@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace Multitron\Tests\Unit;
 
 use LogicException;
-use Multitron\Comms\TaskCommunicator;
-use Multitron\Execution\Task;
-use Multitron\Tree\Partition\PartitionedTaskInterface;
+use Multitron\Tests\Mocks\DummyPartitionTask;
+use Multitron\Tests\Mocks\DummyTask;
+use Multitron\Tests\Mocks\NotATask;
 use Multitron\Tree\TaskNode;
 use Multitron\Tree\TaskTreeBuilder;
 use Multitron\Tree\TaskTreeBuilderFactory;
@@ -60,31 +60,10 @@ final class TaskTreeBuilderTest extends TestCase
     public function testPartitionedFactoryThrowsWithoutContainer(): void
     {
         $builder = new TaskTreeBuilder(null);
-        $node = $builder->partitioned(DummyPartitionedTask::class, 1);
+        $node = $builder->partitioned(DummyPartitionTask::class, 1);
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('TaskTreeBuilderFactory has no container injected');
         ($node->children[0]->factory)();
     }
 }
 
-final class DummyTask implements Task
-{
-    public function execute(TaskCommunicator $comm): void
-    {
-    }
-}
-
-final class DummyPartitionedTask implements PartitionedTaskInterface
-{
-    public function execute(TaskCommunicator $comm): void
-    {
-    }
-
-    public function setPartitioning(int $index, int $count): void
-    {
-    }
-}
-
-final class NotATask
-{
-}

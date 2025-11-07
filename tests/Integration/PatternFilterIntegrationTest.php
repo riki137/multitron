@@ -3,43 +3,31 @@ declare(strict_types=1);
 
 namespace Multitron\Tests\Integration;
 
-use Multitron\Comms\TaskCommunicator;
-use Multitron\Execution\Task;
 use Multitron\Orchestrator\TaskList;
+use Multitron\Tests\Mocks\AppContainer;
+use Multitron\Tests\Mocks\DummyTask;
 use Multitron\Tree\TaskTreeBuilder;
 use Multitron\Tree\TaskTreeQueue;
 use PHPUnit\Framework\TestCase;
-use Psr\Container\ContainerInterface;
 
 final class PatternFilterIntegrationTest extends TestCase
 {
     private function createTaskList(): TaskList
     {
-        $container = new class implements ContainerInterface {
-            public function get(string $id): object
-            {
-                return new $id();
-            }
+        $builder = new TaskTreeBuilder(new AppContainer());
 
-            public function has(string $id): bool
-            {
-                return class_exists($id);
-            }
-        };
-        $builder = new TaskTreeBuilder($container);
-
-        $clean = $builder->task('cache-clear', fn() => new PatternFilterDummyTask());
-        $unused = $builder->task('temp-clean', fn() => new PatternFilterDummyTask(), [$clean]);
-        $warm = $builder->task('cache-warm', fn() => new PatternFilterDummyTask(), [$clean, $unused]);
+        $clean = $builder->task('cache-clear', fn() => new DummyTask());
+        $unused = $builder->task('temp-clean', fn() => new DummyTask(), [$clean]);
+        $warm = $builder->task('cache-warm', fn() => new DummyTask(), [$clean, $unused]);
         $cacheGroup = $builder->group('cache-group', [$clean, $warm]);
 
-        $backup = $builder->task('db-backup', fn() => new PatternFilterDummyTask());
-        $migrate = $builder->task('db-migrate', fn() => new PatternFilterDummyTask(), [$backup]);
+        $backup = $builder->task('db-backup', fn() => new DummyTask());
+        $migrate = $builder->task('db-migrate', fn() => new DummyTask(), [$backup]);
         $dbGroup = $builder->group('db-group', [$backup, $migrate]);
 
         $miscGroup = $builder->group('misc-group', [$unused]);
 
-        $report = $builder->task('final-report', fn() => new PatternFilterDummyTask(), [$warm, $migrate]);
+        $report = $builder->task('final-report', fn() => new DummyTask(), [$warm, $migrate]);
 
         $root = $builder->patternFilter('root', 'db-*,cache-%,final-*', [
             $cacheGroup,
@@ -106,9 +94,3 @@ final class PatternFilterIntegrationTest extends TestCase
     }
 }
 
-final class PatternFilterDummyTask implements Task
-{
-    public function execute(TaskCommunicator $comm): void
-    {
-    }
-}

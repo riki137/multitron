@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Multitron\Console;
 
+use Multitron\Comms\IpcAdapter;
 use Multitron\Comms\TaskCommunicator;
 use Multitron\Message\ContainerLoadedMessage;
 use Multitron\Message\StartTaskMessage;
@@ -11,10 +12,10 @@ use Multitron\Orchestrator\TaskOrchestrator;
 use RuntimeException;
 use StreamIpc\Message\LogMessage;
 use StreamIpc\Message\Message;
-use StreamIpc\NativeIpcPeer;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(name: self::NAME)]
@@ -25,15 +26,25 @@ final class WorkerCommand extends Command
     /**
      * @internal This command is executed in worker processes only.
      */
-    public function __construct(private readonly NativeIpcPeer $peer)
+    public function __construct(private readonly IpcAdapter $ipc)
     {
         parent::__construct(self::NAME);
+    }
+
+    protected function configure(): void
+    {
+        $this->setDescription('Starts a worker process to execute tasks.');
+        $this->addOption('connection', 'c', InputOption::VALUE_REQUIRED, 'Connection string for the IPC server. Not required for default STDIO.');
     }
 
     /** {@inheritDoc} */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $session = $this->peer->createStdioSession();
+        $connection = $input->getOption('connection');
+        if (!is_string($connection)) {
+            $connection = null;
+        }
+        $session = $this->ipc->createWorkerSession($connection);
         $session->onRequest(static fn(Message $message) => $message instanceof ContainerLoadedMessage ? $message : null);
         $startTask = null;
         $session->onRequest(function (Message $message) use (&$startTask) {
@@ -45,7 +56,7 @@ final class WorkerCommand extends Command
         });
 
         while ($startTask === null) {
-            $this->peer->tick();
+            $this->ipc->getPeer()->tick();
         }
 
         $memoryLimit = $startTask->options[TaskOrchestrator::OPTION_MEMORY_LIMIT];
