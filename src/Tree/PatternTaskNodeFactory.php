@@ -7,17 +7,22 @@ namespace Multitron\Tree;
 class PatternTaskNodeFactory
 {
     /**
-     * @param TaskNode[] $children
+     * @param string $id The ID of the task node.
+     * @param string $pattern Comma-separated list of fnmatch patterns to match task IDs or tags
+     * @param TaskNode[] $children Child task nodes to filter.
+     * @param string[] $tags Tags associated with this filter node.
      */
     public static function create(
         string $id,
         string $pattern,
         array $children = [],
+        array $tags = [],
     ): TaskNode {
         $patterns = array_map(fn($p) => strtr($p, ['%' => '*']), explode(',', $pattern));
         return new TaskNode(
             $id,
             children: $children,
+            tags: $tags,
             postProcess: function (array $tasks) use ($patterns): iterable {
                 $selected = [];
 
@@ -46,7 +51,9 @@ class PatternTaskNodeFactory
     }
 
     /**
-     * @param string[] $patterns
+     * Check if a task matches any of the given patterns by ID or tags.
+     * @param CompiledTaskNode $task The task to check.
+     * @param string[] $patterns Array of fnmatch patterns
      */
     private static function matches(CompiledTaskNode $task, array $patterns): bool
     {
