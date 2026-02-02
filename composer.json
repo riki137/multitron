@@ -40,7 +40,7 @@
     ],
     "require": {
         "php": "^8.2",
-        "symfony/console": "^7.2",
+        "symfony/console": "^7.2|^8.0",
         "riki137/stream-ipc": "^1.0",
         "psr/container": "^2.0",
         "psr/container-implementation": "*"
