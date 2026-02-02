@@ -120,6 +120,11 @@ $app->run();
   ```bash
   ./bin/multitron.php app:tasks Test%
   ```
+  By default, Multitron includes transitive dependencies of the matched tasks. Use `--no-deps` to run only the matched tasks:
+
+  ```bash
+  ./bin/multitron.php app:tasks Test% --no-deps
+  ```
 * **Limit concurrency**
 
   ```bash

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - optional $tags argument in TaskTreeBuilder
 - immutable setters in TaskNode
 - optional TaskNodeFactory
+- pattern filtering can exclude dependencies (PatternTaskNodeFactory/TaskTreeBuilder flag + `--no-deps` CLI option)
 
 ## [1.0.0] - 2025-11-07
 ### Added

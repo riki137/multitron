@@ -56,6 +56,33 @@ final class TaskCommandIntegrationTest extends TestCase
         $this->assertArrayHasKey('first', $nodes);
     }
 
+    public function testGetTaskListCanExcludeDependenciesWhenFiltering(): void
+    {
+        $peer = new NativeIpcPeer();
+        $deps = $this->createDeps($peer);
+        $command = new #[AsCommand('demo')] class($deps) extends TaskCommand {
+            public function getNodes(TaskTreeBuilder $builder): array
+            {
+                $b = $builder->task('b', fn() => new DummyTask());
+                $a = $builder->task('a', fn() => new DummyTask(), [$b]);
+                return [$a, $b];
+            }
+        };
+
+        $input = new ArrayInput(
+            [
+                'pattern' => 'a',
+                '--deps' => false,
+            ],
+            $command->getDefinition()
+        );
+        $list = $command->getTaskList($input);
+        $nodes = $list->toArray();
+        $this->assertCount(1, $nodes);
+        $this->assertArrayHasKey('a', $nodes);
+        $this->assertSame([], $nodes['a']->dependencies);
+    }
+
     public function testExecuteFailsWhenWorkerMissing(): void
     {
         $peer = new NativeIpcPeer();
@@ -97,4 +124,3 @@ final class TaskCommandIntegrationTest extends TestCase
         $this->assertSame(0, $result);
     }
 }
-

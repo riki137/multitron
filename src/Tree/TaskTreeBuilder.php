@@ -168,10 +168,18 @@ final readonly class TaskTreeBuilder
      * @param string $pattern Comma-separated fnmatch patterns to match task IDs or tags.
      * @param TaskNode[] $children Child task nodes to filter.
      * @param string[] $tags Tags associated with this filter node.
+     * @param bool $includeDependencies When true (default), include transitive dependencies of matched tasks.
+     *                                 When false, only matched tasks are returned and dependency edges pointing
+     *                                 outside the matched set are removed.
      */
-    public function patternFilter(string $id, string $pattern, array $children = [], array $tags = []): TaskNode
-    {
-        return PatternTaskNodeFactory::create($id, $pattern, $children, $tags);
+    public function patternFilter(
+        string $id,
+        string $pattern,
+        array $children = [],
+        array $tags = [],
+        bool $includeDependencies = true
+    ): TaskNode {
+        return PatternTaskNodeFactory::create($id, $pattern, $children, $tags, $includeDependencies);
     }
 
     /**

@@ -11,19 +11,27 @@ class PatternTaskNodeFactory
      * @param string $pattern Comma-separated list of fnmatch patterns to match task IDs or tags
      * @param TaskNode[] $children Child task nodes to filter.
      * @param string[] $tags Tags associated with this filter node.
+     * @param bool $includeDependencies When true (default), include transitive dependencies of matched tasks.
+     *                                 When false, only matched tasks are returned and dependency edges pointing
+     *                                 outside the matched set are removed.
      */
     public static function create(
         string $id,
         string $pattern,
         array $children = [],
         array $tags = [],
+        bool $includeDependencies = true,
     ): TaskNode {
-        $patterns = array_map(fn($p) => strtr($p, ['%' => '*']), explode(',', $pattern));
+        $patterns = array_values(array_filter(array_map(
+            static fn(string $p): string => strtr(trim($p), ['%' => '*']),
+            explode(',', $pattern)
+        ), static fn(string $p): bool => $p !== ''));
+
         return new TaskNode(
             $id,
             children: $children,
             tags: $tags,
-            postProcess: function (array $tasks) use ($patterns): iterable {
+            postProcess: function (array $tasks) use ($patterns, $includeDependencies): iterable {
                 $selected = [];
 
                 foreach ($tasks as $task) {
@@ -32,20 +40,40 @@ class PatternTaskNodeFactory
                     }
                 }
 
-                $queue = array_values($selected);
-                while ($queue) {
-                    $current = array_pop($queue);
-                    foreach ($current->dependencies as $dep) {
-                        if (!isset($selected[$dep]) && isset($tasks[$dep])) {
-                            $selected[$dep] = $tasks[$dep];
-                            $queue[] = $tasks[$dep];
+                if ($includeDependencies) {
+                    $queue = array_values($selected);
+                    while ($queue) {
+                        $current = array_pop($queue);
+                        foreach ($current->dependencies as $dep) {
+                            if (!isset($selected[$dep]) && isset($tasks[$dep])) {
+                                $selected[$dep] = $tasks[$dep];
+                                $queue[] = $tasks[$dep];
+                            }
                         }
                     }
+
+                    foreach ($selected as $task) {
+                        yield $task;
+                    }
+
+                    return;
                 }
 
                 foreach ($selected as $task) {
-                    yield $task;
+                    $filteredDeps = array_values(array_filter(
+                        $task->dependencies,
+                        static fn(string $depId): bool => isset($selected[$depId])
+                    ));
+
+                    yield new CompiledTaskNode(
+                        id: $task->id,
+                        factory: $task->factory,
+                        dependencies: $filteredDeps,
+                        tags: $task->tags
+                    );
                 }
+
+                return;
             }
         );
     }

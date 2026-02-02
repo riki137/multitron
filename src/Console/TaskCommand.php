@@ -20,6 +20,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 abstract class TaskCommand extends Command
 {
+    public const OPTION_DEPS = 'deps';
+
     private readonly TaskTreeBuilderFactory $builderFactory;
 
     private readonly TaskOrchestrator $orchestrator;
@@ -52,6 +54,13 @@ abstract class TaskCommand extends Command
             InputArgument::OPTIONAL,
             'fnmatch() pattern to filter tasks. You can optionally use % instead of * for wildcards. Works for groups too.'
         );
+        $this->addOption(
+            self::OPTION_DEPS,
+            null,
+            InputOption::VALUE_NEGATABLE,
+            'Include transitive dependencies when filtering by pattern (use --no-deps to run only matched tasks)',
+            true
+        );
         $this->addOption(TaskOrchestrator::OPTION_CONCURRENCY, 'c', InputOption::VALUE_REQUIRED, 'Max concurrent tasks executed', $this->defaultConcurrency);
         $this->addOption(TaskOrchestrator::OPTION_UPDATE_INTERVAL, 'u', InputOption::VALUE_REQUIRED, 'Update interval in seconds', TaskOrchestrator::DEFAULT_UPDATE_INTERVAL);
         $this->addOption(TaskOrchestrator::OPTION_MEMORY_LIMIT, 'm', InputOption::VALUE_REQUIRED, 'PHP memory_limit for all processes', TaskOrchestrator::DEFAULT_MEMORY_LIMIT);
@@ -79,7 +88,13 @@ abstract class TaskCommand extends Command
         $builder = $this->builderFactory->create();
         $pattern = $input?->getArgument('pattern');
         if (is_string($pattern) && trim($pattern) !== '') {
-            $node = $builder->patternFilter('root', $pattern, $this->getNodes($builder));
+            $includeDeps = (bool)($input?->getOption(self::OPTION_DEPS) ?? true);
+            $node = $builder->patternFilter(
+                'root',
+                $pattern,
+                $this->getNodes($builder),
+                includeDependencies: $includeDeps
+            );
         } else {
             $node = new TaskNode('root', null, $this->getNodes($builder));
         }

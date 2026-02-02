@@ -27,5 +27,20 @@ final class PatternTaskNodeFactoryTest extends TestCase
         $this->assertSame(['beta'], $compiled['gamma']->dependencies);
         $this->assertSame([], $compiled['alpha']->dependencies);
     }
-}
 
+    public function testFilteringWithoutDependenciesRemovesDependencyEdgesOutsideSelection(): void
+    {
+        $t1 = new TaskNode('alpha', fn() => new DummyTask());
+        $t2 = new TaskNode('beta', fn() => new DummyTask(), [], ['alpha']);
+        $t3 = new TaskNode('gamma', fn() => new DummyTask(), [], ['beta']);
+
+        $root = PatternTaskNodeFactory::create('filter', 'beta,gamma', [$t1, $t2, $t3], includeDependencies: false);
+        $compiled = (new TaskTreeCompiler())->compile($root);
+
+        $ids = array_keys($compiled);
+        sort($ids);
+        $this->assertSame(['beta', 'gamma'], $ids);
+        $this->assertSame([], $compiled['beta']->dependencies);
+        $this->assertSame(['beta'], $compiled['gamma']->dependencies);
+    }
+}

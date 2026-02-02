@@ -118,6 +118,12 @@ To limit which tasks run, pass a pattern as the first argument. Wildcards work t
 php bin/console app:tasks cache-* # run only tasks whose ID or tag matches "cache-*"
 ```
 
+By default, Multitron will also include transitive dependencies of the matched tasks so the resulting execution graph stays valid. If you want to run only the matched tasks (and ignore dependencies outside the selection), use `--no-deps`:
+
+```bash
+php bin/console app:tasks cache-* --no-deps
+```
+
 You can combine multiple patterns by separating them with commas. The filter applies
 to both task IDs and tags and is an OR pattern.
 
@@ -318,4 +324,3 @@ Your feedback, issues, and contributions are highly encouraged. Open a GitHub is
 ## License
 
 Multitron is MIT licensed. See the [LICENSE](LICENSE) file for full details.
-
