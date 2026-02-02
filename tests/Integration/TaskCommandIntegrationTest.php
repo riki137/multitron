@@ -68,7 +68,7 @@ final class TaskCommandIntegrationTest extends TestCase
         };
 
         $app = new Application();
-        $app->add($command);
+        $app->addCommand($command);
 
         $this->expectException(RuntimeException::class);
         $command->run(new ArrayInput([], $command->getDefinition()), new BufferedOutput());
@@ -90,8 +90,8 @@ final class TaskCommandIntegrationTest extends TestCase
 
         $app = new Application();
         $worker = new WorkerCommand($adapter);
-        $app->add($worker);
-        $app->add($command);
+        $app->addCommand($worker);
+        $app->addCommand($command);
 
         $result = $command->run(new ArrayInput([], $command->getDefinition()), new BufferedOutput());
         $this->assertSame(0, $result);

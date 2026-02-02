@@ -125,8 +125,8 @@ final class WorkerCommandTest extends TestCase
         $worker = new WorkerCommand($adapter);
 
         $app = new Application();
-        $app->add($worker);
-        $app->add(new Command('foo'));
+        $app->addCommand($worker);
+        $app->addCommand(new Command('foo'));
 
         $tester = new CommandTester($worker);
         $this->expectException(RuntimeException::class);
@@ -140,9 +140,9 @@ final class WorkerCommandTest extends TestCase
         $worker = new WorkerCommand($adapter);
 
         $app = new Application();
-        $app->add($worker);
+        $app->addCommand($worker);
         $demo = new DemoCommand($this->createDeps());
-        $app->add($demo);
+        $app->addCommand($demo);
 
         $tester = new CommandTester($worker);
         $this->expectException(RuntimeException::class);
@@ -156,9 +156,9 @@ final class WorkerCommandTest extends TestCase
         $worker = new WorkerCommand($adapter);
 
         $app = new Application();
-        $app->add($worker);
+        $app->addCommand($worker);
         $demo = new DemoCommand($this->createDeps());
-        $app->add($demo);
+        $app->addCommand($demo);
 
         $oldLimit = ini_get('memory_limit');
         $tester = new CommandTester($worker);
