@@ -29,7 +29,7 @@ final readonly class TaskTreeBuilder
      */
     public function task(string $id, Closure $factory, array $dependencies = [], array $tags = [], ?string $class = null): TaskNode
     {
-        return $this->nodeFactory?->create($id, $factory, $dependencies, $tags, $class)
+        return $this->nodeFactory?->create($id, $factory, [], $dependencies, $tags, $class)
             ?? new TaskNode($id, $factory, [], $dependencies, $tags);
     }
 
@@ -90,7 +90,8 @@ final readonly class TaskTreeBuilder
      */
     public function group(string $id, array $children, array $dependencies = [], array $tags = []): TaskNode
     {
-        return new TaskNode($id, null, $children, $dependencies, $tags);
+        return $this->nodeFactory?->create($id, null, $children, $dependencies, $tags)
+            ?? new TaskNode($id, null, $children, $dependencies, $tags);
     }
 
     /**
@@ -160,7 +161,7 @@ final readonly class TaskTreeBuilder
             );
         }
 
-        return new TaskNode($shortId, null, $children, $dependencies, $tags);
+        return $this->group($shortId, $children, $dependencies, $tags);
     }
 
     /**
