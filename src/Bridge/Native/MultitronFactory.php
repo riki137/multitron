@@ -95,7 +95,7 @@ final class MultitronFactory
 
     public function getTaskTreeBuilderFactory(): TaskTreeBuilderFactory
     {
-        return $this->taskTreeBuilderFactory ??= new TaskTreeBuilderFactory($this->container);
+        return $this->taskTreeBuilderFactory ??= new TaskTreeBuilderFactory($this->container, $this->getTaskNodeFactory());
     }
 
     public function setTaskTreeBuilderFactory(?TaskTreeBuilderFactory $taskTreeBuilderFactory): self
