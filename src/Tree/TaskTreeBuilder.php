@@ -15,7 +15,7 @@ use Psr\Container\ContainerInterface;
  */
 final readonly class TaskTreeBuilder
 {
-    public function __construct(private ?ContainerInterface $container)
+    public function __construct(private ?ContainerInterface $container = null, private ?TaskNodeFactory $nodeFactory = null)
     {
     }
 
@@ -27,9 +27,10 @@ final readonly class TaskTreeBuilder
      * @param array<TaskNode|string> $dependencies List of task IDs this node depends on.
      * @param string[] $tags Tags associated with this task.
      */
-    public function task(string $id, Closure $factory, array $dependencies = [], array $tags = []): TaskNode
+    public function task(string $id, Closure $factory, array $dependencies = [], array $tags = [], ?string $class = null): TaskNode
     {
-        return new TaskNode($id, $factory, [], $dependencies, $tags);
+        return $this->nodeFactory?->create($id, $factory, $dependencies, $tags, $class)
+            ?? new TaskNode($id, $factory, [], $dependencies, $tags);
     }
 
     /**
@@ -47,7 +48,7 @@ final readonly class TaskTreeBuilder
                 ' Make sure an instance of ' . ContainerInterface::class . ' is autowired in your DI container OR is passed to ' .
                 MultitronFactory::class . ' constructor.');
         }
-        return $this->task($id ?? $this->shortClassName($class), fn() => $this->getTask($class), $dependencies, $tags);
+        return $this->task($id ?? $this->shortClassName($class), fn() => $this->getTask($class), $dependencies, $tags, $class);
     }
 
     /** Fetch a task service from the container and ensure it implements Task. */
@@ -113,7 +114,8 @@ final readonly class TaskTreeBuilder
             fn(): PartitionedTaskInterface => $this->getPartitionedTask($class),
             $partitionCount,
             $dependencies,
-            $tags
+            $tags,
+            $class
         );
     }
 
@@ -131,7 +133,8 @@ final readonly class TaskTreeBuilder
         Closure $factory,
         int $partitionCount,
         array $dependencies = [],
-        array $tags = []
+        array $tags = [],
+        ?string $class = null
     ): TaskNode {
         $shortId = $this->shortClassName($id);
         $children = [];
@@ -139,7 +142,7 @@ final readonly class TaskTreeBuilder
         for ($i = 0; $i < $partitionCount; $i++) {
             $label = sprintf('%s %d/%d', $shortId, $i + 1, $partitionCount);
 
-            $children[] = new TaskNode(
+            $children[] = $this->task(
                 $label,
                 function () use ($factory, $i, $partitionCount): Task {
                     $task = $factory();
@@ -152,7 +155,8 @@ final readonly class TaskTreeBuilder
                     $task->setPartitioning($i, $partitionCount);
                     return $task;
                 },
-                tags: $tags
+                tags: $tags,
+                class: $class
             );
         }
 
