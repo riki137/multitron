@@ -24,8 +24,8 @@ use Multitron\Tests\Mocks\DemoCommand;
 
 $factory = new MultitronFactory(new AppContainer());
 $app = new Application();
-$app->add($factory->getWorkerCommand());
-$app->add(new DemoCommand($factory->getTaskCommandDeps()));
+$app->addCommand($factory->getWorkerCommand());
+$app->addCommand(new DemoCommand($factory->getTaskCommandDeps()));
 $app->run();
 PHP;
         $this->script = $this->createWorkerScript(sprintf($script, var_export(self::$autoloadPath, true)));

@@ -18,6 +18,7 @@ use Multitron\Execution\ProcessExecutionFactory;
 use Multitron\Orchestrator\Output\ProgressOutputFactory;
 use Multitron\Orchestrator\Output\TableOutputFactory;
 use Multitron\Orchestrator\TaskOrchestrator;
+use Multitron\Tree\TaskNodeFactory;
 use Multitron\Tree\TaskTreeBuilderFactory;
 use Psr\Container\ContainerInterface;
 use StreamIpc\NativeIpcPeer;
@@ -48,6 +49,8 @@ final class MultitronFactory
     private ?TaskCommandDeps $taskCommandDeps = null;
 
     private ?TaskTreeBuilderFactory $taskTreeBuilderFactory = null;
+
+    private ?TaskNodeFactory $taskNodeFactory = null;
 
     public function __construct(private readonly ?ContainerInterface $container)
     {
@@ -92,12 +95,23 @@ final class MultitronFactory
 
     public function getTaskTreeBuilderFactory(): TaskTreeBuilderFactory
     {
-        return $this->taskTreeBuilderFactory ??= new TaskTreeBuilderFactory($this->container);
+        return $this->taskTreeBuilderFactory ??= new TaskTreeBuilderFactory($this->container, $this->getTaskNodeFactory());
     }
 
     public function setTaskTreeBuilderFactory(?TaskTreeBuilderFactory $taskTreeBuilderFactory): self
     {
         $this->taskTreeBuilderFactory = $taskTreeBuilderFactory;
+        return $this;
+    }
+
+    public function getTaskNodeFactory(): ?TaskNodeFactory
+    {
+        return $this->taskNodeFactory;
+    }
+
+    public function setTaskNodeFactory(?TaskNodeFactory $taskNodeFactory): self
+    {
+        $this->taskNodeFactory = $taskNodeFactory;
         return $this;
     }
 

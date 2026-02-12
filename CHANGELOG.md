@@ -6,8 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-
-
+### Added
+- optional $tags argument in TaskTreeBuilder
+- immutable setters in TaskNode
+- optional TaskNodeFactory
+- pattern filtering can exclude dependencies (PatternTaskNodeFactory/TaskTreeBuilder flag + `--no-deps` CLI option)
 
 ## [1.0.0] - 2025-11-07
 ### Added

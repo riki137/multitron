@@ -32,7 +32,7 @@ final readonly class MasterCacheReadKeysRequest implements MasterCacheReadReques
      *
      * @param array<int|string, mixed> $storage   data source to read from
      * @param array<int|string, mixed> $keysSpec  description of keys to fetch
-     * @return array<string, mixed>               fetched data
+     * @return array<int|string, mixed>               fetched data
      */
     private function fetchKeys(array &$storage, array $keysSpec): array
     {

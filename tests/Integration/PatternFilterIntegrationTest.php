@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
 
 final class PatternFilterIntegrationTest extends TestCase
 {
-    private function createTaskList(): TaskList
+    private function createTaskList(bool $includeDependencies = true): TaskList
     {
         $builder = new TaskTreeBuilder(new AppContainer());
 
@@ -34,7 +34,7 @@ final class PatternFilterIntegrationTest extends TestCase
             $dbGroup,
             $miscGroup,
             $report,
-        ]);
+        ], includeDependencies: $includeDependencies);
 
         return new TaskList($root);
     }
@@ -92,5 +92,26 @@ final class PatternFilterIntegrationTest extends TestCase
             'final-report',
         ], $order);
     }
-}
 
+    public function testPatternFilterCanExcludeDependencies(): void
+    {
+        $list = $this->createTaskList(includeDependencies: false);
+        $nodes = $list->toArray();
+
+        $ids = array_keys($nodes);
+        sort($ids);
+        $this->assertSame([
+            'cache-clear',
+            'cache-warm',
+            'db-backup',
+            'db-migrate',
+            'final-report',
+        ], $ids);
+
+        $this->assertSame([], $nodes['cache-clear']->dependencies);
+        $this->assertSame(['cache-clear'], $nodes['cache-warm']->dependencies);
+        $this->assertSame([], $nodes['db-backup']->dependencies);
+        $this->assertSame(['db-backup'], $nodes['db-migrate']->dependencies);
+        $this->assertSame(['cache-warm', 'db-migrate'], $nodes['final-report']->dependencies);
+    }
+}

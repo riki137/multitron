@@ -15,7 +15,7 @@ use Psr\Container\ContainerInterface;
  */
 final readonly class TaskTreeBuilder
 {
-    public function __construct(private ?ContainerInterface $container)
+    public function __construct(private ?ContainerInterface $container = null, private ?TaskNodeFactory $nodeFactory = null)
     {
     }
 
@@ -25,10 +25,12 @@ final readonly class TaskTreeBuilder
      * @param string $id Unique identifier for the task node.
      * @param Closure(): Task $factory Factory that returns the Task instance.
      * @param array<TaskNode|string> $dependencies List of task IDs this node depends on.
+     * @param string[] $tags Tags associated with this task.
      */
-    public function task(string $id, Closure $factory, array $dependencies = []): TaskNode
+    public function task(string $id, Closure $factory, array $dependencies = [], array $tags = [], ?string $class = null): TaskNode
     {
-        return new TaskNode($id, $factory, [], $dependencies);
+        return $this->nodeFactory?->create($id, $factory, [], $dependencies, $tags, $class)
+            ?? new TaskNode($id, $factory, [], $dependencies, $tags);
     }
 
     /**
@@ -36,15 +38,17 @@ final readonly class TaskTreeBuilder
      *
      * @param class-string $class FQCN of the service to fetch from container.
      * @param array<TaskNode|string> $dependencies Dependencies for the service task.
+     * @param string|null $id Optional identifier for the task. Defaults to short class name.
+     * @param string[] $tags Tags associated with this task.
      */
-    public function service(string $class, array $dependencies = [], ?string $id = null): TaskNode
+    public function service(string $class, array $dependencies = [], ?string $id = null, array $tags = []): TaskNode
     {
         if ($this->container === null) {
             throw new LogicException('Cannot create service task: TaskTreeBuilderFactory has no container injected.' .
                 ' Make sure an instance of ' . ContainerInterface::class . ' is autowired in your DI container OR is passed to ' .
                 MultitronFactory::class . ' constructor.');
         }
-        return $this->task($id ?? $this->shortClassName($class), fn() => $this->getTask($class), $dependencies);
+        return $this->task($id ?? $this->shortClassName($class), fn() => $this->getTask($class), $dependencies, $tags, $class);
     }
 
     /** Fetch a task service from the container and ensure it implements Task. */
@@ -82,10 +86,12 @@ final readonly class TaskTreeBuilder
      * @param string $id Group identifier.
      * @param TaskNode[] $children Child task nodes.
      * @param array<TaskNode|string> $dependencies Dependencies for the group.
+     * @param string[] $tags Tags associated with this group.
      */
-    public function group(string $id, array $children, array $dependencies = []): TaskNode
+    public function group(string $id, array $children, array $dependencies = [], array $tags = []): TaskNode
     {
-        return new TaskNode($id, null, $children, $dependencies);
+        return $this->nodeFactory?->create($id, null, $children, $dependencies, $tags)
+            ?? new TaskNode($id, null, $children, $dependencies, $tags);
     }
 
     /**
@@ -95,14 +101,22 @@ final readonly class TaskTreeBuilder
      * @param int $partitionCount Number of partitions.
      * @param array<TaskNode|string> $dependencies Dependencies for the partitioned tasks.
      * @param string|null $id Optional base identifier for the partitioned tasks. Defaults to short class name.
+     * @param string[] $tags Tags associated with the partitioned tasks.
      */
-    public function partitioned(string $class, int $partitionCount, array $dependencies = [], ?string $id = null): TaskNode
-    {
+    public function partitioned(
+        string $class,
+        int $partitionCount,
+        array $dependencies = [],
+        ?string $id = null,
+        array $tags = []
+    ): TaskNode {
         return $this->partitionedClosure(
             $id ?? $class,
             fn(): PartitionedTaskInterface => $this->getPartitionedTask($class),
             $partitionCount,
-            $dependencies
+            $dependencies,
+            $tags,
+            $class
         );
     }
 
@@ -113,12 +127,15 @@ final readonly class TaskTreeBuilder
      * @param Closure(): (PartitionedTaskInterface|Task) $factory Factory for creating each partition.
      * @param int $partitionCount Number of partitions.
      * @param array<TaskNode|string> $dependencies Dependencies for partitioned tasks.
+     * @param string[] $tags Tags associated with the partitioned tasks.
      */
     public function partitionedClosure(
         string $id,
         Closure $factory,
         int $partitionCount,
-        array $dependencies = []
+        array $dependencies = [],
+        array $tags = [],
+        ?string $class = null
     ): TaskNode {
         $shortId = $this->shortClassName($id);
         $children = [];
@@ -126,7 +143,7 @@ final readonly class TaskTreeBuilder
         for ($i = 0; $i < $partitionCount; $i++) {
             $label = sprintf('%s %d/%d', $shortId, $i + 1, $partitionCount);
 
-            $children[] = new TaskNode(
+            $children[] = $this->task(
                 $label,
                 function () use ($factory, $i, $partitionCount): Task {
                     $task = $factory();
@@ -138,19 +155,32 @@ final readonly class TaskTreeBuilder
 
                     $task->setPartitioning($i, $partitionCount);
                     return $task;
-                }
+                },
+                tags: $tags,
+                class: $class
             );
         }
 
-        return new TaskNode($shortId, null, $children, $dependencies);
+        return $this->group($shortId, $children, $dependencies, $tags);
     }
 
     /**
-     * @param TaskNode[] $children
+     * @param string $id Unique identifier for the pattern filter node.
+     * @param string $pattern Comma-separated fnmatch patterns to match task IDs or tags.
+     * @param TaskNode[] $children Child task nodes to filter.
+     * @param string[] $tags Tags associated with this filter node.
+     * @param bool $includeDependencies When true (default), include transitive dependencies of matched tasks.
+     *                                 When false, only matched tasks are returned and dependency edges pointing
+     *                                 outside the matched set are removed.
      */
-    public function patternFilter(string $id, string $pattern, array $children = []): TaskNode
-    {
-        return PatternTaskNodeFactory::create($id, $pattern, $children);
+    public function patternFilter(
+        string $id,
+        string $pattern,
+        array $children = [],
+        array $tags = [],
+        bool $includeDependencies = true
+    ): TaskNode {
+        return PatternTaskNodeFactory::create($id, $pattern, $children, $tags, $includeDependencies);
     }
 
     /**

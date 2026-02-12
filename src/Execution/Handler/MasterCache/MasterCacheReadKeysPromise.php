@@ -17,7 +17,7 @@ final readonly class MasterCacheReadKeysPromise
      * Block until the read request completes and return the full set of
      * retrieved values keyed by cache identifier.
      *
-     * @return array<string, mixed>
+     * @return array<int|string, mixed>
      */
     public function await(): array
     {

@@ -9,7 +9,7 @@ use StreamIpc\Message\Message;
 final readonly class MasterCacheReadResponse implements Message
 {
     /**
-     * @param array<string, mixed> $data
+     * @param array<int|string, mixed> $data
      */
     public function __construct(public array $data)
     {

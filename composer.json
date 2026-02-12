@@ -40,7 +40,7 @@
     ],
     "require": {
         "php": "^8.2",
-        "symfony/console": "^7.2",
+        "symfony/console": "^7.2|^8.0",
         "riki137/stream-ipc": "^1.0",
         "psr/container": "^2.0",
         "psr/container-implementation": "*"
@@ -50,10 +50,10 @@
         "psr/log": "^3.0",
         "nette/di": "^3.2",
         "phpstan/phpstan": "^2.1",
-        "contributte/psr11-container-interface": "^0.6.0",
+        "contributte/psr11-container-interface": "^0.7.0",
         "phpunit/phpunit": "^11.5",
         "squizlabs/php_codesniffer": "^3.13|^4.0",
-        "symfony/dependency-injection": "^7.3",
+        "symfony/dependency-injection": "^7.3|^8.0",
         "illuminate/support": "^12",
         "illuminate/container": "^12",
         "pimple/pimple": "^3.5"
