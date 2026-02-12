@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 namespace Multitron\Tests\Unit;
 
+use Closure;
 use InvalidArgumentException;
+use LogicException;
 use Multitron\Bridge\Native\MultitronFactory;
 use Multitron\Comms\NativeIpcAdapter;
 use Multitron\Console\TaskCommandDeps;
@@ -14,6 +16,8 @@ use Multitron\Execution\Handler\IpcHandlerRegistryFactory;
 use Multitron\Orchestrator\Output\ProgressOutputFactory;
 use Multitron\Orchestrator\TaskOrchestrator;
 use Multitron\Tests\Mocks\AppContainer;
+use Multitron\Tree\TaskNode;
+use Multitron\Tree\TaskNodeFactory;
 use Multitron\Tree\TaskTreeBuilderFactory;
 use PHPUnit\Framework\TestCase;
 use StreamIpc\NativeIpcPeer;
@@ -55,6 +59,22 @@ final class MultitronFactoryTest extends TestCase
 
         $factory->setProgressOutputFactory($outFactory);
         $this->assertSame($outFactory, $factory->getProgressOutputFactory());
+
+        $taskNodeFactory = new class() implements TaskNodeFactory {
+            public function create(
+                string $id,
+                ?Closure $factory,
+                array $children = [],
+                array $dependencies = [],
+                array $tags = [],
+                ?string $class = null
+            ): TaskNode {
+                throw new LogicException('Not needed for this test');
+            }
+        };
+        $factory->setTaskNodeFactory($taskNodeFactory);
+        $this->assertSame($taskNodeFactory, $factory->getTaskNodeFactory());
+
 
         $factory->setIpcHandlerRegistryFactory($regFactory);
         $this->assertSame($regFactory, $factory->getIpcHandlerRegistryFactory());
