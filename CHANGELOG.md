@@ -6,8 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Improved
+- extracted system memory probing from TableOutput into a dedicated SystemMemoryReader
 
-
+### Fixed
+- table output memory reporting on BusyBox environments without `ps -p`
 
 ## [1.1.0] - 2026-02-12
 ### Added

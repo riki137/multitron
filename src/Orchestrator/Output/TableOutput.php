@@ -24,6 +24,8 @@ final class TableOutput implements ProgressOutput
 
     private readonly TableRenderer $renderer;
 
+    private readonly SystemMemoryReader $memoryReader;
+
     /** @var array<string, TaskState> */
     private array $states = [];
 
@@ -35,6 +37,7 @@ final class TableOutput implements ProgressOutput
         TaskList $taskList,
         private readonly bool $interactive,
         private readonly int $lowMemoryWarning,
+        ?SystemMemoryReader $memoryReader = null,
     ) {
         if ($interactive && $output instanceof ConsoleOutputInterface) {
             $this->section = $output->section();
@@ -42,6 +45,7 @@ final class TableOutput implements ProgressOutput
             $this->section = $output;
         }
         $this->renderer = new TableRenderer($taskList);
+        $this->memoryReader = $memoryReader ?? new SystemMemoryReader();
     }
 
     public function onTaskStarted(TaskState $state): void
@@ -90,7 +94,7 @@ final class TableOutput implements ProgressOutput
         $this->attachMemoryWarning($sectionBuffer);
         $sectionBuffer[] = $this->renderer->getSummaryRow(
             $partiallyDone,
-            self::memoryUsage(),
+            $this->memoryReader->getCurrentProcessUsage(),
             $workersMem,
         );
 
@@ -125,29 +129,6 @@ final class TableOutput implements ProgressOutput
         }
     }
 
-    private static function memoryUsage(): int
-    {
-        $pid = getmypid();
-        $out = @shell_exec('ps -o rss= -p ' . $pid);
-        if (is_string($out) && trim($out) !== '') {
-            return (int)trim($out) * 1024;
-        }
-
-        return memory_get_usage(true);
-    }
-
-    private static function freeMemory(): ?int
-    {
-        if (is_readable('/proc/meminfo')) {
-            $data = file_get_contents('/proc/meminfo');
-            if (preg_match('/MemAvailable:\s+(\d+)/', (string)$data, $m)) {
-                return (int)$m[1] * 1024;
-            }
-        }
-
-        return null;
-    }
-
     public function __destruct()
     {
         if ($this->interactive) {
@@ -167,7 +148,7 @@ final class TableOutput implements ProgressOutput
         if ($this->lowMemoryWarning < 1) {
             return;
         }
-        $freeMem = self::freeMemory();
+        $freeMem = $this->memoryReader->getFreeMemory();
         if ($freeMem !== null && $freeMem < ($this->lowMemoryWarning * self::MB)) {
             $buffer[] =
                 $this->renderer->getRowLabel('LOW MEMORY', TaskStatus::SKIP) .

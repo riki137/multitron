@@ -43,7 +43,7 @@ final class TableOutputFactory implements ProgressOutputFactory
             throw new InvalidArgumentException('Low memory warning must be a positive integer.');
         }
 
-        $table = new TableOutput($output, $taskList, $interactive, $lowMemoryWarning);
+        $table = new TableOutput($output, $taskList, $interactive, $lowMemoryWarning, new SystemMemoryReader());
         $registry->onMessage(function (Message $message, TaskState $state) use ($table) {
             if ($message instanceof LogMessage) {
                 $table->log($state, $message->message);
