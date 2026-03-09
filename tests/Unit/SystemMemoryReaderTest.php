@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace Multitron\Orchestrator\Output {
-    function getmypid(): int
+    function getmypid(): int|false
     {
         return \Multitron\Tests\Unit\SystemMemoryReaderTest::$pid;
     }
@@ -37,7 +37,7 @@ use PHPUnit\Framework\TestCase;
 
 final class SystemMemoryReaderTest extends TestCase
 {
-    public static int $pid = 4321;
+    public static int|false $pid = 4321;
 
     /** @var array<string, bool> */
     public static array $readableFiles = [];
@@ -98,6 +98,17 @@ final class SystemMemoryReaderTest extends TestCase
         $this->assertSame(['ps -o rss= -p 4321'], self::$shellCommands);
     }
 
+    public function testCurrentProcessUsageFallsBackToPhpAllocatorWhenPidLookupFails(): void
+    {
+        self::$pid = false;
+        self::$memoryFallback = 456789;
+
+        $reader = new SystemMemoryReader();
+
+        $this->assertSame(456789, $reader->getCurrentProcessUsage());
+        $this->assertSame([], self::$shellCommands);
+    }
+
     public function testFreeMemoryReadsMemAvailableFromProcMeminfo(): void
     {
         self::$readableFiles['/proc/meminfo'] = true;
@@ -106,6 +117,23 @@ final class SystemMemoryReaderTest extends TestCase
         $reader = new SystemMemoryReader();
 
         $this->assertSame(2048 * 1024, $reader->getFreeMemory());
+    }
+
+    public function testFreeMemoryReturnsNullWhenProcMeminfoIsUnavailable(): void
+    {
+        $reader = new SystemMemoryReader();
+
+        $this->assertNull($reader->getFreeMemory());
+    }
+
+    public function testFreeMemoryReturnsNullWhenMemAvailableIsMissing(): void
+    {
+        self::$readableFiles['/proc/meminfo'] = true;
+        self::$fileContents['/proc/meminfo'] = "MemTotal: 1 kB\nMemFree: 512 kB\n";
+
+        $reader = new SystemMemoryReader();
+
+        $this->assertNull($reader->getFreeMemory());
     }
 
     private function resetDoubles(): void
