@@ -8,6 +8,7 @@ use Multitron\Bridge\Native\MultitronFactory;
 use Multitron\Console\TaskCommandDeps;
 use Multitron\Console\WorkerCommand;
 use Nette\DI\CompilerExtension;
+use Nette\DI\Definitions\Reference;
 
 final class MultitronExtension extends CompilerExtension
 {
@@ -19,12 +20,16 @@ final class MultitronExtension extends CompilerExtension
             ->setType(MultitronFactory::class)
             ->setCreator(MultitronFactory::class);
 
+        $factoryName = $factory->getName();
+        assert($factoryName !== null);
+        $factoryRef = new Reference($factoryName);
+
         $builder->addDefinition($this->prefix('commandDeps'))
             ->setType(TaskCommandDeps::class)
-            ->setCreator([$factory, 'getTaskCommandDeps']);
+            ->setCreator([$factoryRef, 'getTaskCommandDeps']);
 
         $builder->addDefinition($this->prefix('workerCommand'))
             ->setType(WorkerCommand::class)
-            ->setFactory([$factory, 'getWorkerCommand']);
+            ->setFactory([$factoryRef, 'getWorkerCommand']);
     }
 }

@@ -127,9 +127,9 @@ final class TableRenderer
         $minutes = floor($time / 60);
         $seconds = fmod($time, 60);
         if ($minutes >= 10) {
-            $out = sprintf('%d:%d', $minutes, $seconds);
+            $out = sprintf('%d:%02d', $minutes, $seconds);
         } elseif ($minutes > 0) {
-            $out = sprintf('%dm%ds', $minutes, $seconds);
+            $out = sprintf('%dm%02ds', $minutes, $seconds);
         } else {
             $out = number_format($seconds, 1) . 's';
         }

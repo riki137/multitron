@@ -24,13 +24,12 @@
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
-  - [Basic Example](#usage)
-  - [Running Tasks](#usage)
   - [Central Cache](#central-cache)
   - [Reporting Progress](#reporting-progress)
   - [Partitioned Tasks](#partitioned-tasks)
   - [Accessing CLI Options](#accessing-cli-options)
   - [Custom Progress Output](#custom-progress-output)
+- [Troubleshooting](#troubleshooting)
 - [Contributing](#contribute-to-multitron)
 - [License](#license)
 
@@ -144,6 +143,12 @@ php bin/console app:tasks -m 512M
 ```
 
 You can disable colors with `--no-colors` and switch off interactive table rendering using `--interactive=no`. The default `--interactive=detect` automatically falls back to plain output when run in CI.
+
+Multitron warns when available system memory drops below a threshold (in MB) via `--low-memory-warn`. It defaults to 1024 MB; pass `0` to disable the warning:
+
+```bash
+php bin/console app:tasks --low-memory-warn=512
+```
 
 ### Central Cache
 

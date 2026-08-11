@@ -88,7 +88,7 @@ abstract class TaskCommand extends Command
         $builder = $this->builderFactory->create();
         $pattern = $input?->getArgument('pattern');
         if (is_string($pattern) && trim($pattern) !== '') {
-            $includeDeps = (bool)($input?->getOption(self::OPTION_DEPS) ?? true);
+            $includeDeps = (bool)($input->getOption(self::OPTION_DEPS) ?? true);
             $node = $builder->patternFilter(
                 'root',
                 $pattern,

@@ -105,5 +105,20 @@ final class MultitronFactoryTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $factory->setDefaultConcurrency(-1);
     }
+
+    public function testSetDefaultConcurrencyRejectsZero(): void
+    {
+        $factory = new MultitronFactory($this->createContainer());
+        $this->expectException(InvalidArgumentException::class);
+        $factory->setDefaultConcurrency(0);
+    }
+
+    public function testSetDefaultConcurrencyAllowsNull(): void
+    {
+        $factory = new MultitronFactory($this->createContainer());
+        $factory->setDefaultConcurrency(3);
+        $factory->setDefaultConcurrency(null);
+        $this->assertNull($factory->getDefaultConcurrency());
+    }
 }
 
