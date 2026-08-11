@@ -52,6 +52,16 @@ final class TableRendererTest extends TestCase
         $this->assertStringContainsString('<fg=yellow>...</>', $out);
     }
 
+    public function testGetTimeFormatsMinutesAndHoursPadded(): void
+    {
+        $r = $this->createRenderer();
+        $ref = new ReflectionMethod(TableRenderer::class, 'getTime');
+        $ref->setAccessible(true);
+
+        $this->assertStringContainsString('1m05s', $ref->invoke($r, microtime(true) - 65));
+        $this->assertStringContainsString('10:05', $ref->invoke($r, microtime(true) - 605));
+    }
+
     public function testGetLogFormatsTime(): void
     {
         $r = $this->createRenderer();
