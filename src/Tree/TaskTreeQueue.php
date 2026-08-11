@@ -117,7 +117,9 @@ final class TaskTreeQueue implements IteratorAggregate
             }
 
             // dispatch it
-            /** @var CompiledTaskNode $task */
+            if ($bestId === null) {
+                throw new LogicException('No available task found despite non-empty availableTasks.');
+            }
             $task = $this->availableTasks[$bestId];
             unset(
                 $this->availableTasks[$bestId],
