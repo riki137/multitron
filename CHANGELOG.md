@@ -6,10 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.2.1] - 2026-08-12
+
 ### Fixed
 - `MultitronFactory::setDefaultConcurrency()` no longer accepts `0`, which previously passed validation but crashed later with an unrelated exception
 
 ## [1.2.0] - 2026-03-09
+
 ### Improved
 - extracted system memory probing from TableOutput into a dedicated SystemMemoryReader
 
@@ -17,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - table output memory reporting on BusyBox environments without `ps -p`
 
 ## [1.1.0] - 2026-02-12
+
 ### Added
 - optional $tags argument in TaskTreeBuilder
 - immutable setters in TaskNode
@@ -24,20 +29,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - pattern filtering can exclude dependencies (PatternTaskNodeFactory/TaskTreeBuilder flag + `--no-deps` CLI option)
 
 ## [1.0.0] - 2025-11-07
+
 ### Added
 - IpcAdapter for extensibility
 - Full release polish
 
 ## [1.0.0-beta9] - 2025-08-14
+
 ### Added
 - default concurrency constructor parameter for TaskCommandDeps
 - container dependency is now optional
 
 ## [1.0.0-beta8] - 2025-08-14
+
 ### Fixed
 - Symfony integration
 
 ## [1.0.0-beta7] - 2025-08-13
+
 ### Added
 - low memory table output in non-interactive mode
 - low memory warning TaskCommand console option
@@ -46,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - process exit code handling (again)
 
 ## [1.0.0-beta6] - 2025-08-01
+
 ### Added
 - MultitronFactory
 
@@ -56,12 +66,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Process exit code handling
 
 ## [1.0.0-beta5] - 2025-06-24
+
 ### Added
 - better error reporting for subprocess crashes
 
 ## [1.0.0-beta4] - 2025-06-24
 
 ## [1.0.0-beta3] - 2025-06-24
+
 ### Added
 - memory limit option
 ### Fixed
@@ -69,6 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - enhance documentation for clarity
 
 ## [1.0.0-beta2] - 2025-06-19
+
 ### Added
 - TableRenderer occurence white color
 - Code coverage badge
@@ -77,20 +90,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unhandled request (IpcHandlerRegistry was too late)
 
 ## [1.0.0-beta1] - 2025-06-18
+
 - complete greenfield rewrite based on experience from the previous version
 
 ## [0.2.0] - 2025-02-21
+
 ### Added
 - multiple trees support
 - --concurrent option
 - readSubsetsSorted request
 
 ## [0.1.2] - 2024-08-23
+
 ### Fixed
 - handled missing services in container
 - fixed nette psr container
 
 ## [0.1.1] - 2024-08-22
+
 ### Added
 - memory usage from `ps` command (if available)
 ### Fixed
@@ -98,9 +115,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - phpstan lvl5 errors, ci checks added
 
 ## [0.1.0] - 2024-08-20
+
 - After months of development, the first release of Multitron is here!
 
-[Unreleased]: https://github.com/riki137/multitron/compare/1.2.0...master
+[Unreleased]: https://github.com/riki137/multitron/compare/1.2.1...master
+[1.2.1]: https://github.com/riki137/multitron/compare/1.2.0...1.2.1
 [1.2.0]: https://github.com/riki137/multitron/compare/1.1.0...1.2.0
 [1.1.0]: https://github.com/riki137/multitron/compare/1.0.0...1.1.0
 [1.0.0]: https://github.com/riki137/multitron/compare/1.0.0-beta9...1.0.0
