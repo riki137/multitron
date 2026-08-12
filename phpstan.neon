@@ -1,2 +1,4 @@
 parameters:
     level: 9
+    # pcntl/pthreads availability differs by runner+PHP version, so this rule fires inconsistently across the CI matrix
+    reportUnmatchedIgnoredErrors: false

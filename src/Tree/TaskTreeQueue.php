@@ -117,7 +117,7 @@ final class TaskTreeQueue implements IteratorAggregate
             }
 
             // dispatch it
-            /** @var CompiledTaskNode $task */
+            assert($bestId !== null, 'No available task found despite non-empty availableTasks.');
             $task = $this->availableTasks[$bestId];
             unset(
                 $this->availableTasks[$bestId],

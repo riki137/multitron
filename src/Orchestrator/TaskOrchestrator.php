@@ -93,7 +93,12 @@ final class TaskOrchestrator
                     $options,
                     $queue->pendingCount(),
                     $handlerRegistry,
-                    fn(Throwable $e) => $this->handleStreamException($e, $states, $queue, $output)
+                    function (Throwable $e) use (&$states, $queue, $output) {
+                        $failedId = $this->handleStreamException($e, $states, $queue, $output);
+                        if ($failedId !== null) {
+                            unset($states[$failedId]);
+                        }
+                    }
                 );
                 $output->onTaskStarted($state);
             } else {
@@ -152,9 +157,12 @@ final class TaskOrchestrator
     }
 
     /**
+     * Handle a broken IPC stream by failing the matching task.
+     *
      * @param TaskState[] $states
+     * @return string|null The task ID that was failed, so the caller can drop it from its own state list.
      */
-    public function handleStreamException(Throwable $e, array $states, TaskTreeQueue $queue, ProgressOutput $output): void
+    public function handleStreamException(Throwable $e, array $states, TaskTreeQueue $queue, ProgressOutput $output): ?string
     {
         if (!$e instanceof InvalidStreamException) {
             throw $e;
@@ -163,9 +171,9 @@ final class TaskOrchestrator
             $execution = $state->getExecution();
             if ($execution?->getSession() === $e->getSession()) {
                 $this->onError($state, $queue, $output);
-                unset($states[$state->getTaskId()]);
-                return;
+                return $state->getTaskId();
             }
         }
+        return null;
     }
 }

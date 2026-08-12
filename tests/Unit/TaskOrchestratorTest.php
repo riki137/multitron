@@ -110,6 +110,73 @@ final class TaskOrchestratorTest extends TestCase
         );
     }
 
+    public function testStreamExceptionCallbackRemovesFailedTaskFromCallerStates(): void
+    {
+        $session1 = $this->peer->session;
+        $session2 = $this->peer->makeSession();
+
+        $exec1 = new class($session1) implements \Multitron\Execution\Execution {
+            public int $exitCalls = 0;
+
+            public function __construct(private \StreamIpc\IpcSession $session)
+            {
+            }
+
+            public function getSession(): \StreamIpc\IpcSession
+            {
+                return $this->session;
+            }
+
+            public function getExitCode(): ?int
+            {
+                $this->exitCalls++;
+                return null;
+            }
+
+            public function kill(): array
+            {
+                return ['exitCode' => 1, 'stdout' => '', 'stderr' => ''];
+            }
+        };
+        $exec2 = new DummyExecution($session2, 0);
+
+        $capturedCallback = null;
+        $execFactory = $this->createMock(ExecutionFactory::class);
+        $execFactory->method('launch')->willReturnCallback(
+            function (string $commandName, string $taskId, array $options, int $remaining, $registry, ?callable $onException = null) use (&$capturedCallback, $exec1, $exec2, $session1) {
+                if ($taskId === 't1') {
+                    $capturedCallback = $onException;
+                    return new TaskState('t1', $exec1);
+                }
+                // simulate task t1's IPC session breaking while t2 is being launched
+                if ($capturedCallback !== null) {
+                    ($capturedCallback)(new InvalidStreamException($session1));
+                }
+                return new TaskState('t2', $exec2);
+            }
+        );
+
+        $progressFactory = $this->createStub(\Multitron\Orchestrator\Output\ProgressOutputFactory::class);
+        $handlerFactory = $this->createStub(IpcHandlerRegistryFactory::class);
+        $orch = new TaskOrchestrator($this->peer, $execFactory, $progressFactory, $handlerFactory);
+
+        $taskList = new TaskList(new TaskNode('root', null, [
+            new TaskNode('t1', fn() => new \Multitron\Tests\Mocks\DummyTask()),
+            new TaskNode('t2', fn() => new \Multitron\Tests\Mocks\DummyTask()),
+        ]));
+        $queue = new TaskTreeQueue($taskList, 2);
+        $registry = new \Multitron\Execution\Handler\IpcHandlerRegistry();
+
+        $orch->doRun('test', ['update-interval' => 0.01], $queue, $this->output, $registry);
+
+        // t1's execution must never be polled again after the callback already failed it,
+        // otherwise a later non-null exit code would double-fire onTaskCompleted and flip its status back
+        $this->assertSame(1, $exec1->exitCalls);
+        $this->assertCount(2, $this->output->completed);
+        $this->assertSame(TaskStatus::ERROR, $this->output->completed[0]->getStatus());
+        $this->assertSame(TaskStatus::SUCCESS, $this->output->completed[1]->getStatus());
+    }
+
     public function testOnErrorWithSkippedDependencies(): void
     {
         $exec = new DummyExecution($this->peer->session);

@@ -203,7 +203,7 @@ final class MultitronFactory
 
     public function setDefaultConcurrency(?int $defaultConcurrency): self
     {
-        if ($defaultConcurrency < 0) {
+        if ($defaultConcurrency !== null && $defaultConcurrency < 1) {
             throw new InvalidArgumentException('Default concurrency must be a positive integer or null.');
         }
         $this->defaultConcurrency = $defaultConcurrency;
