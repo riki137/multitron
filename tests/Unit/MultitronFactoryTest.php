@@ -19,9 +19,11 @@ use Multitron\Tests\Mocks\AppContainer;
 use Multitron\Tree\TaskNode;
 use Multitron\Tree\TaskNodeFactory;
 use Multitron\Tree\TaskTreeBuilderFactory;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use StreamIpc\NativeIpcPeer;
 
+#[AllowMockObjectsWithoutExpectations]
 final class MultitronFactoryTest extends TestCase
 {
     private function createContainer(): AppContainer
