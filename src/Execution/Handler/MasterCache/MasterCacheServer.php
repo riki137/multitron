@@ -33,6 +33,22 @@ final class MasterCacheServer
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    public function export(): array
+    {
+        return $this->storage;
+    }
+
+    /**
+     * @param array<string, mixed> $storage
+     */
+    public function import(array $storage): void
+    {
+        $this->storage = $storage;
+    }
+
+    /**
      * Remove all entries from the cache. Mainly useful in unit tests where
      * persistent state would cause interference between runs.
      */

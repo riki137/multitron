@@ -8,6 +8,7 @@ use Multitron\Execution\CpuDetector;
 use Multitron\Execution\ExecutionFactory;
 use Multitron\Execution\Handler\IpcHandlerRegistry;
 use Multitron\Execution\Handler\IpcHandlerRegistryFactory;
+use Multitron\Execution\Handler\MasterCache\MasterCacheServer;
 use Multitron\Orchestrator\Output\ProgressOutput;
 use Multitron\Orchestrator\Output\ProgressOutputFactory;
 use Multitron\Tree\CompiledTaskNode;
@@ -27,12 +28,14 @@ final class TaskOrchestrator
     public const DEFAULT_UPDATE_INTERVAL = 0.1;
     public const OPTION_MEMORY_LIMIT = 'memory-limit';
     public const DEFAULT_MEMORY_LIMIT = '-1';
+    public const OPTION_RESUME = 'resume';
 
     public function __construct(
         private readonly IpcPeer $ipcPeer,
         private readonly ExecutionFactory $executionFactory,
         private readonly ProgressOutputFactory $outputFactory,
         private readonly IpcHandlerRegistryFactory $handlerFactory,
+        private readonly ?MasterCacheServer $cache = null,
     ) {
     }
 
@@ -49,14 +52,57 @@ final class TaskOrchestrator
         $option = $input->getOption(self::OPTION_CONCURRENCY);
         $concurrency = is_numeric($option) ? (int)$option : CpuDetector::getCpuCount();
 
+        $resumeId = $input->hasOption(self::OPTION_RESUME) ? $input->getOption(self::OPTION_RESUME) : null;
+        if (is_string($resumeId) && $resumeId !== '') {
+            $checkpoint = Checkpoint::load($resumeId, $commandName);
+            $this->cache?->import($checkpoint->cache);
+            $output->writeln('Resuming: ' . count($checkpoint->completed) . ' task(s) already done');
+        } else {
+            $checkpoint = Checkpoint::create($commandName);
+        }
+
         $registry = $this->handlerFactory->create();
-        return $this->doRun(
+        $queue = new TaskTreeQueue($taskList, $concurrency, $checkpoint->completed);
+        $result = $this->doRun(
             $commandName,
             $input->getOptions(),
-            new TaskTreeQueue($taskList, $concurrency),
+            $queue,
             $this->outputFactory->create($taskList, $output, $registry, $input->getOptions()),
             $registry
         );
+
+        if ($result === 0) {
+            $checkpoint->delete();
+        } else {
+            $checkpoint->completed = $queue->getCompleted();
+            $checkpoint->cache = $this->cache?->export() ?? [];
+            $checkpoint->save();
+            $output->writeln('To resume where it failed: ' . self::resumeCommand($checkpoint->id));
+        }
+        return $result;
+    }
+
+    /**
+     * Rebuild the current command line with --resume <id> instead of any previous --resume.
+     */
+    public static function resumeCommand(string $id): string
+    {
+        /** @var string[] $argv */
+        $argv = $_SERVER['argv'] ?? [];
+        $args = [];
+        for ($i = 0, $n = count($argv); $i < $n; $i++) {
+            if ($argv[$i] === '--' . self::OPTION_RESUME) {
+                $i++; // skip its value too
+                continue;
+            }
+            if (str_starts_with($argv[$i], '--' . self::OPTION_RESUME . '=')) {
+                continue;
+            }
+            $args[] = preg_match('~^[\w/.,:=%@+-]+$~', $argv[$i]) ? $argv[$i] : escapeshellarg($argv[$i]);
+        }
+        $args[] = '--' . self::OPTION_RESUME;
+        $args[] = $id;
+        return 'php ' . implode(' ', $args);
     }
 
     /**

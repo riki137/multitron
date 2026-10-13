@@ -36,7 +36,10 @@ final class TaskTreeQueue implements IteratorAggregate
 
     private Generator $generator;
 
-    public function __construct(TaskList $tasks, private readonly int $concurrencyLimit = 1)
+    /**
+     * @param string[] $completed IDs of tasks already done (e.g. in a resumed run)
+     */
+    public function __construct(TaskList $tasks, private readonly int $concurrencyLimit = 1, array $completed = [])
     {
         if ($this->concurrencyLimit < 1) {
             throw new LogicException('Concurrency limit must be at least 1.');
@@ -49,15 +52,22 @@ final class TaskTreeQueue implements IteratorAggregate
             $this->dependentsMap[$id] = [];
         }
 
+        foreach ($completed as $id) {
+            if (isset($this->pendingTasks[$id])) {
+                unset($this->pendingTasks[$id]);
+                $this->completedTasks[$id] = $id;
+            }
+        }
+
         // 2) build reverse map and seed the “ready” queue
         foreach ($this->pendingTasks as $id => $task) {
             foreach ($task->dependencies as $depId) {
-                if (! array_key_exists($depId, $this->pendingTasks)) {
+                if (! isset($this->dependentsMap[$depId])) {
                     throw new LogicException("Task '$id' has unknown dependency '$depId'.");
                 }
                 $this->dependentsMap[$depId][] = $id;
             }
-            if (empty($task->dependencies)) {
+            if ($this->areDependenciesMet($task)) {
                 $this->availableTasks[$id] = $task;
             }
         }
@@ -160,7 +170,6 @@ final class TaskTreeQueue implements IteratorAggregate
         }
 
         unset($this->runningTasks[$taskId]);
-        $this->completedTasks[$taskId] = $taskId;
 
         $skipped = [];
         $queue = [$taskId];
@@ -199,6 +208,14 @@ final class TaskTreeQueue implements IteratorAggregate
             }
         }
         return $score;
+    }
+
+    /**
+     * @return string[] IDs of tasks that succeeded
+     */
+    public function getCompleted(): array
+    {
+        return array_values($this->completedTasks);
     }
 
     public function pendingCount(): int
