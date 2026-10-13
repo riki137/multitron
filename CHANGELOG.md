@@ -7,17 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-- test suite and `phpunit.xml` updated for PHPUnit 13 and PHP 8.5 (no deprecation warnings from this repo)
-
 ### Added
-- `--resume <id>` - failed runs print a command that skips already finished tasks and restores the central cache
+- `--resume <id>` - a run failed? Multitron now prints a ready-to-paste command that picks up right where it stopped. Finished tasks are skipped and the central cache is restored, so you never redo work
 
 ### Fixed
-- Numeric task IDs like `"1"` finally work, no more `TypeError` in the table output and no more queue spinning forever
-- Duplicate task IDs now fail loudly instead of silently eating one of your tasks
-- `--low-memory-warn=N` actually works now, it used to reject every value you gave it (even `0`)
-- A crashed or OOM-killed worker is reported once, keeps TOTAL at 100% and makes the run exit with 1 instead of 0
+- Numeric task IDs like `"1"` work now, no more `TypeError` in the table output and no more queue spinning forever
+- Duplicate task IDs fail loudly instead of silently eating one of your tasks
+- `--low-memory-warn=N` accepts your values now (it used to reject all of them, even `0`)
+- A crashed or OOM-killed worker is reported exactly once, TOTAL stays at 100% and the run exits with 1 instead of 0
 - Workers killed by a signal report `128 + signal` (137 for SIGKILL) instead of a mysterious 255
 - No more `Undefined constant SIGKILL` crash when `ext-pcntl` is not loaded
 - No more `nan%` in the summary row when no tasks match your pattern
@@ -26,35 +23,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.1] - 2026-08-12
 
 ### Fixed
-- `MultitronFactory::setDefaultConcurrency()` no longer accepts `0`, which previously passed validation but crashed later with an unrelated exception
+- `MultitronFactory::setDefaultConcurrency()` rejects `0` right away instead of crashing later with an unrelated exception
 
 ## [1.2.0] - 2026-03-09
 
-### Improved
-- extracted system memory probing from TableOutput into a dedicated SystemMemoryReader
-
 ### Fixed
-- table output memory reporting on BusyBox environments without `ps -p`
+- table output shows memory usage on BusyBox environments without `ps -p`
 
 ## [1.1.0] - 2026-02-12
 
 ### Added
-- optional $tags argument in TaskTreeBuilder
-- immutable setters in TaskNode
-- optional TaskNodeFactory
-- pattern filtering can exclude dependencies (PatternTaskNodeFactory/TaskTreeBuilder flag + `--no-deps` CLI option)
+- `--no-deps` - run just the tasks your pattern matches, without dragging in their dependencies (also available as a flag on `PatternTaskNodeFactory` and `TaskTreeBuilder`)
+- tag your tasks with the new optional `$tags` argument in `TaskTreeBuilder`
+- `TaskNode` gets immutable setters, so you can derive modified nodes safely
+- optional `TaskNodeFactory` for full control over how nodes get built
 
 ## [1.0.0] - 2025-11-07
 
 ### Added
-- IpcAdapter for extensibility
-- Full release polish
+- `IpcAdapter` - plug in your own IPC layer and make Multitron fit any environment
 
 ## [1.0.0-beta9] - 2025-08-14
 
 ### Added
-- default concurrency constructor parameter for TaskCommandDeps
-- container dependency is now optional
+- set the default concurrency straight from the `TaskCommandDeps` constructor
+- the container dependency is optional, so Multitron now works without a DI container
 
 ## [1.0.0-beta8] - 2025-08-14
 
@@ -64,46 +57,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0-beta7] - 2025-08-13
 
 ### Added
-- low memory table output in non-interactive mode
-- low memory warning TaskCommand console option
+- low memory table output in non-interactive mode, so CI logs stay readable
+- low memory warning console option on `TaskCommand`
 
-### Improved
-- process exit code handling (again)
+### Changed
+- more reliable process exit code handling
 
 ## [1.0.0-beta6] - 2025-08-01
 
 ### Added
-- MultitronFactory
+- `MultitronFactory` - set up Multitron in a few lines
 
-### Improved
-- naming of major classes
-- CommandDeps as the TaskCommand's only dependency
+### Changed
+- `CommandDeps` is the only dependency `TaskCommand` needs
 - individual framework extensions/bridges
-- Process exit code handling
+- more reliable process exit code handling
 
 ## [1.0.0-beta5] - 2025-06-24
 
 ### Added
-- better error reporting for subprocess crashes
+- clear error reports when a subprocess crashes
 
 ## [1.0.0-beta4] - 2025-06-24
 
 ## [1.0.0-beta3] - 2025-06-24
 
 ### Added
-- memory limit option
-### Fixed
-- Refactor TaskTreeQueue to implement IteratorAggregate and update task retrieval logic
-- enhance documentation for clarity
+- memory limit option - keep individual tasks on a leash
 
 ## [1.0.0-beta2] - 2025-06-19
 
 ### Added
-- TableRenderer occurence white color
-- Code coverage badge
+- occurrence counts in the table output are white now, easier to spot
 
 ### Fixed
-- Unhandled request (IpcHandlerRegistry was too late)
+- unhandled IPC request (`IpcHandlerRegistry` was registered too late)
 
 ## [1.0.0-beta1] - 2025-06-18
 
@@ -112,23 +100,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - 2025-02-21
 
 ### Added
-- multiple trees support
-- --concurrent option
-- readSubsetsSorted request
+- multiple task trees in one run
+- `--concurrent` option - choose how many tasks run at once
+- `readSubsetsSorted` request
 
 ## [0.1.2] - 2024-08-23
 
 ### Fixed
-- handled missing services in container
-- fixed nette psr container
+- missing services in the container are handled
+- Nette PSR container works
 
 ## [0.1.1] - 2024-08-22
 
 ### Added
-- memory usage from `ps` command (if available)
-### Fixed
-- optimized memory usage of ChannelClient
-- phpstan lvl5 errors, ci checks added
+- memory usage per task, read from `ps` (if available)
+
+### Changed
+- `ChannelClient` uses less memory
 
 ## [0.1.0] - 2024-08-20
 
