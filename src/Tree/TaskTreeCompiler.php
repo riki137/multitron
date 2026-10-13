@@ -92,7 +92,13 @@ final class TaskTreeCompiler
         // 5. Recurse into children
         foreach ($node->children as $childNode) {
             $childTasks = $this->processNode($childNode, $dependenciesForChildren, $tagsForChildren);
-            $subtreeTasks = array_merge($subtreeTasks, $childTasks);
+            // not array_merge(): it renumbers integer-like keys, which breaks numeric task IDs like "1"
+            foreach ($childTasks as $id => $childTask) {
+                if (isset($subtreeTasks[$id])) {
+                    throw new LogicException("Duplicate task ID '$id'.");
+                }
+                $subtreeTasks[$id] = $childTask;
+            }
         }
 
         // 6. Apply post-processing if present

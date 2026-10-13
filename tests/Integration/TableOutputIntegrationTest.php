@@ -232,5 +232,20 @@ final class TableOutputIntegrationTest extends TestCase
         // Should complete without low memory warning
         $this->assertTrue(true);
     }
-}
 
+    public function testFactoryAcceptsLowMemoryWarningFromCliString(): void
+    {
+        $registry = new \Multitron\Execution\Handler\IpcHandlerRegistry();
+        $factory = new TableOutputFactory();
+
+        $this->assertInstanceOf(TableOutput::class, $factory->create($this->createTaskList(), new BufferedOutput(), $registry, [
+            TableOutputFactory::OPTION_LOW_MEMORY_WARNING => '512',
+            TableOutputFactory::OPTION_INTERACTIVE => 'no',
+        ]));
+
+        $this->expectException(\InvalidArgumentException::class);
+        $factory->create($this->createTaskList(), new BufferedOutput(), $registry, [
+            TableOutputFactory::OPTION_LOW_MEMORY_WARNING => 'lots',
+        ]);
+    }
+}

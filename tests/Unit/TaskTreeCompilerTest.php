@@ -174,5 +174,30 @@ final class TaskTreeCompilerTest extends TestCase
         // Should only contain 'dep' once even though it was listed twice
         $this->assertSame(['dep'], $compiled['task']->dependencies);
     }
-}
 
+    public function testNumericTaskIdsKeepTheirKeys(): void
+    {
+        $root = new TaskNode('root', null, [
+            new TaskNode('1', fn() => new DummyTask()),
+            new TaskNode('2', fn() => new DummyTask(), dependencies: ['1']),
+        ]);
+
+        $compiled = (new TaskTreeCompiler())->compile($root);
+
+        $this->assertSame(['1', '2'], array_map(strval(...), array_keys($compiled)));
+        $this->assertSame('2', $compiled[2]->id);
+        $this->assertSame(['1'], $compiled[2]->dependencies);
+    }
+
+    public function testDuplicateTaskIdThrows(): void
+    {
+        $root = new TaskNode('root', null, [
+            new TaskNode('same', fn() => new DummyTask()),
+            new TaskNode('same', fn() => new DummyTask()),
+        ]);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage("Duplicate task ID 'same'");
+        (new TaskTreeCompiler())->compile($root);
+    }
+}

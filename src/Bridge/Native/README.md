@@ -53,7 +53,7 @@ class AppContainer implements ContainerInterface {
 $factory = new MultitronFactory(new AppContainer());
 
 $app = new Application();
-$app->add($factory->getWorkerCommand()); // must be in the same script as the App commands
+$app->addCommands([$factory->getWorkerCommand()]); // must be in the same script as the App commands
 
 #[AsCommand('app:tasks')]
 class AppTaskCommand extends TaskCommand
@@ -73,7 +73,7 @@ class AppTaskCommand extends TaskCommand
     }
 }
 
-$app->add(new AppTaskCommand($factory->getTaskCommandDeps()));
+$app->addCommands([new AppTaskCommand($factory->getTaskCommandDeps())]);
 
 $app->run();
 ```
@@ -101,8 +101,8 @@ $factory->setWorkerTimeout(300.0);
 
 $app = new \Symfony\Component\Console\Application();
 // Now create the commands with the customized factory
-$app->add(new AppTaskCommand($factory->getTaskCommandDeps()));
-$app->add($factory->getWorkerCommand());
+$app->addCommands([new AppTaskCommand($factory->getTaskCommandDeps())]);
+$app->addCommands([$factory->getWorkerCommand()]);
 
 $app->run();
 ```

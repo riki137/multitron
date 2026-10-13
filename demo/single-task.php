@@ -15,7 +15,7 @@ $factory = new MultitronFactory(null);
 $app = new Application('Multitron Minimal Demo', '1.0');
 
 // this registers the background worker command that actually runs nodes
-$app->add($factory->getWorkerCommand());
+$app->addCommands([$factory->getWorkerCommand()]);
 
 // --- A tiny task: does some work, reports progress, logs a line ---
 final class HelloTask implements Task
@@ -45,5 +45,5 @@ final class HelloCommand extends TaskCommand
     }
 }
 
-$app->add(new HelloCommand($factory->getTaskCommandDeps()));
+$app->addCommands([new HelloCommand($factory->getTaskCommandDeps())]);
 $app->run();

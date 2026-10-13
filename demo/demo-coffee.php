@@ -26,7 +26,7 @@ $container = new Container(new \Pimple\Container([
 
 $factory = new MultitronFactory($container);
 $app = new Application('Multitron Coffee Demo', '1.0');
-$app->add($factory->getWorkerCommand());
+$app->addCommands([$factory->getWorkerCommand()]);
 
 /**
  * Task 1: simple, linear work
@@ -138,5 +138,5 @@ final class CoffeeCommand extends TaskCommand
     }
 }
 
-$app->add(new CoffeeCommand($factory->getTaskCommandDeps()));
+$app->addCommands([new CoffeeCommand($factory->getTaskCommandDeps())]);
 $app->run();

@@ -22,7 +22,7 @@ $container = new Container(new \Pimple\Container([
 
 $factory = new MultitronFactory($container);
 $app = new Application('Multitron Demo', '1.0');
-$app->add($factory->getWorkerCommand());
+$app->addCommands([$factory->getWorkerCommand()]);
 
 class RandomTask extends PartitionedTask
 {
@@ -72,6 +72,6 @@ class DemoCommand extends TaskCommand
     }
 }
 
-$app->add(new DemoCommand($factory->getTaskCommandDeps()));
+$app->addCommands([new DemoCommand($factory->getTaskCommandDeps())]);
 
 $app->run();
