@@ -93,9 +93,10 @@ final class TaskOrchestrator
                     $options,
                     $queue->pendingCount(),
                     $handlerRegistry,
-                    function (Throwable $e) use (&$states, $queue, $output) {
+                    function (Throwable $e) use (&$states, &$hadError, $queue, $output) {
                         $failedId = $this->handleStreamException($e, $states, $queue, $output);
                         if ($failedId !== null) {
+                            $hadError = true;
                             unset($states[$failedId]);
                         }
                     }
@@ -106,12 +107,22 @@ final class TaskOrchestrator
             }
 
             // poll each running task for completion
-            foreach ($states as $id => $state) {
+            foreach (array_keys($states) as $id) {
+                // the stream-exception handler (which mutates $states by reference) may have already failed this task
+                // @phpstan-ignore isset.offset
+                if (!isset($states[$id])) {
+                    continue;
+                }
+                $state = $states[$id];
                 $execution = $state->getExecution();
                 $exit = $execution?->getExitCode();
                 if ($exit !== null) {
                     try {
                         $this->ipcPeer->tick(0.01);
+                        // @phpstan-ignore isset.offset
+                        if (!isset($states[$id])) {
+                            continue; // failed by the stream-exception handler during this tick
+                        }
                         if ($exit === 0) {
                             $queue->markCompleted($state->getTaskId());
                             $state->setStatus(TaskStatus::SUCCESS);

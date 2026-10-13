@@ -66,5 +66,13 @@ final class TableRendererTest extends TestCase
         $log = $r->getLog('task1', "hello\nworld");
         $this->assertMatchesRegularExpression('/hello\n\s+world <fg=gray>\(\d{2}:\d{2}:\d{2}\)<\/>/', $log);
     }
-}
 
+    public function testNumericTaskIdsAndEmptyList(): void
+    {
+        $numeric = new TaskList(new TaskNode('root', null, [new TaskNode('123', fn() => new DummyTask())]));
+        $this->assertStringContainsString('123', (new TableRenderer($numeric))->getRowLabel('123', TaskStatus::RUNNING));
+
+        $empty = new TableRenderer(new TaskList(new TaskNode('root')));
+        $this->assertStringNotContainsStringIgnoringCase('nan', $empty->getSummaryRow(0.0, 0, 0));
+    }
+}

@@ -16,6 +16,9 @@ use RuntimeException;
  */
 final class Process
 {
+    /** Literal value so the class works without ext-pcntl, which is the only source of the SIGKILL constant. */
+    private const SIGKILL = 9;
+
     /** @var resource */
     private $process;
 
@@ -24,6 +27,9 @@ final class Process
 
     /** @var int<0,255>|null */
     private ?int $exitCode = null;
+
+    /** Terminating signal seen by an earlier proc_get_status(); later calls no longer report it. */
+    private ?int $termSig = null;
 
     /**
      * @param list<string> $cmd
@@ -102,6 +108,9 @@ final class Process
         }
 
         // Finished, but PHP still shows the sentinel –1.
+        if (!empty($status['signaled'])) {
+            $this->termSig = (int)$status['termsig'];
+        }
         // Fall back to the blocking path which closes pipes first and reaps reliably.
         return $this->wait();
     }
@@ -132,7 +141,7 @@ final class Process
      * Returns the exit code *after* the signal.
      * @return int<0,255>
      */
-    public function kill(int $signal = SIGKILL): int
+    public function kill(int $signal = self::SIGKILL): int
     {
         if (is_resource($this->process)) {
             proc_terminate($this->process, $signal);
@@ -155,7 +164,7 @@ final class Process
         // Snapshot before closing: used if proc_close() returns –1.
         $st = proc_get_status($this->process);
         $preExit = (!$st['running'] && $st['exitcode'] !== -1) ? (int)$st['exitcode'] : null;
-        $termSig = empty($st['signaled']) ? null : (int)$st['termsig'];
+        $termSig = empty($st['signaled']) ? $this->termSig : (int)$st['termsig'];
 
         $rc = proc_close($this->process);
 

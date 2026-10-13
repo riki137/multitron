@@ -169,8 +169,9 @@ final class TaskOrchestratorTest extends TestCase
         $queue = new TaskTreeQueue($taskList, 2);
         $registry = new \Multitron\Execution\Handler\IpcHandlerRegistry();
 
-        $orch->doRun('test', ['update-interval' => 0.01], $queue, $this->output, $registry);
+        $result = $orch->doRun('test', ['update-interval' => 0.01], $queue, $this->output, $registry);
 
+        $this->assertSame(1, $result);
         // t1's execution must never be polled again after the callback already failed it,
         // otherwise a later non-null exit code would double-fire onTaskCompleted and flip its status back
         $this->assertSame(1, $exec1->exitCalls);

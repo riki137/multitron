@@ -10,6 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - test suite and `phpunit.xml` updated for PHPUnit 13 and PHP 8.5 (no deprecation warnings from this repo)
 
+### Fixed
+- Numeric task IDs like `"1"` finally work, no more `TypeError` in the table output and no more queue spinning forever
+- Duplicate task IDs now fail loudly instead of silently eating one of your tasks
+- `--low-memory-warn=N` actually works now, it used to reject every value you gave it (even `0`)
+- A crashed or OOM-killed worker is reported once, keeps TOTAL at 100% and makes the run exit with 1 instead of 0
+- Workers killed by a signal report `128 + signal` (137 for SIGKILL) instead of a mysterious 255
+- No more `Undefined constant SIGKILL` crash when `ext-pcntl` is not loaded
+- No more `nan%` in the summary row when no tasks match your pattern
+- README and demos work with Symfony Console 8 (`addCommands()` instead of the removed `add()`)
+
 ## [1.2.1] - 2026-08-12
 
 ### Fixed

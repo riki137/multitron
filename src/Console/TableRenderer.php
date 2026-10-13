@@ -22,9 +22,9 @@ final class TableRenderer
     {
         $this->summary = new TaskProgress();
         $this->taskWidth = 16;
-        foreach ($taskList as $taskId => $task) {
+        foreach ($taskList as $task) {
             $this->summary->total++;
-            $this->taskWidth = max($this->taskWidth, strlen($taskId));
+            $this->taskWidth = max($this->taskWidth, strlen($task->id));
         }
 
         $this->startTime = microtime(true);
@@ -62,7 +62,7 @@ final class TableRenderer
     {
         return implode(' ', array_filter([
             $this->getRowLabel('TOTAL', TaskStatus::RUNNING),
-            self::getProgressBar($this->summary, (fdiv($this->summary->done + $partiallyDone, $this->summary->total)) * 100, 'blue'),
+            self::getProgressBar($this->summary, $this->summary->total === 0 ? 0 : (fdiv($this->summary->done + $partiallyDone, $this->summary->total)) * 100, 'blue'),
             self::getCount($this->summary),
             $this->getTime($this->startTime, 'yellow;options=bold'),
             '<fg=blue>' . TaskProgress::formatMemoryUsage($workerMem) . '</>+' .

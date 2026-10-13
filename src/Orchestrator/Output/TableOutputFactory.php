@@ -38,8 +38,12 @@ final class TableOutputFactory implements ProgressOutputFactory
             $interactive = filter_var($interactiveOpt, FILTER_VALIDATE_BOOLEAN);
         }
 
-        $lowMemoryWarning = $options[self::OPTION_LOW_MEMORY_WARNING] ?? self::DEFAULT_LOW_MEMORY_WARNING;
-        if (!is_int($lowMemoryWarning) || $lowMemoryWarning < 0) {
+        // CLI values arrive as strings ("512"), so accept integer-like strings too
+        $lowMemoryWarning = filter_var(
+            $options[self::OPTION_LOW_MEMORY_WARNING] ?? self::DEFAULT_LOW_MEMORY_WARNING,
+            FILTER_VALIDATE_INT
+        );
+        if ($lowMemoryWarning === false || $lowMemoryWarning < 0) {
             throw new InvalidArgumentException('Low memory warning must be a positive integer.');
         }
 

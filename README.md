@@ -287,7 +287,7 @@ $container->registerExtension(new MultitronExtension());
 MultitronServiceProvider::class,
 
 // Native - add to application
-$app->add($factory->getWorkerCommand());
+$app->addCommands([$factory->getWorkerCommand()]);
 ```
 
 ### Memory limit errors

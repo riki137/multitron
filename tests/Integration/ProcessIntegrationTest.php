@@ -30,4 +30,13 @@ final class ProcessIntegrationTest extends TestCase
         }
         $this->assertFalse($proc->isRunning());
     }
+
+    public function testSignalKilledProcessReportsShellStyleExitCode(): void
+    {
+        $proc = new Process(['sh', '-c', 'kill -9 $$']);
+        for ($i = 0; $i < 50 && $proc->getExitCode() === null; $i++) {
+            usleep(100000);
+        }
+        $this->assertSame(137, $proc->getExitCode());
+    }
 }
