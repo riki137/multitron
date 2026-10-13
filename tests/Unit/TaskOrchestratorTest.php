@@ -16,10 +16,12 @@ use Multitron\Orchestrator\TaskState;
 use Multitron\Orchestrator\TaskStatus;
 use Multitron\Tree\TaskNode;
 use Multitron\Tree\TaskTreeQueue;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use StreamIpc\InvalidStreamException;
 
+#[AllowMockObjectsWithoutExpectations]
 final class TaskOrchestratorTest extends TestCase
 {
     private TaskOrchestrator $orch;

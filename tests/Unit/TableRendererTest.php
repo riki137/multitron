@@ -35,7 +35,6 @@ final class TableRendererTest extends TestCase
         $progress->total = 10;
         $progress->done = 12;
         $ref = new ReflectionMethod(TableRenderer::class, 'getCount');
-        $ref->setAccessible(true);
         $out = $ref->invoke(null, $progress);
         $this->assertStringContainsString('<fg=yellow>', $out);
     }
@@ -56,7 +55,6 @@ final class TableRendererTest extends TestCase
     {
         $r = $this->createRenderer();
         $ref = new ReflectionMethod(TableRenderer::class, 'getTime');
-        $ref->setAccessible(true);
 
         $this->assertStringContainsString('1m05s', $ref->invoke($r, microtime(true) - 65));
         $this->assertStringContainsString('10:05', $ref->invoke($r, microtime(true) - 605));

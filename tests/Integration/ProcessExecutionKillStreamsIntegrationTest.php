@@ -39,11 +39,9 @@ PHP;
         $execution = new ProcessExecution($peer);
 
         $procProp = new ReflectionProperty($execution, 'process');
-        $procProp->setAccessible(true);
         $proc = $procProp->getValue($execution);
 
         $pipesProp = new ReflectionProperty($proc, 'pipes');
-        $pipesProp->setAccessible(true);
         $pipes = $pipesProp->getValue($proc);
         foreach ($pipes as $pipe) {
             fclose($pipe);

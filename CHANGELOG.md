@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- test suite and `phpunit.xml` updated for PHPUnit 13 and PHP 8.5 (no deprecation warnings from this repo)
+
 ## [1.2.1] - 2026-08-12
 
 ### Fixed

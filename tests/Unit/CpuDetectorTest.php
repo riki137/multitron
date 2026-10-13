@@ -31,7 +31,6 @@ final class CpuDetectorTest extends TestCase
     protected function tearDown(): void
     {
         $prop = new ReflectionProperty(CpuDetector::class, 'cachedCount');
-        $prop->setAccessible(true);
         $prop->setValue(null, null);
         self::$pthreadsCount = null;
         self::$pcntlCount = null;
