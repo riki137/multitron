@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - test suite and `phpunit.xml` updated for PHPUnit 13 and PHP 8.5 (no deprecation warnings from this repo)
 
+### Added
+- `--resume <id>` - failed runs print a command that skips already finished tasks and restores the central cache
+
 ### Fixed
 - Numeric task IDs like `"1"` finally work, no more `TypeError` in the table output and no more queue spinning forever
 - Duplicate task IDs now fail loudly instead of silently eating one of your tasks

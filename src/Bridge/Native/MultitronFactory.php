@@ -37,6 +37,8 @@ final class MultitronFactory
 
     private ?IpcHandlerRegistryFactory $ipcHandlerRegistryFactory = null;
 
+    private ?MasterCacheServer $masterCacheServer = null;
+
     private float $workerTimeout = ProcessExecutionFactory::DEFAULT_TIMEOUT;
 
     private ?int $processBufferSize = null;
@@ -121,7 +123,8 @@ final class MultitronFactory
             $this->getIpcAdapter()->getPeer(),
             $this->getExecutionFactory(),
             $this->getProgressOutputFactory(),
-            $this->getIpcHandlerRegistryFactory()
+            $this->getIpcHandlerRegistryFactory(),
+            $this->getMasterCacheServer(),
         );
     }
 
@@ -185,7 +188,7 @@ final class MultitronFactory
     public function getIpcHandlerRegistryFactory(): IpcHandlerRegistryFactory
     {
         return $this->ipcHandlerRegistryFactory ??= new DefaultIpcHandlerRegistryFactory(
-            new MasterCacheServer(),
+            $this->getMasterCacheServer(),
             new ProgressServer(),
         );
     }
@@ -194,6 +197,11 @@ final class MultitronFactory
     {
         $this->ipcHandlerRegistryFactory = $ipcHandlerRegistryFactory;
         return $this;
+    }
+
+    public function getMasterCacheServer(): MasterCacheServer
+    {
+        return $this->masterCacheServer ??= new MasterCacheServer();
     }
 
     public function getDefaultConcurrency(): ?int

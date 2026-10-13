@@ -27,6 +27,7 @@
   - [Central Cache](#central-cache)
   - [Reporting Progress](#reporting-progress)
   - [Partitioned Tasks](#partitioned-tasks)
+  - [Resuming Failed Runs](#resuming-failed-runs)
   - [Accessing CLI Options](#accessing-cli-options)
   - [Custom Progress Output](#custom-progress-output)
 - [Troubleshooting](#troubleshooting)
@@ -211,6 +212,18 @@ final class BuildReportTask extends PartitionedTask // or implements Partitioned
 
 $builder->partitioned(BuildReportTask::class, 4);
 ```
+
+### Resuming Failed Runs
+
+When a run fails, Multitron prints a command that continues where it stopped:
+
+```
+To resume where it failed: php bin/console app:tasks --resume 3f9a1c0be47d2a85
+```
+
+Tasks that already succeeded are skipped and the central cache is restored, so the rerun tasks can still read what the finished ones wrote. Failed and skipped tasks run again.
+
+Nothing is written to disk for successful runs. A failed run stores one checkpoint file in `sys_get_temp_dir()/multitron`, which is deleted once the resumed run succeeds. Checkpoints older than 7 days are cleaned up automatically.
 
 ### Accessing CLI Options
 
