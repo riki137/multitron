@@ -28,6 +28,7 @@
   - [Reporting Progress](#reporting-progress)
   - [Partitioned Tasks](#partitioned-tasks)
   - [Resuming Failed Runs](#resuming-failed-runs)
+  - [Running on a Schedule](#running-on-a-schedule)
   - [Accessing CLI Options](#accessing-cli-options)
   - [Custom Progress Output](#custom-progress-output)
 - [Troubleshooting](#troubleshooting)
@@ -224,6 +225,25 @@ To resume where it failed: php bin/console app:tasks --resume 3f9a1c0be47d2a85
 Tasks that already succeeded are skipped and the central cache is restored, so the rerun tasks can still read what the finished ones wrote. Failed and skipped tasks run again.
 
 Nothing is written to disk for successful runs. A failed run stores one checkpoint file in `sys_get_temp_dir()/multitron`, which is deleted once the resumed run succeeds. Checkpoints older than 7 days are cleaned up automatically.
+
+### Running on a Schedule
+
+Multitron exits with a non-zero code when any task fails, so any scheduler can tell a failed run from a good one. Plain cron works:
+
+```
+0 3 * * * cd /app && php bin/console app:tasks
+```
+
+With plain cron the output of a failed run usually ends up in `/dev/null` or in a mailbox nobody reads. I also make [RunWisp](https://runwisp.com), a self-hosted cron replacement that keeps the output and exit code of every run and notifies you when one fails.
+
+```toml
+[tasks.nightly-import]
+cron        = "0 3 * * *"
+run         = "php bin/console app:tasks"
+working_dir = "/app"
+keep_runs   = 30
+notify      = ["slack-ops"]
+```
 
 ### Accessing CLI Options
 
