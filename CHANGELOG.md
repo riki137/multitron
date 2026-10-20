@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-20
+
 ### Added
 - `--resume <id>` - a run failed? Multitron now prints a ready-to-paste command that picks up right where it stopped. Finished tasks are skipped and the central cache is restored, so you never redo work
 
@@ -122,7 +124,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - After months of development, the first release of Multitron is here!
 
-[Unreleased]: https://github.com/riki137/multitron/compare/1.2.1...master
+[Unreleased]: https://github.com/riki137/multitron/compare/1.3.0...master
+[1.3.0]: https://github.com/riki137/multitron/compare/1.2.1...1.3.0
 [1.2.1]: https://github.com/riki137/multitron/compare/1.2.0...1.2.1
 [1.2.0]: https://github.com/riki137/multitron/compare/1.1.0...1.2.0
 [1.1.0]: https://github.com/riki137/multitron/compare/1.0.0...1.1.0
